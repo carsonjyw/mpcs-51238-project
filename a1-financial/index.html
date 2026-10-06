@@ -231,6 +231,23 @@
           </ul>
           <p>The gains calendar sits beside the feed as a scrubber: clicking a day jumps to it, and the calendar follows as you scroll. Blue dots mark days with bank activity. The v01-style account picker filters the feed, “Key moments only” keeps just the flagged events, and “Load August” extends history. The demo adds a scripted “find” box (e.g. “steakhouse,” “worst day”).</p>
         </li>
+        <li>
+          <div class="when">Stage 10 · Feedback on v08</div>
+          <h4>The timeline's combined view and “Since you last checked” work; recent changes should come before upcoming events</h4>
+          <p><b>Your review of v08:</b> you like how the timeline brings bank activity and investment changes together, especially the “Since you last checked” summary. You'd make recent changes more prominent and move the upcoming events lower down, so users can quickly see what has happened before looking ahead.</p>
+          <p><b>Next step:</b> you asked to move on to the next new direction, Money Map, for v09. v08 is kept as is.</p>
+        </li>
+        <li>
+          <div class="when">Stage 10 · Decision → v09</div>
+          <h4>Approach 4, “Money Map,” chosen</h4>
+          <p><b>How v09 responds:</b> the page centers on one flow diagram of September instead of panels, a feed or levels.</p>
+          <ul>
+            <li><b>Left column:</b> money in (paychecks $6,850, market gains +$2,080).</li>
+            <li><b>Middle:</b> the accounts it went through (Everyday Checking, Schwab, IBKR).</li>
+            <li><b>Right:</b> where it ended up (spending $5,120, kept $1,730, and a dashed $0 line to savings for the skipped transfer), then spending by category.</li>
+          </ul>
+          <p>Bands are sized by amount, and items worth a look (dining, the skipped savings transfer) carry an orange dot. Hovering lights up connected flows; clicking any box or band opens a side panel with an AI explanation and its data: dining by month and the weekend meals, the savings balance with the flat September, each holding's contribution, or the gains calendar for Market gains and each brokerage. The panel opens on a September overview with “worth a look” shortcuts. The v01-style account picker is laid out as a bar above the map and decides which flows exist. The demo adds a scripted “find” box (e.g. “rent” highlights Housing).</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -304,7 +321,14 @@ const VERSIONS = [
     title: "The Timeline",
     stage: "explore",
     date: "2026-10-05",
-    note: "<b>New approach 3, chosen by you.</b> The page is organized by time. One feed merges bank activity and market days from every account, newest first, with a “Coming up” card and a Today marker on top, a “since you last checked” summary, and AI recaps closing each week and month. The <b>gains calendar</b> works as a scrubber: click a day to jump there, and it follows along as you scroll. The v01-style account picker filters the feed; “Key moments only” trims it. Light/dark kept; all mock."
+    note: "<b>New approach 3, chosen by you.</b> The page is organized by time. One feed merges bank activity and market days from every account, newest first, with a “Coming up” card and a Today marker on top, a “since you last checked” summary, and AI recaps closing each week and month. The <b>gains calendar</b> works as a scrubber: click a day to jump there, and it follows along as you scroll. The v01-style account picker filters the feed; “Key moments only” trims it. Light/dark kept; all mock. <b>Your review:</b> you like how it brings bank activity and investment changes together, especially the “Since you last checked” summary. You'd make recent changes more prominent and move upcoming events lower, so people see what happened before looking ahead."
+  },
+  {
+    v: "v09",
+    title: "Money Map",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>New approach 4, chosen by you.</b> The page is organized by how money moves. One interactive flow diagram of September runs left to right: paychecks and market gains → checking, Schwab and IBKR → spending, kept and savings → spending categories, with each band sized by its amount. Clicking any box or band opens the AI's explanation and its data beside the map. The <b>gains calendar</b> appears under Market gains and each brokerage. The v01-style account picker sits above as a bar and decides which flows are drawn. Light/dark kept; all mock."
   }
 ];
 
