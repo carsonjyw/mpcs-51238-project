@@ -89,7 +89,7 @@
     <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
     <div class="meta">
       <span>Versions: <b id="count">6</b> / 25<span id="refs"></span></span>
-      <span>Stage: <b>Refining the Priority Inbox</b></span>
+      <span>Stage: <b>Exploring new directions</b></span>
       <span>Final selection: <b>not chosen yet</b></span>
     </div>
     <div class="progress" aria-hidden="true"><div id="bar" style="width:4%"></div></div>
@@ -203,6 +203,20 @@
           </ul>
           <p>The top priority changes with the selected accounts (with bank only, the dining item leads). The gains calendar is the evidence for the September item, and the demo adds a scripted ask box. v06 is kept unchanged for comparison. At your request this refinement is named <b>v06-refined</b> and sits next to v06; v07 is reserved for the next substantially different direction.</p>
         </li>
+        <li>
+          <div class="when">Stage 8 · Decision → v07</div>
+          <h4>Approach 2, “Zoom In,” chosen for the next new direction</h4>
+          <p><b>Your decision:</b> keep the Priority Inbox refinement as v06-refined beside v06, use v07 for the next substantially different direction, and make that direction “Zoom In: one number you can open up.”</p>
+          <p><b>How v07 responds:</b> the page starts with a single figure, net worth $118,115, plus one AI sentence. A “What it's made of” bar and tiles break it into Cash and Invested; tapping zooms in to each bank account or brokerage, then to individual holdings (four levels). Each level has its own big number, AI explanation and supporting data:</p>
+          <ul>
+            <li><b>Net worth:</b> September at a glance, plus “worth a look further down” links</li>
+            <li><b>Cash:</b> spending vs. average, and income vs. spending</li>
+            <li><b>Checking:</b> a step-by-step balance chart</li>
+            <li><b>Invested and each brokerage:</b> the gains calendar, tech share and holdings</li>
+            <li><b>Each holding:</b> its September day by day</li>
+          </ul>
+          <p>A breadcrumb trail and “Zoom out” button keep navigation simple. The v01-style account picker decides which branches exist, and an arrow on each account jumps straight to it. The demo adds a scripted “find” box (e.g. “NVDA” zooms to that holding).</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -263,6 +277,13 @@ const VERSIONS = [
     stage: "refine",
     date: "2026-10-05",
     note: "<b>Refines v06 per your feedback.</b> The top-priority item opens by default, with a three-part AI explanation (what I noticed, why it matters, worth asking yourself), supporting charts and a holdings table, and follow-up questions. Other items step down in size: medium cards for Worth a look, compact rows for Good to know, one line for All clear. Summaries name the specific accounts, amounts and dates. Picker, calendar and light/dark kept; all mock."
+  },
+  {
+    v: "v07",
+    title: "Zoom In",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>New approach 2, chosen by you.</b> The page is organized by levels of detail. It opens on one number, net worth, with a one-line AI summary, then zooms in step by step: Cash / Invested → each account → each holding. Every level has its own AI explanation and data, and a breadcrumb trail shows where you are. The gains calendar appears at the Invested and brokerage levels. The v01-style account picker decides which branches exist and can jump straight to an account. Light/dark kept; all mock."
   }
 ];
 
