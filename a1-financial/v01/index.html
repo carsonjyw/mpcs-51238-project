@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v01 · The Terminal — Ledgerline</title>
+<meta name="description" content="v01 — The Terminal: a dark, data-dense landing page for a personal finance assistant that unifies bank and brokerage accounts with AI analyst notes. All data is mock.">
+<style>
+  :root {
+    --bg: #0a0e13;
+    --panel: #111821;
+    --panel-2: #16202b;
+    --line: #233040;
+    --text: #e8eef4;
+    --muted: #9fb0c0;
+    --faint: #6f8294;
+    --accent: #f5b544;
+    --accent-ink: #1a1203;
+    --up: #45d394;
+    --down: #ff7b72;
+    --bank: #6cb6ff;
+    --brok: #c39bff;
+    --ai: #f5b544;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  .muted { color: var(--muted); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Top chrome ---------- */
+  .mockbar {
+    background: #2a1f08;
+    color: #ffd98a;
+    border-bottom: 1px solid #4a3812;
+    font-size: 13px;
+    text-align: center;
+    padding: 7px 16px;
+  }
+  .mockbar strong { color: #ffe7b3; }
+  header.top {
+    border-bottom: 1px solid var(--line);
+    background: rgba(10,14,19,.92);
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: blur(6px);
+  }
+  header.top .wrap { display: flex; align-items: center; gap: 20px; height: 58px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .02em; text-decoration: none; }
+  .brand .mark {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), #ff8a4c);
+    display: grid; place-items: center; color: var(--accent-ink); font: 700 13px var(--mono);
+  }
+  .brand small { font: 500 11px var(--mono); color: var(--faint); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; }
+  nav.links { display: flex; gap: 18px; margin-left: auto; font-size: 14px; }
+  nav.links a { text-decoration: none; color: var(--muted); }
+  nav.links a:hover { color: var(--text); }
+  .back {
+    font: 500 13px var(--mono); text-decoration: none; color: var(--muted);
+    border: 1px solid var(--line); padding: 6px 10px; border-radius: 6px;
+  }
+  .back:hover { color: var(--text); border-color: var(--faint); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font: 600 15px var(--sans); cursor: pointer;
+    border-radius: 8px; padding: 11px 18px; border: 1px solid transparent; text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { background: #ffc766; }
+  .btn-ghost { background: transparent; color: var(--text); border-color: var(--line); }
+  .btn-ghost:hover { border-color: var(--faint); }
+  .btn-sm { padding: 7px 12px; font-size: 14px; }
+
+  /* ---------- Ticker ---------- */
+  .ticker { border-bottom: 1px solid var(--line); background: #0d131a; overflow: hidden; white-space: nowrap; font: 13px var(--mono); }
+  .ticker .track { display: inline-flex; gap: 34px; padding: 8px 0; animation: scroll 50s linear infinite; }
+  .ticker span b { color: var(--text); font-weight: 600; margin-right: 6px; }
+  .ticker .tag { color: var(--faint); }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .ticker .track { animation: none; } html { scroll-behavior: auto; } }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 44px 0 26px; }
+  .hero .wrap { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: end; }
+  .eyebrow { font: 600 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(30px, 4.2vw, 50px); line-height: 1.08; margin: 12px 0 14px; letter-spacing: -.02em; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { font-size: 17px; color: var(--muted); max-width: 60ch; margin: 0 0 22px; }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .kpi { background: var(--panel); padding: 14px 16px; }
+  .kpi .label { font: 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .kpi .val { font: 600 22px var(--mono); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font: 13px var(--mono); margin-top: 2px; }
+  .kpi.wide { grid-column: span 2; }
+
+  /* ---------- Connect selector ---------- */
+  .connect { padding: 8px 0 18px; }
+  .connect .bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px;
+  }
+  .connect .q { font-weight: 600; margin-right: 6px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    background: transparent; color: var(--muted); border: 0; padding: 9px 16px; font: 600 14px var(--sans); cursor: pointer;
+    border-right: 1px solid var(--line);
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+  .seg .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+  .connect .hint { color: var(--muted); font-size: 14px; margin-left: auto; }
+
+  /* ---------- Terminal grid ---------- */
+  .terminal { padding-bottom: 30px; }
+  .term-head { display: flex; align-items: baseline; gap: 12px; margin: 6px 0 10px; }
+  .term-head h2 { font-size: 15px; margin: 0; font-family: var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+  .live { font: 12px var(--mono); color: var(--faint); }
+  .live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; min-width: 0; }
+  .panel > .ph {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-bottom: 1px solid var(--line);
+    font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+  }
+  .panel > .ph .src { margin-left: auto; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--faint); }
+  .panel > .pb { padding: 12px 14px; flex: 1; }
+  .chip { font: 600 11px var(--mono); padding: 2px 7px; border-radius: 4px; letter-spacing: .02em; text-transform: none; }
+  .chip.bank { background: rgba(108,182,255,.14); color: var(--bank); }
+  .chip.brok { background: rgba(195,155,255,.14); color: var(--brok); }
+  .chip.ai { background: rgba(245,181,68,.14); color: var(--ai); }
+  .chip.mock { background: rgba(255,255,255,.06); color: var(--muted); }
+
+  .p-accounts { grid-area: acct; }
+  .p-ai { grid-area: ai; }
+  .p-pnl { grid-area: pnl; }
+  .p-positions { grid-area: pos; }
+  .p-cash { grid-area: cash; }
+  .p-spend { grid-area: spend; }
+  .p-alloc { grid-area: alloc; }
+  .grid[data-mode="both"] { grid-template-areas:
+    "acct acct acct acct pnl pnl pnl pnl ai ai ai ai"
+    "pos pos pos pos pos pos pos pos ai ai ai ai"
+    "cash cash cash cash cash spend spend spend alloc alloc alloc alloc"; }
+  .grid[data-mode="bank"] { grid-template-areas:
+    "acct acct acct acct spend spend spend spend ai ai ai ai"
+    "cash cash cash cash cash cash cash cash ai ai ai ai"; }
+  .grid[data-mode="brok"] { grid-template-areas:
+    "acct acct acct acct pnl pnl pnl pnl alloc alloc alloc alloc"
+    "pos pos pos pos pos pos pos pos ai ai ai ai"; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font: 500 12px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .05em; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 8px; border-bottom: 1px solid rgba(35,48,64,.6); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.r, th.r { text-align: right; }
+  td.wrap-cell { white-space: normal; }
+  .tbl-scroll { overflow-x: auto; }
+  .sym { font: 600 14px var(--mono); }
+  .acct-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(35,48,64,.6); }
+  .acct-row:last-child { border-bottom: 0; }
+  .acct-row .nm { flex: 1; min-width: 0; }
+  .acct-row .nm div:first-child { font-weight: 600; }
+  .acct-row .nm div:last-child { font-size: 12.5px; color: var(--faint); font-family: var(--mono); }
+  .acct-row .amt { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .acct-group { font: 600 11px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .08em; margin-top: 8px; }
+  .acct-group:first-child { margin-top: 0; }
+
+  .note { border-left: 2px solid var(--ai); padding: 2px 0 2px 12px; margin-bottom: 16px; }
+  .note:last-child { margin-bottom: 0; }
+  .note .t { font: 12px var(--mono); color: var(--faint); margin-bottom: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .note p { margin: 0; font-size: 14.5px; }
+  .note p b { color: var(--text); }
+  .note p span, .note p b { white-space: nowrap; }
+  .askbox { border-top: 1px solid var(--line); padding: 12px 14px; }
+  .askbox .label { font: 12px var(--mono); color: var(--faint); margin-bottom: 8px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { font: 13px var(--sans); background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; cursor: pointer; text-align: left; }
+  .pill:hover { border-color: var(--ai); }
+
+  .big { font: 600 26px var(--mono); font-variant-numeric: tabular-nums; }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .legend { display: flex; gap: 14px; font: 12px var(--mono); color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .bars .row { display: grid; grid-template-columns: 88px 1fr 64px; gap: 10px; align-items: center; font-size: 13.5px; margin-bottom: 7px; }
+  .bars .track { height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+  .bars .fill { height: 100%; border-radius: 4px; }
+  .bars .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .flag { font: 11px var(--mono); color: var(--accent); margin-left: 4px; }
+
+  /* mode filtering */
+  .grid[data-mode="bank"] [data-kind="brok"],
+  .grid[data-mode="brok"] [data-kind="bank"] { display: none; }
+
+  /* ---------- Feature strip ---------- */
+  .features { padding: 30px 0 40px; border-top: 1px solid var(--line); }
+  .features h2 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .features .intro { color: var(--muted); margin: 0 0 22px; max-width: 70ch; }
+  .fgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .fcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .fcard h3 { margin: 10px 0 8px; font-size: 18px; }
+  .fcard ul { margin: 0; padding-left: 18px; color: var(--muted); }
+  .fcard li { margin-bottom: 5px; }
+  .fcard li b { color: var(--text); font-weight: 600; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .step { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .step .n { font: 600 12px var(--mono); color: var(--accent); }
+  .step b { display: block; margin: 4px 0 2px; }
+  .step span { color: var(--muted); font-size: 14px; }
+
+  .final-cta { text-align: center; padding: 34px 20px 46px; border-top: 1px solid var(--line); }
+  .final-cta h2 { font-size: 28px; margin: 0 0 8px; }
+  .final-cta p { color: var(--muted); margin: 0 0 18px; }
+
+  footer { border-top: 1px solid var(--line); padding: 20px 0 30px; font-size: 13px; color: var(--faint); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+
+  /* ---------- Demo overlay ---------- */
+  .demo { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .demo-top .title { font: 600 14px var(--mono); letter-spacing: .04em; }
+  .demo-top .spacer { flex: 1; }
+  .demo-body { flex: 1; display: grid; grid-template-columns: 250px 1fr 360px; min-height: 0; }
+  .demo-side { border-right: 1px solid var(--line); padding: 14px; overflow-y: auto; }
+  .demo-side h4 { font: 600 11px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .08em; margin: 14px 0 6px; }
+  .demo-side h4:first-child { margin-top: 0; }
+  .chk { display: flex; align-items: center; gap: 9px; padding: 7px 4px; font-size: 14px; cursor: pointer; border-radius: 6px; }
+  .chk:hover { background: var(--panel); }
+  .chk input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .chk .a { margin-left: auto; font: 12.5px var(--mono); color: var(--muted); }
+  .demo-main { overflow-y: auto; padding: 14px; display: grid; gap: 12px; align-content: start; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .demo-main .span2 { grid-column: span 2; }
+  .demo-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .demo-kpis .kpi { border: 1px solid var(--line); border-radius: var(--radius); }
+  .demo-chat { border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .demo-chat .ph { padding: 12px 14px; border-bottom: 1px solid var(--line); font: 600 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: flex; gap: 8px; align-items: center; }
+  .msgs { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 92%; padding: 10px 12px; border-radius: 10px; font-size: 14px; }
+  .msg.user { align-self: flex-end; background: var(--panel-2); border: 1px solid var(--line); }
+  .msg.bot { align-self: flex-start; background: rgba(245,181,68,.07); border: 1px solid rgba(245,181,68,.25); }
+  .msg.bot .who { font: 11px var(--mono); color: var(--ai); margin-bottom: 4px; }
+  .chat-in { border-top: 1px solid var(--line); padding: 12px 14px; }
+  .chat-in form { display: flex; gap: 8px; margin-top: 10px; }
+  .chat-in input[type=text] { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 9px 11px; font: 14px var(--sans); }
+  .empty { color: var(--faint); font-size: 14px; padding: 6px 0; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1100px) {
+    .grid[data-mode] { grid-template-areas: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid[data-mode] > .panel { grid-area: auto; }
+    .grid[data-mode] > .p-positions, .grid[data-mode] > .p-cash { grid-column: span 2; }
+    .demo-body { grid-template-columns: 220px 1fr; }
+    .demo-chat { grid-column: span 2; border-left: 0; border-top: 1px solid var(--line); max-height: 46vh; }
+    .demo-body { overflow-y: auto; }
+  }
+  @media (max-width: 760px) {
+    .hero .wrap { grid-template-columns: 1fr; gap: 24px; }
+    nav.links { display: none; }
+    .grid[data-mode] { grid-template-columns: minmax(0, 1fr); }
+    .grid[data-mode] > .panel { grid-column: auto !important; }
+    .fgrid, .steps { grid-template-columns: 1fr; }
+    .connect .hint { margin-left: 0; }
+    .demo-body { grid-template-columns: 1fr; display: block; }
+    .demo-side { border-right: 0; border-bottom: 1px solid var(--line); }
+    .demo-main { grid-template-columns: 1fr; }
+    .demo-main .span2 { grid-column: span 1; }
+    .demo-kpis { grid-template-columns: repeat(2, 1fr); }
+    .demo-chat { max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note">
+  <strong>Design prototype · v01.</strong> Every account, balance, price and AI response on this page is <strong>mock data</strong>. No real bank or brokerage connection is implemented.
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html" title="Back to the design gallery">← Gallery</a>
+    <a class="brand" href="#top" aria-label="Ledgerline home">
+      <span class="mark">L</span> Ledgerline <small>v01</small>
+    </a>
+    <nav class="links" aria-label="Page sections">
+      <a href="#terminal">Terminal</a>
+      <a href="#features">What it reads</a>
+      <a href="#how">How it works</a>
+    </nav>
+    <button class="btn btn-primary btn-sm" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<div class="ticker" aria-label="Mock price ticker">
+  <div class="track" id="ticker"></div>
+</div>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Bank + brokerage · one terminal</div>
+        <h1>All your money on one screen, with an <em>AI analyst</em> that explains every move.</h1>
+        <p class="lede">Connect your bank accounts, your brokerage accounts, or both. Ledgerline shows balances, cash flow, positions and daily P&amp;L side by side, and writes plain-English notes on what changed and why.</p>
+        <div class="cta-row">
+          <button class="btn btn-primary" data-open-demo>View Demo →</button>
+          <a class="btn btn-ghost" href="#terminal">See the preview below</a>
+        </div>
+      </div>
+      <div class="kpis" aria-label="Mock summary">
+        <div class="kpi wide">
+          <div class="label">Net worth · all accounts <span class="chip mock">mock</span></div>
+          <div class="val" id="kpi-net">—</div>
+          <div class="sub" id="kpi-net-sub">—</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Cash (bank)</div>
+          <div class="val" id="kpi-cash">—</div>
+          <div class="sub up">Sep net +$1,730</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Invested</div>
+          <div class="val" id="kpi-inv">—</div>
+          <div class="sub" id="kpi-inv-sub">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="connect" aria-label="Choose accounts to connect">
+    <div class="wrap">
+      <div class="bar">
+        <span class="q">What do you want to connect?</span>
+        <div class="seg" role="group" aria-label="Account type">
+          <button type="button" data-mode="bank" aria-pressed="false"><span class="dot" style="background:var(--bank)"></span>Bank only</button>
+          <button type="button" data-mode="brok" aria-pressed="false"><span class="dot" style="background:var(--brok)"></span>Brokerage only</button>
+          <button type="button" data-mode="both" aria-pressed="true"><span class="dot" style="background:linear-gradient(90deg,var(--bank) 50%,var(--brok) 50%)"></span>Both</button>
+        </div>
+        <span class="hint" id="mode-hint">Showing bank + brokerage panels.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="terminal" id="terminal">
+    <div class="wrap">
+      <div class="term-head">
+        <h2>Terminal preview</h2>
+        <span class="live">Sample session · mock data · prices are not real market data</span>
+      </div>
+
+      <div class="grid" id="grid" data-mode="both">
+        <!-- Accounts -->
+        <div class="panel p-accounts">
+          <div class="ph">Accounts <span class="src">5 mock accounts</span></div>
+          <div class="pb" id="acct-list"></div>
+        </div>
+
+        <!-- AI notes -->
+        <div class="panel p-ai">
+          <div class="ph"><span class="chip ai">AI</span> Analyst notes <span class="src">mock output</span></div>
+          <div class="pb" id="ai-notes"></div>
+          <div class="askbox">
+            <div class="label">Ask about your accounts — opens the demo</div>
+            <div class="pills" id="ask-pills"></div>
+          </div>
+        </div>
+
+        <!-- Daily P&L -->
+        <div class="panel p-pnl" data-kind="brok">
+          <div class="ph">Today's P&amp;L <span class="chip brok">brokerage</span> <span class="src">intraday</span></div>
+          <div class="pb">
+            <div class="big up" id="pnl-big">—</div>
+            <div class="muted num" style="font-size:13px" id="pnl-sub">—</div>
+            <div class="chart" id="pnl-chart" style="margin-top:8px"></div>
+          </div>
+        </div>
+
+        <!-- Positions -->
+        <div class="panel p-positions" data-kind="brok">
+          <div class="ph">Positions <span class="chip brok">Schwab + IBKR</span> <span class="src">sorted by day change</span></div>
+          <div class="pb tbl-scroll">
+            <table aria-label="Mock positions">
+              <thead><tr><th>Symbol</th><th>Account</th><th class="r">Qty</th><th class="r">Price</th><th class="r">Day</th><th class="r">Day $</th><th class="r">Value</th></tr></thead>
+              <tbody id="pos-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Allocation -->
+        <div class="panel p-alloc" data-kind="brok">
+          <div class="ph">Allocation <span class="chip brok">invested</span></div>
+          <div class="pb bars" id="alloc"></div>
+        </div>
+
+        <!-- Cash flow -->
+        <div class="panel p-cash" data-kind="bank">
+          <div class="ph">Cash flow <span class="chip bank">bank</span> <span class="src">Apr–Sep</span></div>
+          <div class="pb">
+            <div class="chart" id="cash-chart"></div>
+            <div class="legend"><span><i style="background:var(--bank)"></i>Income</span><span><i style="background:#4a5b6d"></i>Spending</span><span><i style="background:var(--up)"></i>Net</span></div>
+          </div>
+        </div>
+
+        <!-- Spending -->
+        <div class="panel p-spend" data-kind="bank">
+          <div class="ph">Sep spending <span class="chip bank">bank</span></div>
+          <div class="pb bars" id="spend"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="wrap">
+      <h2>What Ledgerline reads, and what it tells you</h2>
+      <p class="intro">Pick bank, brokerage, or both. Each one adds its own panels to the terminal, and the AI analyst works across everything you connect.</p>
+      <div class="fgrid">
+        <div class="fcard">
+          <span class="chip bank">Bank accounts</span>
+          <h3>Where your cash goes</h3>
+          <ul>
+            <li><b>Balances</b> across checking, savings and cards</li>
+            <li><b>Income</b> detected from deposits and paychecks</li>
+            <li><b>Spending</b> by category, compared with your average</li>
+            <li><b>Cash flow</b>: month-by-month income minus spending</li>
+          </ul>
+        </div>
+        <div class="fcard">
+          <span class="chip brok">Brokerage accounts</span>
+          <h3>What your portfolio did</h3>
+          <ul>
+            <li><b>Holdings &amp; positions</b> across Schwab, IBKR and others</li>
+            <li><b>Daily gains &amp; losses</b>, per position and in total</li>
+            <li><b>Portfolio changes</b>: allocation, concentration, overlap</li>
+            <li>One table, even when the same ticker sits in two accounts</li>
+          </ul>
+        </div>
+        <div class="fcard">
+          <span class="chip ai">AI analyst</span>
+          <h3>Why it changed</h3>
+          <ul>
+            <li><b>Explains</b> moves in plain language, with the numbers</li>
+            <li><b>Summarizes</b> your day, week or month across accounts</li>
+            <li><b>Answers questions</b> like “Why is checking down?”</li>
+            <li>Points to the data behind every note</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="steps" id="how">
+        <div class="step"><div class="n">01 · CHOOSE</div><b>Bank, brokerage, or both</b><span>Start with one side and add the other later.</span></div>
+        <div class="step"><div class="n">02 · CONNECT</div><b>Link accounts (concept)</b><span>Not built in this prototype. The demo uses mock accounts.</span></div>
+        <div class="step"><div class="n">03 · UNDERSTAND</div><b>Read the terminal</b><span>Tables and charts for detail, AI notes for the story.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta">
+    <h2>See the full terminal</h2>
+    <p>Filter accounts, browse positions and cash flow, and ask the AI analyst sample questions. Everything in it is mock data.</p>
+    <button class="btn btn-primary" data-open-demo>View Demo →</button>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Ledgerline is a fictional product concept. v01 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<!-- ================= DEMO ================= -->
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-labelledby="demo-title">
+  <div class="demo-top">
+    <span class="brand"><span class="mark">L</span></span>
+    <span class="title" id="demo-title">LEDGERLINE · DEMO TERMINAL</span>
+    <span class="chip mock">all data is mock</span>
+    <span class="spacer"></span>
+    <a class="back" href="../index.html">← Gallery</a>
+    <button class="btn btn-ghost btn-sm" id="demo-close">Close demo ✕</button>
+  </div>
+  <div class="demo-body">
+    <aside class="demo-side" aria-label="Account filters">
+      <h4>Bank <span class="chip bank">mock</span></h4>
+      <div id="f-bank"></div>
+      <h4>Brokerage <span class="chip brok">mock</span></h4>
+      <div id="f-brok"></div>
+      <h4>Quick select</h4>
+      <div class="pills">
+        <button class="pill" data-quick="bank">Bank only</button>
+        <button class="pill" data-quick="brok">Brokerage only</button>
+        <button class="pill" data-quick="both">All</button>
+      </div>
+    </aside>
+    <div class="demo-main" id="demo-main"></div>
+    <div class="demo-chat">
+      <div class="ph"><span class="chip ai">AI</span> Ask the analyst <span class="chip mock" style="margin-left:auto">scripted answers</span></div>
+      <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="chat-in">
+        <div class="pills" id="demo-pills"></div>
+        <form id="chat-form">
+          <label for="chat-text" class="sr" style="position:absolute;left:-9999px">Ask a question</label>
+          <input type="text" id="chat-text" placeholder="Try: why is checking down?" autocomplete="off">
+          <button class="btn btn-primary btn-sm" type="submit">Ask</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA — fictional, for design demonstration only.
+   No values here come from a real account or market feed.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", inst: "Mock Bank", mask: "••4021", type: "Checking", bal: 8412.55, change: -912.30 },
+    { id: "sav", name: "High-Yield Savings", inst: "Mock Bank", mask: "••7710", type: "Savings", bal: 24180.00, change: 500.00 },
+    { id: "cc",  name: "Rewards Card", inst: "Mock Bank", mask: "••3398", type: "Credit card", bal: -1236.40, change: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", inst: "Schwab (mock)", mask: "••5512", cash: 2140.00 },
+    { id: "ibk", name: "IBKR Margin", inst: "IBKR (mock)", mask: "U•••908", cash: 3615.00 }
+  ],
+  positions: [
+    { sym: "VTI",  acct: "sch", qty: 120, px: 287.40, pct: 0.42,  sector: "US total market" },
+    { sym: "AAPL", acct: "sch", qty: 45,  px: 228.10, pct: -0.85, sector: "Tech" },
+    { sym: "MSFT", acct: "sch", qty: 30,  px: 431.20, pct: 0.31,  sector: "Tech" },
+    { sym: "NVDA", acct: "ibk", qty: 60,  px: 121.80, pct: 3.10,  sector: "Tech" },
+    { sym: "TSLA", acct: "ibk", qty: 15,  px: 251.30, pct: -1.90, sector: "Consumer" },
+    { sym: "QQQ",  acct: "ibk", qty: 25,  px: 489.50, pct: 0.65,  sector: "Tech" }
+  ],
+  cashflow: [
+    { m: "Apr", inc: 6850, sp: 5480 }, { m: "May", inc: 6850, sp: 4920 },
+    { m: "Jun", inc: 7100, sp: 5610 }, { m: "Jul", inc: 6850, sp: 5050 },
+    { m: "Aug", inc: 6850, sp: 5390 }, { m: "Sep", inc: 6850, sp: 5120 }
+  ],
+  spending: [
+    { c: "Housing", v: 2100 }, { c: "Groceries", v: 640 }, { c: "Dining", v: 612, flag: "+18% vs avg" },
+    { c: "Shopping", v: 520 }, { c: "Transport", v: 380 }, { c: "Utilities", v: 290 }, { c: "Other", v: 578 }
+  ],
+  transactions: [
+    { d: "Oct 3", desc: "Payroll deposit (mock employer)", acct: "chk", amt: 3425.00 },
+    { d: "Oct 3", desc: "Rent — Oct", acct: "chk", amt: -2100.00 },
+    { d: "Oct 2", desc: "Transfer to savings", acct: "chk", amt: -500.00 },
+    { d: "Oct 2", desc: "Transfer from checking", acct: "sav", amt: 500.00 },
+    { d: "Oct 1", desc: "Grocery store", acct: "cc", amt: -142.18 },
+    { d: "Oct 1", desc: "Restaurant", acct: "cc", amt: -86.40 },
+    { d: "Sep 30", desc: "Card payment", acct: "chk", amt: -1250.00 }
+  ]
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const fmt = (n, d = 2) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sfmt = (n, d = 2) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pfmt = n => (n >= 0 ? "▲ +" : "▼ −") + Math.abs(n).toFixed(2) + "%";
+const cls = n => (n >= 0 ? "up" : "down");
+const acctName = id => [...MOCK.bank, ...MOCK.brok].find(a => a.id === id);
+
+MOCK.positions.forEach(p => { p.val = p.qty * p.px; p.day = p.val * p.pct / 100; });
+const brokTotal = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0) + acctName(id).cash;
+const brokDay = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.day, 0);
+
+function totals(sel) {
+  const bank = MOCK.bank.filter(a => sel.has(a.id)).reduce((s, a) => s + a.bal, 0);
+  const inv = MOCK.brok.filter(a => sel.has(a.id)).reduce((s, a) => s + brokTotal(a.id), 0);
+  const day = MOCK.brok.filter(a => sel.has(a.id)).reduce((s, a) => s + brokDay(a.id), 0);
+  return { bank, inv, day, net: bank + inv };
+}
+
+/* ---------- ticker ---------- */
+(function ticker() {
+  const extra = [["SPY", 571.20, 0.38], ["BND", 72.95, -0.06], ["BTC", 62140, 1.25], ["10Y", 4.12, -0.9]];
+  const items = MOCK.positions.map(p => [p.sym, p.px, p.pct]).concat(extra);
+  const html = items.map(([s, px, pct]) => `<span><b>${s}</b>${px.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span class="${cls(pct)}">${pfmt(pct)}</span></span>`).join("");
+  $("#ticker").innerHTML = html + `<span class="tag">MOCK PRICES · NOT MARKET DATA</span>` + html + `<span class="tag">MOCK PRICES · NOT MARKET DATA</span>`;
+})();
+
+/* ---------- SVG charts ---------- */
+function pnlSvg(end, w = 360, h = 120) {
+  // deterministic intraday path ending at `end`
+  const n = 40, pts = [];
+  let seed = 7;
+  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    pts.push(end * (t * 0.9 + 0.1 * Math.sin(t * 9)) + (rnd() - 0.5) * Math.abs(end) * 0.35 * (1 - t));
+  }
+  pts[n] = end;
+  const min = Math.min(0, ...pts), max = Math.max(0, ...pts);
+  const y = v => h - 8 - ((v - min) / (max - min || 1)) * (h - 16);
+  const x = i => (i / n) * w;
+  const d = pts.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  const col = end >= 0 ? "var(--up)" : "var(--down)";
+  return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Mock intraday P&L line ending at ${sfmt(end)}">
+    <line x1="0" x2="${w}" y1="${y(0)}" y2="${y(0)}" stroke="#2b3a4b" stroke-dasharray="3 4"/>
+    <path d="${d} L${w},${y(0)} L0,${y(0)}Z" fill="${col}" opacity=".10"/>
+    <path d="${d}" fill="none" stroke="${col}" stroke-width="2"/>
+    <text x="2" y="${h - 1}" fill="#6f8294" font-size="10" font-family="monospace">9:30</text>
+    <text x="${w - 2}" y="${h - 1}" text-anchor="end" fill="#6f8294" font-size="10" font-family="monospace">16:00</text>
+  </svg>`;
+}
+function cashSvg(w = 520, h = 190) {
+  const data = MOCK.cashflow, max = 8000, bw = 18, gap = w / data.length;
+  const y = v => h - 22 - (v / max) * (h - 34);
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Mock monthly income versus spending, April to September">`;
+  [0, 4000, 8000].forEach(v => { s += `<line x1="34" x2="${w}" y1="${y(v)}" y2="${y(v)}" stroke="#1f2b38"/><text x="0" y="${y(v) + 4}" fill="#6f8294" font-size="10" font-family="monospace">${v / 1000}k</text>`; });
+  const net = [];
+  data.forEach((d, i) => {
+    const cx = 34 + gap * i + gap / 2 - 10;
+    s += `<rect x="${cx - bw}" y="${y(d.inc)}" width="${bw}" height="${y(0) - y(d.inc)}" rx="2" fill="var(--bank)"/>`;
+    s += `<rect x="${cx + 2}" y="${y(d.sp)}" width="${bw}" height="${y(0) - y(d.sp)}" rx="2" fill="#4a5b6d"/>`;
+    s += `<text x="${cx}" y="${h - 6}" fill="#9fb0c0" font-size="11" text-anchor="middle" font-family="monospace">${d.m}</text>`;
+    net.push([cx, y(d.inc - d.sp)]);
+  });
+  s += `<polyline points="${net.map(p => p.join(",")).join(" ")}" fill="none" stroke="var(--up)" stroke-width="2"/>`;
+  net.forEach(([x, yy], i) => { s += `<circle cx="${x}" cy="${yy}" r="3" fill="var(--up)"/>`; });
+  const last = data[data.length - 1];
+  s += `<text x="${net[5][0]}" y="${net[5][1] - 8}" fill="var(--up)" font-size="11" text-anchor="middle" font-family="monospace">+${(last.inc - last.sp).toLocaleString()}</text>`;
+  return s + `</svg>`;
+}
+
+/* ---------- landing render ---------- */
+const ALL = new Set([...MOCK.bank, ...MOCK.brok].map(a => a.id));
+function renderLanding() {
+  const t = totals(ALL);
+  $("#kpi-net").textContent = fmt(t.net);
+  $("#kpi-net-sub").innerHTML = `<span class="${cls(t.day)}">${sfmt(t.day)} today</span> <span class="muted">· from brokerage moves</span>`;
+  $("#kpi-cash").textContent = fmt(t.bank, 0);
+  $("#kpi-inv").textContent = fmt(t.inv, 0);
+  $("#kpi-inv-sub").innerHTML = `<span class="${cls(t.day)}">${pfmt(t.day / (t.inv - t.day) * 100)} today</span>`;
+
+  // accounts
+  let a = `<div class="acct-group" data-kind="bank">Bank · <span style="color:var(--bank)">Mock Bank</span></div>`;
+  a += MOCK.bank.map(x => `<div class="acct-row" data-kind="bank"><span class="chip bank">${({Checking:"CHK",Savings:"SAV","Credit card":"CARD"})[x.type]}</span><div class="nm"><div>${x.name}</div><div>${x.inst} ${x.mask}</div></div><div class="amt"><div>${fmt(x.bal)}</div><div class="${cls(x.change)}" style="font-size:12px">${sfmt(x.change)} 7d</div></div></div>`).join("");
+  a += `<div class="acct-group" data-kind="brok" style="margin-top:12px">Brokerage</div>`;
+  a += MOCK.brok.map(x => `<div class="acct-row" data-kind="brok"><span class="chip brok">${x.id === "sch" ? "SCHW" : "IBKR"}</span><div class="nm"><div>${x.name}</div><div>${x.inst} ${x.mask}</div></div><div class="amt"><div>${fmt(brokTotal(x.id))}</div><div class="${cls(brokDay(x.id))}" style="font-size:12px">${sfmt(brokDay(x.id))} today</div></div></div>`).join("");
+  $("#acct-list").innerHTML = a;
+
+  // pnl
+  $("#pnl-big").textContent = sfmt(t.day);
+  $("#pnl-big").className = "big " + cls(t.day);
+  $("#pnl-sub").textContent = `Schwab ${sfmt(brokDay("sch"))} · IBKR ${sfmt(brokDay("ibk"))}`;
+  $("#pnl-chart").innerHTML = pnlSvg(t.day);
+
+  // positions
+  $("#pos-body").innerHTML = posRows(MOCK.positions);
+
+  // alloc
+  $("#alloc").innerHTML = allocBars(MOCK.positions);
+
+  // cash
+  $("#cash-chart").innerHTML = cashSvg();
+
+  // spending
+  const maxS = Math.max(...MOCK.spending.map(s => s.v));
+  $("#spend").innerHTML = MOCK.spending.map(s => `<div class="row"><span>${s.c}${s.flag ? `<span class="flag">●</span>` : ""}</span><div class="track"><div class="fill" style="width:${s.v / maxS * 100}%;background:${s.flag ? "var(--accent)" : "var(--bank)"}"></div></div><span class="v">${fmt(s.v, 0)}</span></div>`).join("")
+    + `<div class="muted" style="font-size:12.5px;margin-top:6px"><span class="flag">●</span> Dining is 18% above your 6-month average.</div>`;
+
+  renderNotes("both");
+}
+function posRows(list) {
+  return [...list].sort((a, b) => b.day - a.day).map(p => `<tr>
+    <td class="sym">${p.sym}</td>
+    <td><span class="chip brok">${p.acct === "sch" ? "Schwab" : "IBKR"}</span></td>
+    <td class="r num">${p.qty}</td>
+    <td class="r num">${p.px.toFixed(2)}</td>
+    <td class="r num ${cls(p.pct)}">${pfmt(p.pct)}</td>
+    <td class="r num ${cls(p.day)}">${sfmt(p.day)}</td>
+    <td class="r num">${fmt(p.val)}</td></tr>`).join("");
+}
+function allocBars(list) {
+  const groups = {};
+  list.forEach(p => groups[p.sector] = (groups[p.sector] || 0) + p.val);
+  const tot = Object.values(groups).reduce((a, b) => a + b, 0);
+  const colors = { "Tech": "var(--brok)", "US total market": "#8fa3ff", "Consumer": "#5fd0c8" };
+  return Object.entries(groups).sort((a, b) => b[1] - a[1]).map(([k, v]) =>
+    `<div class="row"><span>${k === "US total market" ? "US market" : k}</span><div class="track"><div class="fill" style="width:${v / tot * 100}%;background:${colors[k]}"></div></div><span class="v">${(v / tot * 100).toFixed(1)}%</span></div>`).join("")
+    + `<div class="muted" style="font-size:12.5px;margin-top:6px">Excludes $5,755 uninvested cash. AAPL, MSFT, NVDA and QQQ overlap in tech.</div>`;
+}
+
+/* ---------- AI notes (scripted mock output) ---------- */
+const NOTES = [
+  { kind: "brok", time: "16:05 · market close", tag: "Daily move",
+    text: `Your invested assets are <b class="up">up $332</b> today. <b>NVDA in IBKR</b> did most of it (<span class="up">+$227</span>, +3.1%). AAPL in Schwab was the biggest drag (<span class="down">−$87</span>).` },
+  { kind: "bank", time: "Oct 3 · checking", tag: "Explain change",
+    text: `Checking is <b class="down">down $912</b> this week, even though your <b>$3,425 paycheck</b> arrived. October rent ($2,100), a $1,250 card payment and a $500 transfer to savings went out first.` },
+  { kind: "bank", time: "Sep summary", tag: "Spending",
+    text: `You spent <b>$5,120</b> in September and kept <b class="up">$1,730</b>. <b>Dining ($612)</b> was 18% above your 6-month average; everything else was close to normal.` },
+  { kind: "brok", time: "Portfolio check", tag: "Concentration",
+    text: `About <b>53% of invested money is in tech</b> across both brokerages. AAPL and MSFT (Schwab) overlap with QQQ (IBKR), so your tech exposure is higher than any single account shows.` }
+];
+function renderNotes(mode) {
+  const show = NOTES.filter(n => mode === "both" || n.kind === mode);
+  $("#ai-notes").innerHTML = show.map(n => `<div class="note"><div class="t"><span>${n.time}</span><span class="chip ${n.kind}">${n.kind === "bank" ? "bank" : "brokerage"}</span><span>${n.tag}</span></div><p>${n.text}</p></div>`).join("");
+  const qs = QA.filter(q => mode === "both" || q.kind === mode || q.kind === "both").slice(0, 4);
+  $("#ask-pills").innerHTML = qs.map(q => `<button class="pill" data-ask="${q.id}">${q.q}</button>`).join("");
+}
+
+/* ---------- connect selector ---------- */
+const HINT = {
+  bank: "Bank only: balances, income, spending and cash flow.",
+  brok: "Brokerage only: positions, daily P&L and allocation.",
+  both: "Showing bank + brokerage panels."
+};
+let landingMode = "both";
+$$(".seg button").forEach(b => b.addEventListener("click", () => {
+  landingMode = b.dataset.mode;
+  $$(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $("#grid").dataset.mode = landingMode;
+  $("#mode-hint").textContent = HINT[landingMode];
+  renderNotes(landingMode);
+}));
+
+/* =========================================================
+   DEMO TERMINAL
+   ========================================================= */
+const QA = [
+  { id: "today", kind: "brok", q: "How did my portfolio do today?",
+    a: () => { const s = demoSel(); return s.brok.length ? `Across ${s.brok.map(a => a.inst).join(" and ")}, positions moved <b class="${cls(s.t.day)}">${sfmt(s.t.day)}</b> today. Biggest mover: <b>${s.top.sym}</b> (${sfmt(s.top.day)}).` : `No brokerage accounts are selected. Turn on Schwab or IBKR on the left to see daily P&L.`; } },
+  { id: "checking", kind: "bank", q: "Why is checking down this week?",
+    a: () => demoSel().ids.has("chk") ? `Checking fell <b class="down">$912</b> over 7 days. In: $3,425 paycheck. Out: $2,100 rent, $1,250 card payment, $500 to savings, plus everyday spending. Nothing unusual, just timing.` : `Everyday Checking is filtered out. Turn it on to see what happened.` },
+  { id: "spend", kind: "bank", q: "Where did my money go in September?",
+    a: () => `September spending was <b>$5,120</b>: Housing $2,100, Groceries $640, <b>Dining $612</b> (18% above average), Shopping $520, Other $578, Transport $380, Utilities $290. Net cash flow: <b class="up">+$1,730</b>.` },
+  { id: "tech", kind: "brok", q: "Am I too concentrated in tech?",
+    a: () => `About <b>53%</b> of invested assets are tech (AAPL, MSFT, NVDA, QQQ). That's a description, not advice. The overlap comes from holding QQQ in IBKR alongside individual tech stocks in Schwab.` },
+  { id: "summary", kind: "both", q: "Summarize my week",
+    a: () => { const s = demoSel(); return `This week: net worth is <b>${fmt(s.t.net)}</b> across ${s.ids.size} selected account${s.ids.size === 1 ? "" : "s"}. ${s.bank.length ? `Bank balances total ${fmt(s.t.bank)}; your paycheck landed and rent went out. ` : ""}${s.brok.length ? `Investments moved ${sfmt(s.t.day)} today, led by ${s.top.sym}.` : ""}`; } },
+  { id: "cash", kind: "both", q: "Can I afford to invest $1,000 more?",
+    a: () => `In this mock data you've kept $1,370–$1,930 each month since April, and checking holds $8,412. I can show the numbers, but this demo doesn't give personal financial advice.` }
+];
+
+const demoIds = new Set(ALL);
+function demoSel() {
+  const bank = MOCK.bank.filter(a => demoIds.has(a.id));
+  const brok = MOCK.brok.filter(a => demoIds.has(a.id));
+  const pos = MOCK.positions.filter(p => demoIds.has(p.acct));
+  const top = [...pos].sort((a, b) => Math.abs(b.day) - Math.abs(a.day))[0] || { sym: "—", day: 0 };
+  return { bank, brok, pos, top, ids: demoIds, t: totals(demoIds) };
+}
+function filterRow(a, isBank) {
+  const amt = isBank ? a.bal : brokTotal(a.id);
+  return `<label class="chk"><input type="checkbox" data-id="${a.id}" ${demoIds.has(a.id) ? "checked" : ""}><span>${a.name}<br><span class="muted num" style="font-size:12px">${a.inst} ${a.mask}</span></span><span class="a">${fmt(amt, 0)}</span></label>`;
+}
+function renderDemo() {
+  $("#f-bank").innerHTML = MOCK.bank.map(a => filterRow(a, true)).join("");
+  $("#f-brok").innerHTML = MOCK.brok.map(a => filterRow(a, false)).join("");
+  $$("#demo .demo-side input").forEach(i => i.addEventListener("change", () => {
+    i.checked ? demoIds.add(i.dataset.id) : demoIds.delete(i.dataset.id);
+    renderDemoMain();
+  }));
+  renderDemoMain();
+}
+function renderDemoMain() {
+  const s = demoSel();
+  let h = `<div class="demo-kpis span2">
+    <div class="kpi"><div class="label">Net worth</div><div class="val">${fmt(s.t.net, 0)}</div><div class="sub muted">${s.ids.size} account${s.ids.size === 1 ? "" : "s"} selected</div></div>
+    <div class="kpi"><div class="label">Bank cash</div><div class="val">${s.bank.length ? fmt(s.t.bank, 0) : "—"}</div><div class="sub up">${s.bank.length ? "Sep net +$1,730" : "no bank selected"}</div></div>
+    <div class="kpi"><div class="label">Invested</div><div class="val">${s.brok.length ? fmt(s.t.inv, 0) : "—"}</div><div class="sub muted">${s.brok.map(a => a.inst.replace(" (mock)", "")).join(" + ") || "no brokerage selected"}</div></div>
+    <div class="kpi"><div class="label">Today</div><div class="val ${cls(s.t.day)}">${s.brok.length ? sfmt(s.t.day) : "—"}</div><div class="sub muted">brokerage P&amp;L</div></div>
+  </div>`;
+
+  if (!s.ids.size) {
+    h += `<div class="panel span2"><div class="pb empty">No accounts selected. Pick at least one bank or brokerage account on the left.</div></div>`;
+  }
+  if (s.bank.length) {
+    const tx = MOCK.transactions.filter(t => demoIds.has(t.acct));
+    h += `<div class="panel"><div class="ph">Cash flow <span class="chip bank">bank</span></div><div class="pb chart">${cashSvg()}<div class="legend"><span><i style="background:var(--bank)"></i>Income</span><span><i style="background:#4a5b6d"></i>Spending</span><span><i style="background:var(--up)"></i>Net</span></div></div></div>`;
+    h += `<div class="panel"><div class="ph">Recent transactions <span class="chip bank">bank</span></div><div class="pb tbl-scroll"><table><thead><tr><th>Date</th><th>Description</th><th class="r">Amount</th></tr></thead><tbody>${
+      tx.map(t => `<tr><td class="num muted">${t.d}</td><td class="wrap-cell">${t.desc}<br><span class="muted" style="font-size:12px">${acctName(t.acct).name}</span></td><td class="r num ${cls(t.amt)}">${sfmt(t.amt)}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">No transactions for selected accounts.</td></tr>`
+    }</tbody></table></div></div>`;
+  }
+  if (s.brok.length) {
+    h += `<div class="panel span2"><div class="ph">Positions <span class="chip brok">${s.brok.map(a => a.inst.replace(" (mock)", "")).join(" + ")}</span><span class="src">mock prices</span></div><div class="pb tbl-scroll"><table><thead><tr><th>Symbol</th><th>Account</th><th class="r">Qty</th><th class="r">Price</th><th class="r">Day</th><th class="r">Day $</th><th class="r">Value</th></tr></thead><tbody>${posRows(s.pos)}</tbody></table></div></div>`;
+    h += `<div class="panel"><div class="ph">Intraday P&amp;L <span class="chip brok">brokerage</span></div><div class="pb"><div class="big ${cls(s.t.day)}">${sfmt(s.t.day)}</div><div class="chart">${pnlSvg(s.t.day)}</div></div></div>`;
+    h += `<div class="panel"><div class="ph">Allocation <span class="chip brok">invested</span></div><div class="pb bars">${allocBars(s.pos)}</div></div>`;
+  }
+  $("#demo-main").innerHTML = h;
+}
+
+const msgs = () => $("#msgs");
+function say(cls_, html) {
+  const m = document.createElement("div");
+  m.className = "msg " + cls_;
+  m.innerHTML = cls_ === "bot" ? `<div class="who">AI ANALYST · mock response</div>${html}` : html;
+  msgs().appendChild(m);
+  msgs().scrollTop = msgs().scrollHeight;
+}
+function ask(id) {
+  const q = QA.find(x => x.id === id);
+  if (!q) return;
+  say("user", q.q);
+  setTimeout(() => say("bot", q.a()), 350);
+}
+function askFree(text) {
+  say("user", text.replace(/</g, "&lt;"));
+  const t = text.toLowerCase();
+  const map = [["check", "checking"], ["today", "today"], ["portfolio", "today"], ["p&l", "today"], ["spend", "spend"], ["september", "spend"], ["where", "spend"], ["tech", "tech"], ["concentrat", "tech"], ["week", "summary"], ["summar", "summary"], ["afford", "cash"], ["invest", "cash"]];
+  const hit = map.find(([k]) => t.includes(k));
+  setTimeout(() => say("bot", hit ? QA.find(q => q.id === hit[1]).a() : `This prototype only has scripted answers. Try one of the suggested questions, or ask about checking, spending, today's P&L, tech exposure or your week.`), 350);
+}
+$("#demo-pills").innerHTML = QA.map(q => `<button class="pill" data-ask="${q.id}">${q.q}</button>`).join("");
+$("#chat-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const v = $("#chat-text").value.trim();
+  if (v) { askFree(v); $("#chat-text").value = ""; }
+});
+
+let lastFocus = null;
+function openDemo(askId) {
+  demoIds.clear();
+  [...MOCK.bank, ...MOCK.brok].forEach(a => {
+    const isBank = MOCK.bank.includes(a);
+    if (landingMode === "both" || (landingMode === "bank" && isBank) || (landingMode === "brok" && !isBank)) demoIds.add(a.id);
+  });
+  renderDemo();
+  if (!msgs().children.length) say("bot", `Welcome to the demo terminal. These accounts are <b>mock data</b>. Use the filters on the left to choose bank, brokerage, or both, then ask a question below.`);
+  lastFocus = document.activeElement;
+  $("#demo").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#demo-close").focus();
+  if (askId) ask(askId);
+}
+function closeDemo() {
+  $("#demo").classList.remove("open");
+  document.body.style.overflow = "";
+  if (lastFocus) lastFocus.focus();
+}
+document.addEventListener("click", e => {
+  const o = e.target.closest("[data-open-demo]");
+  if (o) return openDemo();
+  const a = e.target.closest("[data-ask]");
+  if (a) { $("#demo").classList.contains("open") ? ask(a.dataset.ask) : openDemo(a.dataset.ask); return; }
+  const q = e.target.closest("[data-quick]");
+  if (q) {
+    demoIds.clear();
+    [...MOCK.bank, ...MOCK.brok].forEach(x => {
+      const isBank = MOCK.bank.includes(x);
+      if (q.dataset.quick === "both" || (q.dataset.quick === "bank" && isBank) || (q.dataset.quick === "brok" && !isBank)) demoIds.add(x.id);
+    });
+    renderDemo();
+  }
+});
+$("#demo-close").addEventListener("click", closeDemo);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#demo").classList.contains("open")) closeDemo(); });
+
+renderLanding();
+if (location.hash === "#demo") openDemo();
+</script>
+</body>
+</html>

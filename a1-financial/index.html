@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landing Page Gallery — AI Personal Financial Assistant</title>
+<meta name="description" content="Gallery and process log for 25 landing-page versions of an AI personal financial assistant that unifies bank and brokerage accounts.">
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --card: #ffffff;
+    --ink: #1b1d21;
+    --muted: #5d6470;
+    --faint: #8a909a;
+    --line: #e2e0da;
+    --accent: #2f5bea;
+    --final: #0f8a5f;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141518; --card: #1c1e22; --ink: #ecedef; --muted: #a5abb5; --faint: #7d838d; --line: #2c2f35; --accent: #7c9cff; --final: #3fd49a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+  a { color: var(--accent); }
+  header { padding: 56px 0 28px; border-bottom: 1px solid var(--line); }
+  .kicker { font: 600 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  h1 { font-size: clamp(30px, 4vw, 44px); line-height: 1.1; letter-spacing: -.02em; margin: 10px 0 14px; }
+  .lede { color: var(--muted); max-width: 68ch; margin: 0; font-size: 17px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 22px; font: 13px var(--mono); color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 18px; max-width: 420px; }
+  .progress div { height: 100%; background: var(--accent); }
+
+  section { padding: 40px 0; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 22px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 22px; max-width: 72ch; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .card.final { border: 2px solid var(--final); }
+  .thumb { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #0a0e13; border-bottom: 1px solid var(--line); display: block; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; transition: transform .3s; }
+  .thumb:hover img { transform: scale(1.02); }
+  .card .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .vnum { font: 700 13px var(--mono); }
+  .badge { font: 600 11px var(--mono); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.explore { color: var(--accent); border-color: currentColor; }
+  .badge.final { color: #fff; background: var(--final); border-color: var(--final); }
+  .card h3 { margin: 0; font-size: 18px; }
+  .note { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .note b { color: var(--ink); font-weight: 600; }
+  .card .links { margin-top: auto; padding-top: 6px; display: flex; gap: 16px; font-size: 14px; font-weight: 600; }
+  .date { font: 12px var(--mono); color: var(--faint); margin-left: auto; }
+
+  .dirs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .dir { border: 1px solid var(--line); border-radius: 10px; padding: 14px; background: var(--card); }
+  .dir .n { font: 600 12px var(--mono); color: var(--faint); }
+  .dir b { display: block; margin: 4px 0; }
+  .dir p { margin: 0; font-size: 14px; color: var(--muted); }
+  .dir.picked { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .dir .pick { font: 600 11px var(--mono); color: var(--accent); }
+
+  ol.log { margin: 0; padding: 0; list-style: none; border-left: 2px solid var(--line); }
+  ol.log li { position: relative; padding: 0 0 22px 22px; }
+  ol.log li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+  ol.log .when { font: 12px var(--mono); color: var(--faint); }
+  ol.log h4 { margin: 2px 0 4px; font-size: 16px; }
+  ol.log p { margin: 0 0 6px; color: var(--muted); font-size: 15px; max-width: 75ch; }
+  blockquote { margin: 6px 0 8px; padding: 6px 14px; border-left: 3px solid var(--accent); color: var(--ink); font-size: 15px; background: var(--card); border-radius: 0 8px 8px 0; }
+
+  footer { padding: 28px 0 44px; font-size: 13px; color: var(--faint); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Design gallery · process log</div>
+    <h1>AI Personal Financial Assistant: 25 landing-page versions</h1>
+    <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
+    <div class="meta">
+      <span>Versions: <b id="count">1</b> / 25</span>
+      <span>Stage: <b>Exploration</b></span>
+      <span>Final selection: <b>not chosen yet</b></span>
+    </div>
+    <div class="progress" aria-hidden="true"><div id="bar" style="width:4%"></div></div>
+  </div>
+</header>
+
+<main>
+  <section id="versions">
+    <div class="wrap">
+      <h2>Versions</h2>
+      <p class="sub">Each card shows a screenshot of the page (1440×900), a link to open it, and a short note on the direction and why it was made. Earlier versions are never overwritten.</p>
+      <div class="grid" id="cards"></div>
+    </div>
+  </section>
+
+  <section id="directions">
+    <div class="wrap">
+      <h2>Stage 1: directions proposed</h2>
+      <p class="sub">Before building anything, five substantially different directions were proposed. Each one differs in audience, layout and how it communicates, not only in visual style. You picked one to start with.</p>
+      <div class="dirs">
+        <div class="dir"><div class="n">01</div><b>The Morning Briefing</b><p>Editorial, newspaper-style. AI-written headlines about your money.</p></div>
+        <div class="dir"><div class="n">02</div><b>Pick Your Path</b><p>Interactive Bank / Brokerage / Both toggle reshapes the page.</p></div>
+        <div class="dir"><div class="n">03</div><b>Ask Anything</b><p>Chat-first hero; capabilities shown as conversations.</p></div>
+        <div class="dir"><div class="n">04</div><b>One Screen, Not Six Tabs</b><p>Problem/solution contrast: scattered apps merge into one view.</p></div>
+        <div class="dir picked"><div class="n">05 <span class="pick">· chosen for v01</span></div><b>The Terminal</b><p>Dark, data-dense live preview with AI analyst notes, for active investors.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="log">
+    <div class="wrap">
+      <h2>Decision log</h2>
+      <p class="sub">What was decided, and why, based only on our actual discussion. Newest entries are added at the bottom.</p>
+      <ol class="log">
+        <li>
+          <div class="when">Stage 1 · Directions</div>
+          <h4>Five directions proposed</h4>
+          <p>Morning Briefing, Pick Your Path, Ask Anything, One Screen Not Six Tabs, and The Terminal.</p>
+        </li>
+        <li>
+          <div class="when">Stage 1 · Decision → v01</div>
+          <h4>Direction 5, “The Terminal,” chosen as the starting point</h4>
+          <blockquote>“I like that people can see what the product does right away through the tables, charts, and AI notes.”</blockquote>
+          <p><b>Your requests for v01:</b> keep the dark layout and the detailed information, but make sure it's easy to read; include bank accounts alongside brokerage accounts, because users should be able to choose either or both; use mock data and follow AGENTS.md.</p>
+          <p><b>How v01 responds:</b> a larger base text size and high-contrast text on the dark background. Gains and losses use ▲/▼ symbols as well as color, and monospace is used only for numbers. A Bank / Brokerage / Both selector changes which terminal panels appear. Bank panels (accounts, cash flow, spending) sit next to brokerage panels (positions, daily P&amp;L, allocation), and the AI notes cover both.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Plain HTML/CSS/JS, with no frameworks, build step or external APIs. All financial data is fictional. Schwab and IBKR are named only to label mock accounts.</div>
+</footer>
+
+<script>
+/* Add one entry per version. Never edit an earlier entry's page. */
+const VERSIONS = [
+  {
+    v: "v01",
+    title: "The Terminal",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>Direction 5, chosen by you.</b> A dark, Bloomberg-style terminal where the landing page itself is a live preview: ticker, accounts, positions, daily P&amp;L, cash flow, spending and AI analyst notes. Per your feedback: kept dense but readable, and added bank accounts next to Schwab/IBKR with a Bank / Brokerage / Both selector. “View Demo” opens a full demo terminal with account filters and scripted AI Q&amp;A."
+  }
+];
+
+const FINAL = null; // set to e.g. "v24" once you choose the final version
+
+const cards = document.getElementById("cards");
+cards.innerHTML = VERSIONS.map(x => {
+  const isFinal = x.v === FINAL;
+  return `<article class="card${isFinal ? " final" : ""}">
+    <a class="thumb" href="${x.v}/index.html" aria-label="Open ${x.v}: ${x.title}">
+      <img src="thumbs/${x.v}.png" alt="Screenshot of ${x.v}, ${x.title}" loading="lazy" width="1440" height="900">
+    </a>
+    <div class="body">
+      <div class="row">
+        <span class="vnum">${x.v}</span>
+        ${isFinal ? `<span class="badge final">★ FINAL</span>` : `<span class="badge ${x.stage}">${x.stage === "explore" ? "Exploration" : "Refinement"}</span>`}
+        <span class="date">${x.date}</span>
+      </div>
+      <h3>${x.title}</h3>
+      <p class="note">${x.note}</p>
+      <div class="links"><a href="${x.v}/index.html">Open page →</a><a href="${x.v}/index.html#demo">Open demo →</a></div>
+    </div>
+  </article>`;
+}).join("");
+
+document.getElementById("count").textContent = VERSIONS.length;
+document.getElementById("bar").style.width = (VERSIONS.length / 25 * 100) + "%";
+</script>
+</body>
+</html>
