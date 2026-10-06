@@ -85,7 +85,7 @@
     <h1>AI Personal Financial Assistant: 25 landing-page versions</h1>
     <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
     <div class="meta">
-      <span>Versions: <b id="count">2</b> / 25</span>
+      <span>Versions: <b id="count">3</b> / 25</span>
       <span>Stage: <b>Exploration</b></span>
       <span>Final selection: <b>not chosen yet</b></span>
     </div>
@@ -110,7 +110,7 @@
         <div class="dir"><div class="n">01</div><b>The Morning Briefing</b><p>Editorial, newspaper-style. AI-written headlines about your money.</p></div>
         <div class="dir picked"><div class="n">02 <span class="pick">· tried in v02</span></div><b>Pick Your Path</b><p>Interactive Bank / Brokerage / Both toggle reshapes the page.</p></div>
         <div class="dir"><div class="n">03</div><b>Ask Anything</b><p>Chat-first hero; capabilities shown as conversations.</p></div>
-        <div class="dir"><div class="n">04</div><b>One Screen, Not Six Tabs</b><p>Problem/solution contrast: scattered apps merge into one view.</p></div>
+        <div class="dir picked"><div class="n">04 <span class="pick">· tried in v03</span></div><b>One Screen, Not Six Tabs</b><p>Problem/solution contrast: scattered apps merge into one view.</p></div>
         <div class="dir picked"><div class="n">05 <span class="pick">· chosen for v01</span></div><b>The Terminal</b><p>Dark, data-dense live preview with AI analyst notes, for active investors.</p></div>
       </div>
     </div>
@@ -139,6 +139,20 @@
           <p><b>Your feedback after v01:</b> add a switch between light and dark mode, and a calendar of daily investment gains and losses where each day shows the amount and uses color so gains and losses are easy to spot, with mock data. You asked to try direction 2 for v02 <i>to see how it compares with “The Terminal,”</i> to fit both features into that direction, and to keep v01 unchanged for comparison.</p>
           <p><b>How v02 responds:</b> the hero is a three-card chooser (Bank / Brokerage / Both). The headline, the preview app, the “what you get” list, the AI questions and the comparison table all change with the choice. A Light / Dark switch sits in the header and the demo. The gains &amp; losses calendar appears on the Brokerage and Both paths. Each trading day shows its amount, green or red with darker shades for bigger moves, ▲/▼ and signs for color-blind readability, and gray for closed days. Tapping a day shows the top movers and an AI summary. v01 was not modified.</p>
         </li>
+        <li>
+          <div class="when">Stage 3 · Comparing v01 and v02 → v03</div>
+          <h4>v02 is easier to understand; v01's investment data is clearer. v01's account picker carried forward; direction 4 tried next.</h4>
+          <p><b>Your comparison:</b> v02 is easier to understand overall, but the investment data is clearer in v01.</p>
+          <p><b>What you want to keep going forward:</b> the account section from v01 (its demo's account filter): separate bank and brokerage groups, individual account balances, checkboxes, and quick-select buttons. You said these make it easy to see what you have and choose which accounts to include, and asked to carry that idea into future versions.</p>
+          <p><b>Your request for v03:</b> try direction 4, “One Screen, Not Six Tabs,” keeping v02's clarity and v01's detailed account view in mind but exploring a new layout; keep the light/dark switch and the daily gains-and-losses calendar; leave v01 and v02 unchanged.</p>
+          <p><b>How v03 responds:</b> the hero contrasts six scattered mock app windows (bank, card portal, Schwab, IBKR, a broken spreadsheet, a sticky note) with one calm screen, and a “Merge into one screen” button folds them together. The centerpiece is a working “one screen” built around the v01-style account picker. Bank and brokerage groups each show a subtotal, every account has its balance and a checkbox, and Bank only / Brokerage only / All quick-select buttons and a selected total sit at the bottom. Ticking accounts updates the totals, the gains calendar (which recalculates for only the selected brokerages), the positions table (v01-style columns: Day %, Day $, Value), cash flow and the AI notes. A before/after table and plain section headings carry over v02's clarity. v01 and v02 were not modified.</p>
+        </li>
+        <li>
+          <div class="when">Stage 4 · Feedback on v03</div>
+          <h4>v03 didn't feel different enough; v04 should change the organization, not just the look</h4>
+          <p><b>Your review:</b> v03 still feels too similar to the earlier versions. It stays in the gallery as part of the exploration.</p>
+          <p><b>Your request for v04:</b> a bigger change in how the page is organized and how it introduces the product, keeping the core product idea but rethinking the layout and how features are presented, using direction 3, “Ask Anything.” Two approaches are proposed for you to choose from before any code is written.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -164,6 +178,13 @@ const VERSIONS = [
     stage: "explore",
     date: "2026-10-05",
     note: "<b>Direction 2, chosen by you to compare with v01.</b> A light, friendly page built around a Bank / Brokerage / Both chooser that reshapes everything below it. Adds your two requests from v01 feedback: a <b>light/dark switch</b> and a <b>daily gains &amp; losses calendar</b> (green/red by amount, tap a day for the AI's explanation). “View Demo” opens on the chosen path."
+  },
+  {
+    v: "v03",
+    title: "One Screen, Not Six Tabs",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>Direction 4, chosen by you after comparing v01 and v02.</b> A bold problem/solution page: six scattered mock app windows vs. one screen. Carries forward what you liked: <b>v01's account picker</b> (bank and brokerage groups, balances, checkboxes, quick select) now drives the whole screen, with v01-style position detail and v02-style plain sections. Keeps the <b>light/dark switch</b> and <b>gains calendar</b>, which now follows the selected brokerages. <b>Your review:</b> it still felt too similar to the earlier versions; kept as part of the exploration."
   }
 ];
 
