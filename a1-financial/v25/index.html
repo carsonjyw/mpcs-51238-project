@@ -534,9 +534,72 @@
   .vs { margin-bottom: 12px; }
   table.hold td small { display: block; font-size: 11.5px; color: var(--faint); font-weight: 500; }
 
+  /* ---------- v25 refresh: one spacing scale, one type scale, one button style ---------- */
+  :root:not([data-theme="dark"]) { --accent: #4a3fc4; --accent-soft: #efedfb; --brok: #6a4fb8; --brok-soft: #f0ecf8; --bank: #1d6a95; --bank-soft: #e6f0f6; --bg: #f5f6f8; --line: #e3e6ec; --shadow: 0 1px 2px rgba(16,24,40,.04), 0 4px 16px rgba(16,24,40,.05); --r: 14px; --r-s: 10px; }
+  [data-theme="dark"] { --accent: #9d93f2; --accent-soft: #23203f; --brok: #ad98ee; --bank: #6aaed6; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25); --r: 14px; --r-s: 10px; }
+  body { font-size: 15.5px; }
+  .card { border-radius: var(--r); }
+  .detail { padding: 22px 26px 28px; gap: 22px; }
+  .sec h3, .p-h, .cats-h, .sub-h { font-size: 12px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .sec h3 { margin-bottom: 10px; }
+  /* buttons share one shape */
+  .btn, .qbtn, .chipq, .to-ov, .as-min, .ranges button, .seg button, .seg2 button, .chip { border-radius: var(--r-s); }
+  .btn { padding: 9px 16px; font-size: 14.5px; }
+  .btn.sm { padding: 6px 12px; font-size: 13.5px; }
+  .chipq { padding: 5px 11px; }
+  .ranges, .seg { border-radius: 12px; }
+  /* compact account list */
+  .ws { grid-template-columns: 196px minmax(0, 1fr) 330px; gap: 16px; }
+  .ws.ai-min { grid-template-columns: 196px minmax(0, 1fr) 54px; }
+  .list { padding: 8px 6px; }
+  .list .pick { padding: 5px 6px 5px 2px; }
+  .list .pick .nm, .list .pick .bal { font-size: 13px; }
+  .list .pick .nm { white-space: normal; overflow: visible; }
+  .list .pick .chg { font-size: 11px; }
+  .list .grp { margin: 10px 6px 2px; }
+  .list-note { font-size: 11px; }
+  /* hierarchy: latest net worth > selected period > details */
+  .nw-head .big { font-size: clamp(40px, 4.6vw, 56px); }
+  .nw-head .k { color: var(--muted); }
+  .period { background: var(--surface-2); border: 0; border-radius: var(--r); padding: 14px 16px; }
+  .pstats > div { background: var(--surface); border: 1px solid var(--line); }
+  .pstats .chg { background: var(--surface); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+  .pstats b { font-size: 20px; }
+  .detail > .sec, .detail > .two { padding-top: 18px; border-top: 1px solid var(--line); }
+  .tf { background: transparent; border: 1px solid var(--line); }
+  /* AI: takeaway first */
+  .take { border-left-width: 3px; padding: 2px 0 2px 12px; }
+  .take .x-title { font-size: 19px; line-height: 1.3; }
+  .x-text { font-size: 14.5px; color: var(--muted); }
+  .x-nums { border-radius: var(--r-s); }
+  .ctxbar { border-radius: var(--r-s); }
+  /* stock tabs and fundamentals */
+  .seg2 { display: inline-flex; gap: 2px; background: var(--surface-2); border-radius: 12px; padding: 3px; justify-self: start; }
+  .seg2 button { border: 0; background: none; padding: 6px 16px; font-weight: 700; font-size: 14px; color: var(--muted); cursor: pointer; }
+  .seg2 button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .about { margin: 0; font-size: 15.5px; max-width: 70ch; }
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .fgrid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fm { text-align: left; display: flex; flex-direction: column; gap: 3px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s); padding: 12px 14px; cursor: pointer; min-width: 0; }
+  .fm:hover { border-color: var(--accent); }
+  .fm .l { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+  .fm b { font-size: 22px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .fm b.na { font-size: 17px; color: var(--muted); }
+  .fm .nab { font-size: 12px; color: var(--loss); }
+  .fm .nt { font-size: 12px; color: var(--muted); }
+  .fm .ex { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .fm .per { font-size: 11.5px; color: var(--faint); margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .wrow { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 52px; gap: 10px; align-items: center; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--line); }
+  .wrow em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--brok); background: var(--brok-soft); border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
+  .wrow .bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .wrow .bar i { display: block; height: 100%; background: var(--brok); border-radius: 4px; }
+  .wrow .bar i.s { background: var(--bank); }
+  .wrow b { text-align: right; font-variant-numeric: tabular-nums; }
+
   /* ---------- responsive ---------- */
   @media (max-width: 1240px) {
     .ws { grid-template-columns: minmax(0, 1fr) 320px; }
+    .fgrid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ws.ai-min { grid-template-columns: minmax(0, 1fr) 54px; }
     .list { display: none; }
     .fx { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -591,6 +654,8 @@
     .ar .pc { display: none; }
     .pstats { grid-template-columns: 1fr 1fr; }
     .fx-sum, .pfacts { grid-template-columns: 1fr 1fr; }
+    .fgrid, .fgrid.three { grid-template-columns: minmax(0, 1fr); }
+    .detail { padding: 16px 14px 22px; gap: 18px; }
     table.hold th:last-child, table.hold td:last-child { display: none; }
     table.hold td { white-space: normal; }
     .dates-row label { min-width: 0; }
@@ -943,13 +1008,40 @@ function datesHTML(key) {
 }
 
 
+/* =========================================================
+   SAMPLE FUNDAMENTALS (new in this v25 update). Illustrative figures, not real company data.
+   Price-based metrics use the same Oct 2 close as everywhere else, so they stay consistent.
+   ========================================================= */
+const FUND_PERIOD = { ttm: "trailing 12 months to Jun 30, 2026", q: "Apr–Jun 2026 quarter vs. a year earlier", px: "price at Fri, Oct 2 close", fund: "fund data as of Aug 31, 2026" };
+const FUND = {
+  AAPL: { desc: "Designs and sells iPhone, Mac, iPad and wearables, plus services such as the App Store, iCloud and Apple Music.", sector: "Technology", shares: 15.2e9, eps: 6.60, rev: 4.9, margin: 24.1, div: 1.04 },
+  MSFT: { desc: "Makes software and cloud services, including Windows, Microsoft 365 and the Azure cloud platform, plus LinkedIn and Xbox.", sector: "Technology", shares: 7.43e9, eps: 12.40, rev: 14.2, margin: 35.6, div: 3.32 },
+  NVDA: { desc: "Designs graphics processors and other chips used for gaming and, increasingly, for AI and data centers.", sector: "Technology", shares: 24.5e9, eps: 2.94, rev: 56.0, margin: 52.4, div: 0.04 },
+  TSLA: { desc: "Makes electric vehicles, plus battery storage and solar energy products.", sector: "Consumer discretionary", shares: 3.21e9, eps: 1.88, rev: null, revWhy: "The latest quarterly report isn't included in this sample data.", margin: 6.8, div: 0 },
+  VTI: { etf: true, desc: "Holds nearly every publicly traded US company, large and small, weighted by size. One fund gives broad exposure to the whole US stock market.", exp: 0.03, n: 3600, yld: 1.3,
+    top: [["MSFT", 6.0], ["AAPL", 5.8], ["NVDA", 5.5], ["AMZN", 3.4], ["META", 2.3]], sect: [["Technology", 31], ["Financials", 13], ["Health care", 11], ["Consumer discretionary", 11], ["Industrials", 10], ["Other", 24]] },
+  QQQ: { etf: true, desc: "Tracks the Nasdaq-100: the 100 largest non-financial companies listed on the Nasdaq exchange, so it leans heavily toward technology.", exp: 0.20, n: 101, yld: 0.6,
+    top: [["MSFT", 8.6], ["AAPL", 8.4], ["NVDA", 8.0], ["AMZN", 5.3], ["META", 4.9]], sect: [["Technology", 50], ["Communication services", 16], ["Consumer discretionary", 14], ["Health care", 6], ["Other", 14]] }
+};
+const big = n => n >= 1e12 ? "$" + (n / 1e12).toFixed(2) + "T" : "$" + (n / 1e9).toFixed(0) + "B";
+function metrics(sym) {   // stock metrics, computed from the sample inputs
+  const f = FUND[sym], px = pos(sym).px;
+  return [
+    { k: "mcap", l: "Market cap", v: big(px * f.shares), per: FUND_PERIOD.px, ex: "What the whole company is worth on the stock market: share price × shares outstanding." },
+    { k: "pe", l: "P/E ratio", v: (px / f.eps).toFixed(1), per: `${FUND_PERIOD.px} ÷ earnings per share, ${FUND_PERIOD.ttm}`, ex: `How many dollars investors pay for $1 of yearly profit. A higher number usually means people expect faster growth.` },
+    { k: "rev", l: "Revenue growth", v: f.rev == null ? null : pct(f.rev), na: f.revWhy, per: FUND_PERIOD.q, ex: "How much more (or less) the company sold than in the same quarter a year earlier." },
+    { k: "margin", l: "Net profit margin", v: f.margin.toFixed(1) + "%", per: FUND_PERIOD.ttm, ex: "How many cents of profit the company keeps from each dollar of sales." },
+    { k: "div", l: "Dividend yield", v: f.div ? (f.div / px * 100).toFixed(2) + "%" : "None", note: f.div ? `$${f.div.toFixed(2)} a share per year` : "Doesn't pay a dividend", per: `yearly dividend ÷ ${FUND_PERIOD.px}`, ex: "The cash the company pays shareholders each year, as a share of the stock price." }
+  ];
+}
+
 /* ---------- state ---------- */
 const sel = new Set(ALL.map(a => a.id));          // ticked = counted in totals
 let conn = "both";                                // v19: bank, brokerage or both
 const W = { pay: false, dine: false, move: 0, moveTo: null, mkt: 0, acct: {}, stk: {} };
 const BASE = { pay: false, dine: false, move: 0, moveTo: null, mkt: 0, acct: {}, stk: {} };
 const mkFX = () => ({ q: "", from: "", to: "", acct: "", cat: "all", min: "", max: "", n: 40, err: null, open: false });
-const mkUI = () => ({ fx: mkFX(), mng: false, dateErr: null, item: "all", range: "1M", x: null, q: null, up: false, hover: null, wopen: false, hist: [], prev: null, prevX: null, ans: null, nwr: "1M", per: null, nwDay: null, drag: null, exp: {}, collapsed: false });
+const mkUI = () => ({ stab: "ov", fx: mkFX(), mng: false, dateErr: null, item: "all", range: "1M", x: null, q: null, up: false, hover: null, wopen: false, hist: [], prev: null, prevX: null, ans: null, nwr: "1M", per: null, nwDay: null, drag: null, exp: {}, collapsed: false });
 const ui = { land: mkUI(), demo: mkUI() };
 const cals = {};
 const connected = id => conn === "both" || (conn === "bank") === isBank(id);
@@ -984,7 +1076,7 @@ function ctxInfo(item) {
   const a = acct(item); return { label: a.name, sub: `${a.inst} ${a.mask} · ${money(item === "cc" ? 1236.40 : value(item), 2)}${item === "cc" ? " due" : ""} ${isBank(item) ? `as of ${MOCK.bankAsOf}` : `at ${MOCK.priceAsOf}`}${sel.has(item) ? "" : " · not selected"}`, color: isBank(item) ? "var(--bank)" : "var(--brok)", kind: isBank(item) ? "bank" : "brok" };
 }
 const X_LABEL = { "dc-income": "Income", "dc-spend": "Spending", "dc-inv": "Investment gains/losses", "dc-ext": "Transfers with accounts not counted", "dc-int": "Moves between your accounts", "a-bank": "Bank cash", "a-bcash": "Brokerage cash", "a-stocks": "Stocks & ETFs", "a-debt": "Credit card debt", nw: "Net worth", cash: "Bank total", inv: "Investments", kept: "Kept in September", income: "Income", spend: "Spending", pxchg: "Price change", mygain: "Your gain or loss", flow: "Recent cash flow", movers: "Top movers" };
-const xLabel = (x, key) => x.startsWith("tx-") ? (t => `${t.t} · ${short(t.d)}`)(HIST.byId[x.slice(3)]) : x === "nwd" ? nice(HIST.days[ui[key].nwDay]) : x === "nwp" ? period(key).label : X_LABEL[x] || (x.startsWith("cat-") ? x.slice(4) : x.startsWith("day-") ? nice(x.slice(4)) : x);
+const xLabel = (x, key) => x.startsWith("fm-") ? metrics(ui[key].item.slice(2)).find(z => "fm-" + z.k === x).l : x.startsWith("fe-") ? { "fe-exp": "Expense ratio", "fe-yld": "Dividend yield", "fe-top": "Top holdings" }[x] : x.startsWith("tx-") ? (t => `${t.t} · ${short(t.d)}`)(HIST.byId[x.slice(3)]) : x === "nwd" ? nice(HIST.days[ui[key].nwDay]) : x === "nwp" ? period(key).label : X_LABEL[x] || (x.startsWith("cat-") ? x.slice(4) : x.startsWith("day-") ? nice(x.slice(4)) : x);
 
 // one definition of “nothing to show”, used by the overview AND the assistant
 function emptyState() {
@@ -1161,7 +1253,7 @@ function chkHistory() {
   return out;
 }
 function lineSVG(key, pts, { color, base, fmt, labels, id, shade, sel, attr }) {
-  const w = innerWidth < 600 ? 360 : ui[key].collapsed && innerWidth > 1240 ? 880 : 640, h = innerWidth < 600 ? 200 : 220, vals = pts.map(p => p.v), lo = Math.min(...vals, base ?? Infinity), hi = Math.max(...vals, base ?? -Infinity), pad = (hi - lo) * .12 || 1;
+  const w = innerWidth < 600 ? 360 : ui[key].collapsed && innerWidth > 1240 ? 880 : 640, h = innerWidth < 600 ? 210 : 250, vals = pts.map(p => p.v), lo = Math.min(...vals, base ?? Infinity), hi = Math.max(...vals, base ?? -Infinity), pad = (hi - lo) * .12 || 1;
   const x = i => 46 + i * (w - 56) / Math.max(1, pts.length - 1), y = v => 14 + (hi + pad - v) / (hi - lo + 2 * pad) * (h - 44);
   const d = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
   let g = `<svg viewBox="0 0 ${w} ${h}" data-chart="${key}|${id}" role="img" aria-label="${labels.aria}">`;
@@ -1225,6 +1317,9 @@ function stockHTML(key, sym) {
   let h = crumbs(key, [["all", "Overview"], [p.acct, a.name], ["h-" + sym, sym]]);
   h += `<div class="d-head"><div><span class="tag brok">${a.short}</span> <span style="font-size:13px;color:var(--muted)">${p.name}${ETFS.includes(sym) ? " · ETF" : ""}</span><h2>${sym}</h2><div class="pxline"><b>${money(p.px, 2)}</b> per share · <span>Fri, Oct 2, 4:00 pm ET close</span></div></div>
     <div class="fig"><div class="k2">Your position</div><div class="v">${money(p.val)}</div>${aft(p.val, A.pv[sym])}<div class="l">${p.qty} shares × ${money(p.px, 2)}</div></div></div>`;
+  const etf = !!(FUND[sym] && FUND[sym].etf);
+  h += `<div class="seg2" role="tablist" aria-label="${sym} view"><button type="button" role="tab" data-stab="${key}|ov" aria-selected="${u.stab !== "fund"}">Overview</button><button type="button" role="tab" data-stab="${key}|fund" aria-selected="${u.stab === "fund"}">${etf ? "Fund info" : "Fundamentals"}</button></div>`;
+  if (u.stab === "fund") return h + (etf ? etfHTML(key, p) : fundHTML(key, p));
   // key facts: quantity, average cost, current value, cost basis
   h += `<div class="pfacts"><div><span>Shares</span><b>${p.qty}</b></div><div><span>Average cost</span><b>${money(p.cost, 2)}</b><small>per share</small></div><div><span>Current value</span><b>${money(p.val)}</b><small>at Oct 2 close</small></div><div><span>Cost basis</span><b>${money(basis)}</b><small>what you paid</small></div></div>`;
   // the two kinds of performance, side by side
@@ -1239,6 +1334,27 @@ function stockHTML(key, sym) {
   return h;
 }
 
+function fundHTML(key, p) {
+  const f = FUND[p.sym], m = metrics(p.sym);
+  return `<div class="sec"><h3>About ${p.name} <span class="tf">${f.sector}</span></h3><p class="about">${f.desc}</p></div>
+    <div class="sec"><h3>Key numbers <span class="tf">Sample figures · tap one for an explanation</span></h3>
+      <div class="fgrid">${m.map(x => `<button type="button" ${xa(key, "fm-" + x.k, "fm")}><span class="l">${x.l}</span><b class="${x.v == null ? "na" : ""}">${x.v == null ? "Not available" : x.v}</b>${x.v == null ? `<small class="nab">${x.na}</small>` : x.note ? `<small class="nt">${x.note}</small>` : ""}<span class="ex">${x.ex}</span><span class="per">${x.per}</span></button>`).join("")}</div>
+      <p class="ovn">These are company-level numbers: they describe ${p.sym} as a business, not your ${p.qty} shares. Your own gain is on the Overview tab.</p></div>`;
+}
+function etfHTML(key, p) {
+  const f = FUND[p.sym], own = f.top.filter(([s]) => MOCK.positions.some(q => q.sym === s && q.sym !== p.sym)), cost = p.val * f.exp / 100;
+  return `<div class="sec"><h3>About this fund <span class="tf">ETF · ${f.n.toLocaleString()} holdings</span></h3><p class="about">${f.desc}</p></div>
+    <div class="sec"><h3>Fund basics <span class="tf">Sample figures · ${FUND_PERIOD.fund}</span></h3>
+      <div class="fgrid three">
+        <button type="button" ${xa(key, "fe-exp", "fm")}><span class="l">Expense ratio</span><b>${f.exp.toFixed(2)}%</b><small class="nt">about ${money(cost, 2)} a year on your ${money(p.val)}</small><span class="ex">The yearly fee the fund takes, as a share of what you hold.</span><span class="per">annual, ${FUND_PERIOD.fund}</span></button>
+        <button type="button" ${xa(key, "fe-yld", "fm")}><span class="l">Dividend yield</span><b>${f.yld.toFixed(1)}%</b><span class="ex">Cash the fund passes on from the companies it holds, as a share of its price.</span><span class="per">trailing 12 months, ${FUND_PERIOD.fund}</span></button>
+        <button type="button" ${xa(key, "fe-top", "fm")}><span class="l">Top 5 holdings</span><b>${f.top.reduce((a, t) => a + t[1], 0).toFixed(1)}%</b><span class="ex">How much of the fund sits in its five largest companies.</span><span class="per">${FUND_PERIOD.fund}</span></button>
+      </div></div>
+    <div class="two"><div class="sec"><h3>Top holdings</h3>${f.top.map(([s, w]) => `<div class="wrow"><span>${s}${MOCK.positions.some(q => q.sym === s) ? ` <em>you also own</em>` : ""}</span><span class="bar"><i style="width:${w / f.top[0][1] * 100}%"></i></span><b>${w.toFixed(1)}%</b></div>`).join("")}
+        ${own.length ? `<p class="ovn">You also own ${own.map(o => o[0]).join(", ")} directly, so part of this fund overlaps with your other holdings.</p>` : ""}</div>
+      <div class="sec"><h3>Sector allocation</h3>${f.sect.map(([n, w]) => `<div class="wrow"><span>${n}</span><span class="bar"><i class="s" style="width:${w}%"></i></span><b>${w}%</b></div>`).join("")}</div></div>
+    <p class="ovn">ETFs hold many companies, so company metrics like P/E aren't shown; fund costs and what's inside matter more.</p>`;
+}
 function calHTML(key, bs, rootKey) {
   const c = cals[key] || (cals[key] = { mi: 1, day: null }), [y, m] = MOCK.months[c.mi], ms = monthStats(y, m, bs), root = rootKey || key;
   const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
@@ -1270,6 +1386,26 @@ function explain(key) {
   const u = ui[key], it = u.item, x = u.x, B = numbers(BASE), bs = B.bs, S = MOCK.september;
   const nums = rows => `<div class="x-nums">${rows.map(([l, v]) => `<div class="r"><span>${l}</span><b>${v}</b></div>`).join("")}</div>`;
   const X = (what, title, text, rows, qs) => ({ what, title, text, rows: rows ? nums(rows) : "", qs: qs || [] });
+  // fundamentals and fund information
+  if (x && (x.startsWith("fm-") || x.startsWith("fe-")) && it.startsWith("h-")) {
+    const p = pos(it.slice(2)), f = FUND[p.sym];
+    if (x.startsWith("fe-")) {
+      if (x === "fe-exp") return X("FUND COST", `${p.sym} costs about ${money(p.val * f.exp / 100, 2)} a year on your holding`, `Its expense ratio is ${f.exp.toFixed(2)}%: each year the fund keeps that share of what you hold to cover its costs. It's taken out of the fund's value, not billed to you. Sample figure, ${FUND_PERIOD.fund}.`, MOCK.positions.filter(q => FUND[q.sym] && FUND[q.sym].etf).map(q => [`${q.sym} <small>${FUND[q.sym].exp.toFixed(2)}%</small>`, money(q.val * FUND[q.sym].exp / 100, 2) + " / yr"]));
+      if (x === "fe-yld") return X("FUND DIVIDENDS", `${p.sym} yields about ${f.yld.toFixed(1)}%`, `On your ${money(p.val)} that's roughly ${money(p.val * f.yld / 100)} a year, if the yield stayed the same. Sample figure, trailing 12 months.`);
+      return X("WHAT'S INSIDE", `Its top 5 companies are ${f.top.reduce((a, t) => a + t[1], 0).toFixed(1)}% of ${p.sym}`, `${f.top.filter(([s]) => MOCK.positions.some(q => q.sym === s)).length ? `You also own ${f.top.filter(([s]) => MOCK.positions.some(q => q.sym === s)).map(t => t[0]).join(", ")} directly, so your exposure to them is higher than your direct holdings suggest.` : ""} Sample figures, ${FUND_PERIOD.fund}.`, f.top.map(([s, w]) => [s, `${w.toFixed(1)}% · about ${money(p.val * w / 100)} of yours`]));
+    }
+    const m = metrics(p.sym).find(z => "fm-" + z.k === x), all = MOCK.positions.filter(q => FUND[q.sym] && !FUND[q.sym].etf);
+    const cmp = all.map(q => { const v = metrics(q.sym).find(z => z.k === m.k); return [q.sym + (q.sym === p.sym ? " <small>(this)</small>" : ""), v.v == null ? "Not available" : v.v]; });
+    const take = m.v == null ? `${p.sym}'s ${m.l.toLowerCase()} isn't available` : { mcap: `${p.sym} is worth about ${m.v} on the market`, pe: `Investors pay about $${(+m.v).toFixed(2)} for each $1 of ${p.sym}'s yearly profit`, rev: `${p.sym}'s sales ${FUND[p.sym].rev >= 0 ? "grew" : "fell"} ${m.v.replace(/^[+−]/, "")} from a year earlier`, margin: `${p.sym} keeps about ${Math.round(FUND[p.sym].margin)}¢ of profit per $1 of sales`, div: FUND[p.sym].div ? `${p.sym} pays about ${m.v} a year in dividends` : `${p.sym} doesn't pay a dividend` }[m.k];
+    return X(`${m.l.toUpperCase()} · ${p.sym}`, take, `${m.ex} ${m.v == null ? m.na + " The demo shows it as unavailable instead of guessing." : ""} Period: ${m.per}. Sample figures, not real company data, and not a recommendation.`, cmp);
+  }
+  // the Fundamentals / Fund info tab, before anything specific is chosen
+  if (!x && it.startsWith("h-") && u.stab === "fund" && FUND[it.slice(2)]) {
+    const p = pos(it.slice(2)), f = FUND[p.sym];
+    if (f.etf) return X(`${p.sym} · FUND INFO`, `${p.sym} holds ${f.n.toLocaleString()} companies and costs about ${money(p.val * f.exp / 100, 2)} a year on yours`, `${f.desc} Its largest sector is ${f.sect[0][0].toLowerCase()} at ${f.sect[0][1]}%. Sample figures, ${FUND_PERIOD.fund}.`, [["Expense ratio", f.exp.toFixed(2) + "%"], ["Dividend yield", f.yld.toFixed(1) + "%"], ["Top 5 holdings", f.top.reduce((a, t) => a + t[1], 0).toFixed(1) + "%"]], [["x:fe-exp", "What does the fee cost me?"], ["x:fe-top", "What's inside?"]]);
+    const m = metrics(p.sym), g = k => m.find(z => z.k === k);
+    return X(`${p.sym} · FUNDAMENTALS`, `${p.sym} in brief: a ${g("mcap").v} company at ${g("pe").v}× earnings`, `${f.desc} These describe the company, not your shares. Sample figures, not real company data.`, m.map(z => [z.l, z.v == null ? "Not available" : z.v]), [["x:fm-pe", "What does P/E tell me?"], ["x:fm-margin", "Is it profitable?"]]);
+  }
   // a single transaction from the explorer
   if (x && x.startsWith("tx-")) {
     const t = HIST.byId[x.slice(3)], A = id => id === "cc" ? "Rewards Card" : acct(id).name, Sx = counted(), i = HIST.idx[t.d], own = Sx.has(t.a);
@@ -1503,6 +1639,8 @@ document.addEventListener("click", e => {
   if (ap) { const [key, i] = ap.dataset.apply.split("|"), o = ui[key].ans.options[+i]; applyScenario(key, o.act); return; }
   const ac = e.target.closest("[data-ansclear]");
   if (ac) { const key = ac.dataset.ansclear; ui[key].ans = null; render(key); return; }
+  const st = e.target.closest("[data-stab]");
+  if (st) { const [key, v] = st.dataset.stab.split("|"); ui[key].stab = v; if (ui[key].x && /^f[me]-/.test(ui[key].x)) ui[key].x = null; render(key); $(`[data-stab="${key}|${v}"]`)?.focus(); return; }
   const fo = e.target.closest("[data-fxopen]");
   if (fo) { const key = fo.dataset.fxopen; ui[key].fx.open = !ui[key].fx.open; render(key); $(`[data-fxopen="${key}"]`)?.focus(); return; }
   const fs = e.target.closest("[data-fxscope]");

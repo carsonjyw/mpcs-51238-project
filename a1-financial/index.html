@@ -185,7 +185,7 @@
             <li>Latest net worth first, then a selected period (presets or exact dates) explained through income, spending and investment gains</li>
             <li>A breakdown into bank cash, brokerage cash, stocks &amp; ETFs and card debt</li>
             <li>A searchable transaction explorer built from the same sample ledger as the overview</li>
-            <li>Holdings with a price chart, average cost and your own gain, kept separate from the stock's performance</li>
+            <li>Holdings with a price chart, average cost and your own gain, kept separate from the stock's performance, plus an Overview / Fundamentals switch: sample company metrics for stocks, fund costs and contents for ETFs</li>
             <li>An assistant that leads with a short takeaway; what-if scenarios are a secondary tool</li>
           </ul>
           <h4>Earlier versions that shaped it</h4>
@@ -289,7 +289,7 @@
       </details>
 
       <details class="lg" open>
-        <summary>Stage 3 · Refining the Connected Workspace <small>v20–v25 · 6 entries</small></summary>
+        <summary>Stage 3 · Refining the Connected Workspace <small>v20–v25 · 7 entries</small></summary>
         <ol class="log">
           <li><div class="when">v20</div><h4>v18 becomes the foundation</h4>
             <p>I combined v18's overview and AI panel with the clear account list from v01/v16, the bank/brokerage choice from v19 and v08's “Since you last checked”, keeping the layout focused. I also wanted individual stocks, each with a price chart (simulated 1D, 1W, 1M and 1Y), position details, and a clear difference between the stock's price change and my own gain or loss. The AI panel explains what's selected, with what-ifs as a secondary tab. Bank accounts show cash flow instead of stock charts.</p></li>
@@ -321,6 +321,14 @@
               <li>a polished investment flow, from brokerage to holding to chart to my own gain</li>
             </ul>
             <p>Order placement is left for the future.</p></li>
+          <li class="fin"><div class="when">v25 · update</div><h4>Stock fundamentals and a visual refresh</h4>
+            <p>I asked for one more refinement of v25, keeping the Connected Workspace structure:</p>
+            <ul>
+              <li>An Overview / Fundamentals switch in the stock details. Stocks show a short company description, market cap, P/E, revenue growth, net profit margin and dividend yield, each explained in plain language with its reporting period. Values that aren't available are shown as unavailable, with the reason.</li>
+              <li>ETFs show fund information instead: expense ratio (and what it costs on my holding), dividend yield, top holdings with any overlap with stocks I own directly, and sector allocation.</li>
+              <li>A more polished, easier-to-scan interface: a stronger hierarchy from latest net worth to period changes to details, a more compact account list, larger charts, one button style, consistent spacing and type, and restrained colors in both light and dark mode. The assistant still leads with a short takeaway, including on the fundamentals tab.</li>
+            </ul>
+            <p>All fundamentals are sample figures, and price-based metrics use the same Oct 2 close as the rest of the page.</p></li>
         </ol>
       </details>
 
@@ -364,7 +372,7 @@ const VERSIONS = [
   { v: "v22", p: "c", title: "Clear & Reliable", dir: "The same workspace, made more trustworthy.", chg: "A value-first headline, data dates, exact what-ifs, consistent empty states.", learn: "Next, a clearer picture of overall finances." },
   { v: "v23", p: "c", title: "Net Worth Overview", dir: "Net-worth history and breakdown.", chg: "1M, 3M and 1Y history, assets vs. debt, a reconciled sample ledger.", learn: "Next, flexible dates, spending details and mobile." },
   { v: "v24", p: "c", title: "Dates, Spending & Mobile", dir: "Flexible dates and spending details.", chg: "Exact dates, a transaction explorer, Manage accounts on mobile.", learn: "It had the features I wanted." },
-  { v: "v25", p: "c", title: "Connected Workspace (final)", dir: "The finished Connected Workspace.", chg: "A clearer hierarchy, one sample-data label, takeaway-first AI, a polished investment flow.", learn: "My final choice." }
+  { v: "v25", p: "c", title: "Connected Workspace (final)", dir: "The finished Connected Workspace.", chg: "A clearer hierarchy, one sample-data label, takeaway-first AI and a polished investment flow, then stock fundamentals and a visual refresh.", learn: "My final choice." }
 ];
 const FINAL = "v25";
 const PH = { a: "Exploration", b: "Practical", c: "Refinement" };
