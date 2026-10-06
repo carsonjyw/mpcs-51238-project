@@ -85,7 +85,7 @@
     <h1>AI Personal Financial Assistant: 25 landing-page versions</h1>
     <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
     <div class="meta">
-      <span>Versions: <b id="count">5</b> / 25</span>
+      <span>Versions: <b id="count">6</b> / 25</span>
       <span>Stage: <b>Exploration</b></span>
       <span>Final selection: <b>not chosen yet</b></span>
     </div>
@@ -174,6 +174,18 @@
           <p><b>Your report:</b> amounts in the v05 calendar were overlapping. You asked for each day's number and gain or loss to fit inside its own cell on narrow screens too, keeping the newspaper style.</p>
           <p><b>What changed:</b> the overlap was worst in the demo's narrow “Back issues” calendar. Both v05 calendars now size themselves to their own width. Wide calendars are unchanged; medium ones drop the “$” and use slightly smaller type; narrow ones tighten padding and hide the “Closed” label (the dashed border and legend still mark closed days). Each cell also clips anything that could spill over. Checked with no overflow at 1440, 1024, 768, 375 and 320px wide.</p>
         </li>
+        <li>
+          <div class="when">Stage 6 · Feedback on v05</div>
+          <h4>v05 is creative but too dense; all five original directions now tried</h4>
+          <p><b>Your review:</b> the newspaper idea is creative, but it doesn't feel very practical. Too much information is packed together, which makes it hard to find what matters. v05 stays in the gallery.</p>
+          <p><b>Next step:</b> with all five original directions tried, you asked for five more approaches that differ from v01–v05 in how the information is organized and how the product is introduced, not just in visual style. You'll choose one for v06.</p>
+        </li>
+        <li>
+          <div class="when">Stage 6 · Decision → v06</div>
+          <h4>Approach 1, “Priority Inbox,” chosen</h4>
+          <p><b>Five new approaches proposed</b>, each organizing the page differently: Priority Inbox (by importance), Zoom In (by level of detail), The Timeline (by time), Money Map (by how money moves) and One Card at a Time (by sequence). You chose the Priority Inbox for v06.</p>
+          <p><b>How v06 responds:</b> a short page built around one inbox. A one-line AI summary names what's worth a look. Items sit in three groups (Worth a look, Good to know, and All clear, collapsed by default), and each is a single line until opened, when it shows the AI explanation and its evidence: spending vs. your average, the checking ledger, tech exposure, the gains calendar or each position's move. The v01-style account picker sits beside the inbox as a filter, and unticking an account removes its items. Items can be marked as read. Below the inbox, two short sections explain how items are sorted and what the product reads. View Demo opens a list-and-detail inbox with a scripted “ask” box.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -219,7 +231,14 @@ const VERSIONS = [
     title: "The Morning Briefing",
     stage: "explore",
     date: "2026-10-05",
-    note: "<b>Direction 1, chosen by you.</b> The page reads like a personal financial newspaper: a masthead, a lead headline about your money, short stories explaining account changes, “The briefing in 30 seconds” AI summary, and letters to the editor answered by the AI. Bank / Brokerage / Both is the edition picker; the v01-style account picker becomes “Sources for this edition”; the gains calendar runs in the Markets section, where each day has its own story. Light/dark kept; all mock."
+    note: "<b>Direction 1, chosen by you.</b> The page reads like a personal financial newspaper: a masthead, a lead headline about your money, short stories explaining account changes, “The briefing in 30 seconds” AI summary, and letters to the editor answered by the AI. Bank / Brokerage / Both is the edition picker; the v01-style account picker becomes “Sources for this edition”; the gains calendar runs in the Markets section, where each day has its own story. Light/dark kept; all mock. <b>Your review:</b> creative, but not very practical. Too much information is packed together, which makes it hard to find what matters."
+  },
+  {
+    v: "v06",
+    title: "Priority Inbox",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>New approach 1, chosen by you after v05.</b> The page is organized by importance instead of by feature. A short inbox sorts what changed into <b>Worth a look</b>, <b>Good to know</b> and <b>All clear</b> (collapsed). Each item opens to the AI's explanation and its evidence; the <b>gains calendar</b> is the evidence for the September item. The v01-style account picker filters the inbox. Light/dark kept; all mock."
   }
 ];
 
