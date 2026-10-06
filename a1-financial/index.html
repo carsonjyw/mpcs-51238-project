@@ -85,7 +85,7 @@
     <h1>AI Personal Financial Assistant: 25 landing-page versions</h1>
     <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
     <div class="meta">
-      <span>Versions: <b id="count">1</b> / 25</span>
+      <span>Versions: <b id="count">2</b> / 25</span>
       <span>Stage: <b>Exploration</b></span>
       <span>Final selection: <b>not chosen yet</b></span>
     </div>
@@ -105,10 +105,10 @@
   <section id="directions">
     <div class="wrap">
       <h2>Stage 1: directions proposed</h2>
-      <p class="sub">Before building anything, five substantially different directions were proposed. Each one differs in audience, layout and how it communicates, not only in visual style. You picked one to start with.</p>
+      <p class="sub">Before building anything, five substantially different directions were proposed. Each one differs in audience, layout and how it communicates, not only in visual style. You picked which ones to try; the highlighted cards link to the versions that use them.</p>
       <div class="dirs">
         <div class="dir"><div class="n">01</div><b>The Morning Briefing</b><p>Editorial, newspaper-style. AI-written headlines about your money.</p></div>
-        <div class="dir"><div class="n">02</div><b>Pick Your Path</b><p>Interactive Bank / Brokerage / Both toggle reshapes the page.</p></div>
+        <div class="dir picked"><div class="n">02 <span class="pick">· tried in v02</span></div><b>Pick Your Path</b><p>Interactive Bank / Brokerage / Both toggle reshapes the page.</p></div>
         <div class="dir"><div class="n">03</div><b>Ask Anything</b><p>Chat-first hero; capabilities shown as conversations.</p></div>
         <div class="dir"><div class="n">04</div><b>One Screen, Not Six Tabs</b><p>Problem/solution contrast: scattered apps merge into one view.</p></div>
         <div class="dir picked"><div class="n">05 <span class="pick">· chosen for v01</span></div><b>The Terminal</b><p>Dark, data-dense live preview with AI analyst notes, for active investors.</p></div>
@@ -133,6 +133,12 @@
           <p><b>Your requests for v01:</b> keep the dark layout and the detailed information, but make sure it's easy to read; include bank accounts alongside brokerage accounts, because users should be able to choose either or both; use mock data and follow AGENTS.md.</p>
           <p><b>How v01 responds:</b> a larger base text size and high-contrast text on the dark background. Gains and losses use ▲/▼ symbols as well as color, and monospace is used only for numbers. A Bank / Brokerage / Both selector changes which terminal panels appear. Bank panels (accounts, cash flow, spending) sit next to brokerage panels (positions, daily P&amp;L, allocation), and the AI notes cover both.</p>
         </li>
+        <li>
+          <div class="when">Stage 2 · Feedback on v01 → v02</div>
+          <h4>Two features added; direction 2, “Pick Your Path,” tried for comparison</h4>
+          <p><b>Your feedback after v01:</b> add a switch between light and dark mode, and a calendar of daily investment gains and losses where each day shows the amount and uses color so gains and losses are easy to spot, with mock data. You asked to try direction 2 for v02 <i>to see how it compares with “The Terminal,”</i> to fit both features into that direction, and to keep v01 unchanged for comparison.</p>
+          <p><b>How v02 responds:</b> the hero is a three-card chooser (Bank / Brokerage / Both). The headline, the preview app, the “what you get” list, the AI questions and the comparison table all change with the choice. A Light / Dark switch sits in the header and the demo. The gains &amp; losses calendar appears on the Brokerage and Both paths. Each trading day shows its amount, green or red with darker shades for bigger moves, ▲/▼ and signs for color-blind readability, and gray for closed days. Tapping a day shows the top movers and an AI summary. v01 was not modified.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -151,6 +157,13 @@ const VERSIONS = [
     stage: "explore",
     date: "2026-10-05",
     note: "<b>Direction 5, chosen by you.</b> A dark, Bloomberg-style terminal where the landing page itself is a live preview: ticker, accounts, positions, daily P&amp;L, cash flow, spending and AI analyst notes. Per your feedback: kept dense but readable, and added bank accounts next to Schwab/IBKR with a Bank / Brokerage / Both selector. “View Demo” opens a full demo terminal with account filters and scripted AI Q&amp;A."
+  },
+  {
+    v: "v02",
+    title: "Pick Your Path",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>Direction 2, chosen by you to compare with v01.</b> A light, friendly page built around a Bank / Brokerage / Both chooser that reshapes everything below it. Adds your two requests from v01 feedback: a <b>light/dark switch</b> and a <b>daily gains &amp; losses calendar</b> (green/red by amount, tap a day for the AI's explanation). “View Demo” opens on the chosen path."
   }
 ];
 

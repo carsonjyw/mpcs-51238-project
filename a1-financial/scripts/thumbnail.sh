@@ -4,5 +4,5 @@
 set -e
 V="$1"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars \
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars --virtual-time-budget=3000 \
   --window-size=1440,900 --screenshot="$ROOT/thumbs/$V.png" "file://$ROOT/$V/index.html"
