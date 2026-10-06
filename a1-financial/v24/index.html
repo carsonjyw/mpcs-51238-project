@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v24 · Dates, Spending &amp; Mobile — Ledgerline</title>
+<meta name="description" content="v24 — builds on v23: precise start and end dates shared by the chart, breakdown and assistant; a spending explorer over the same mock ledger; a Manage accounts panel and clear way back to the overview on smaller screens; consistent transfer explanations. All data is mock.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface-2: #f2f4f8;
+    --hover: #edf0f6;
+    --ink: #121826;
+    --muted: #525c6e;
+    --faint: #8790a0;
+    --line: #e0e4eb;
+    --line-2: #cbd1db;
+    --accent: #5b3fd6;
+    --accent-soft: #eeeafd;
+    --wif: #b45c00; --wif-soft: #fff1df;
+    --bank: #13709e; --bank-soft: #e0eff7;
+    --brok: #6b45c2; --brok-soft: #efe9fa;
+    --gain: #13804a; --loss: #c53a2f;
+    --gain-rgb: 19, 128, 74; --loss-rgb: 197, 58, 47;
+    --mock-ink: #83520b; --mock-bg: #fff0c8;
+    --shadow: 0 1px 2px rgba(20,30,50,.05), 0 10px 30px rgba(20,30,50,.07);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1017;
+    --surface: #151a23;
+    --surface-2: #1b212c;
+    --hover: #202736;
+    --ink: #e9edf4;
+    --muted: #a6afbd;
+    --faint: #717b8c;
+    --line: #252c38;
+    --line-2: #333c4b;
+    --accent: #a995ff;
+    --accent-soft: #241d44;
+    --wif: #ffb25e; --wif-soft: #3a2810;
+    --bank: #5fb7e3; --bank-soft: #13293a;
+    --brok: #b597ff; --brok-soft: #2a2145;
+    --gain: #45cc88; --loss: #ff7e72;
+    --gain-rgb: 69, 204, 136; --loss-rgb: 255, 126, 114;
+    --mock-ink: #ffd88a; --mock-bg: #3a2c0d;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--mock-ink); background: var(--mock-bg); padding: 2px 6px; border-radius: 4px; vertical-align: 2px; white-space: nowrap; }
+  .tag { font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .tag.bank { background: var(--bank-soft); color: var(--bank); }
+  .tag.brok { background: var(--brok-soft); color: var(--brok); }
+
+  .mockbar { background: var(--mock-bg); color: var(--mock-ink); font-size: 13.5px; text-align: center; padding: 7px 16px; }
+  header.top { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; height: 58px; }
+  .back { font-size: 14px; text-decoration: none; color: var(--muted); padding: 5px 12px; border: 1px solid var(--line-2); border-radius: 999px; white-space: nowrap; background: var(--surface); }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 750; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .brand .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 800; }
+  .brand small { font-size: 11px; color: var(--faint); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 7px; font-weight: 600; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 3px; cursor: pointer; font-size: 13px; }
+  .theme-btn > span { padding: 3px 10px; border-radius: 999px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--ink); color: var(--bg); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; padding: 10px 18px; font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; text-decoration: none; white-space: nowrap; background: var(--accent); color: #fff; }
+  [data-theme="dark"] .btn { color: #0d1017; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+  .btn.sm { padding: 6px 13px; font-size: 14px; }
+
+  /* ---------- hero ---------- */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: end; padding: 26px 0 18px; }
+  .hero .k { font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .hero h1 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.08; letter-spacing: -.03em; margin: 6px 0 10px; }
+  .hero p { margin: 0; font-size: 17px; color: var(--muted); max-width: 60ch; }
+  .connect { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .connect .q { font-weight: 750; font-size: 15px; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .conn-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .copt { text-align: left; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 9px 11px; cursor: pointer; min-width: 0; }
+  .copt b { display: block; font-size: 14.5px; }
+  .copt span { font-size: 12.5px; color: var(--muted); display: block; line-height: 1.35; }
+  .copt[aria-pressed="true"] { border-color: var(--c); background: var(--surface); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); }
+  .copt.bank { --c: var(--bank); } .copt.brok { --c: var(--brok); } .copt.both { --c: var(--accent); }
+  .connect .cta { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+  /* ---------- workspace: list | detail | assistant ---------- */
+  .ws { display: grid; grid-template-columns: 216px minmax(0, 1fr) 340px; gap: 14px; align-items: start; margin-bottom: 30px; transition: grid-template-columns .2s; }
+  .ws.ai-min { grid-template-columns: 216px minmax(0, 1fr) 54px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); min-width: 0; }
+
+  /* account list */
+  .list { padding: 10px 8px; position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow-y: auto; }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface-2); border-radius: 10px; padding: 3px; margin: 0 4px 8px; }
+  .seg button { border: 0; background: none; border-radius: 8px; padding: 5px 4px; font-size: 12.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .grp { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 12px 8px 4px; }
+  .grp .sum { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 650; font-variant-numeric: tabular-nums; }
+  .row { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; border-radius: 11px; border: 1px solid transparent; }
+  .row:hover { background: var(--hover); }
+  .row.on { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .row .chk { display: grid; place-items: center; height: 100%; padding-left: 4px; cursor: pointer; }
+  .row .chk input { width: 15px; height: 15px; accent-color: var(--accent); margin: 0; cursor: pointer; }
+  .pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; text-align: left; background: none; border: 0; padding: 7px 8px 7px 4px; cursor: pointer; min-width: 0; border-radius: 0 11px 11px 0; }
+  .pick .nm { font-weight: 650; font-size: 14px; line-height: 1.3; min-width: 0; }
+  .pick .sub { font-size: 12px; color: var(--faint); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick .bal { font-weight: 700; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pick .chg { font-size: 12px; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .row.out .pick .nm, .row.out .pick .bal { color: var(--faint); }
+  .row.ov .pick .nm { font-size: 15px; }
+  .hrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; width: calc(100% - 22px); margin-left: 22px; text-align: left; border: 0; background: none; padding: 4px 8px 4px 10px; border-left: 2px solid var(--line); cursor: pointer; font-size: 13px; border-radius: 0 8px 8px 0; }
+  .hrow:hover { background: var(--hover); }
+  .hrow.on { background: var(--accent-soft); border-left-color: var(--accent); }
+  .hrow b { font-weight: 700; }
+  .hrow .v { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .notconn { margin: 4px 8px; font-size: 12.5px; color: var(--faint); border: 1px dashed var(--line-2); border-radius: 10px; padding: 7px 9px; }
+  .notconn button { border: 0; background: none; color: var(--accent); font-weight: 700; cursor: pointer; padding: 0; font-size: 12.5px; }
+  .list-note { font-size: 11.5px; color: var(--faint); margin: 10px 8px 2px; }
+  .chips { display: none; }
+
+  /* detail */
+  .detail { padding: 18px 20px 22px; display: grid; gap: 16px; }
+  .crumbs { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .crumbs button { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-weight: 650; font-size: 13px; }
+  .d-head { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+  .d-head h2 { margin: 2px 0 0; font-size: 26px; letter-spacing: -.02em; line-height: 1.15; }
+  .d-head h2 small { font-size: 15px; color: var(--muted); font-weight: 600; letter-spacing: 0; }
+  .d-head .fig { margin-left: auto; text-align: right; }
+  .d-head .fig .v { font-size: 34px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .d-head .fig .l { font-size: 13.5px; color: var(--muted); }
+  .after { display: block; font-size: 13px; font-weight: 750; color: var(--wif); font-variant-numeric: tabular-nums; }
+  .after::before { content: "what-if → "; font-weight: 600; }
+  .sec h3 { margin: 0 0 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sec h3 .r { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 600; font-size: 13px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+  [data-x] { cursor: pointer; }
+  .xon { box-shadow: 0 0 0 2px var(--accent) !important; }
+
+  /* since you last checked (from v08) */
+  .since { background: linear-gradient(135deg, var(--accent-soft), var(--surface) 75%); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+  .since .top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .since .k { font-size: 12px; font-weight: 800; letter-spacing: .07em; color: var(--accent); text-transform: uppercase; }
+  .since .big { font-size: 34px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .since .split { font-size: 14px; color: var(--muted); }
+  .since ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+  .since li button { width: 100%; text-align: left; display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 8px 11px; cursor: pointer; font-size: 14.5px; }
+  .since li button:hover { border-color: var(--accent); }
+  .since li .a { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .since li .go { font-size: 12.5px; color: var(--accent); font-weight: 700; white-space: nowrap; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .tile { text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .tile:hover { border-color: var(--accent); }
+  .tile > span { display: block; }
+  .tile .l { font-size: 12.5px; color: var(--muted); font-weight: 650; }
+  .tile .v { font-size: clamp(17px, 1.5vw, 21px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tile .s { font-size: 12px; color: var(--muted); }
+
+  /* holdings list */
+  table.hold { width: 100%; border-collapse: separate; border-spacing: 0 2px; font-size: 14px; font-variant-numeric: tabular-nums; }
+  table.hold th { text-align: right; font-size: 11.5px; color: var(--faint); font-weight: 700; padding: 0 8px 4px; white-space: nowrap; }
+  table.hold td { text-align: right; padding: 7px 8px; white-space: nowrap; background: var(--surface); }
+  table.hold th:first-child, table.hold td:first-child { text-align: left; }
+  table.hold tr.go { cursor: pointer; }
+  table.hold tr.go:hover td { background: var(--accent-soft); }
+  table.hold tr.go td:first-child { border-radius: 9px 0 0 9px; }
+  table.hold tr.go td:last-child { border-radius: 0 9px 9px 0; color: var(--accent); }
+  table.hold td small { display: block; color: var(--faint); font-size: 11.5px; }
+
+  /* calendar */
+  .cal-host { container: cal / inline-size; }
+  .cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .cal-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .cal-nav button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; }
+  .cal-nav button:disabled { opacity: .3; cursor: default; }
+  .cal-nav .m { padding: 0 4px; white-space: nowrap; font-weight: 700; font-size: 14px; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .dow { font-size: 11px; font-weight: 700; color: var(--faint); text-align: center; }
+  .day { min-width: 0; overflow: hidden; min-height: 44px; border-radius: 8px; padding: 4px 6px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1px solid transparent; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+  button.day { cursor: pointer; }
+  button.day:hover { border-color: var(--ink); }
+  .day .dn, .day .amt { display: block; max-width: 100%; overflow: hidden; }
+  .day .dn { font-size: 11px; color: var(--muted); font-weight: 650; }
+  .day .amt { font-size: 12px; font-weight: 800; white-space: nowrap; letter-spacing: -.01em; }
+  .day.up .amt { color: var(--gain); } .day.down .amt { color: var(--loss); }
+  .day.up.l1 { background: rgba(var(--gain-rgb), .10); } .day.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .day.up.l3 { background: rgba(var(--gain-rgb), .36); } .day.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .day.down.l1 { background: rgba(var(--loss-rgb), .10); } .day.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .day.down.l3 { background: rgba(var(--loss-rgb), .36); } .day.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .day.l3 .amt, .day.l4 .amt { color: var(--ink); }
+  .day.off { background: transparent; border: 1px dashed var(--line-2); }
+  .day.off .amt { font-size: 10.5px; font-weight: 500; color: var(--faint); }
+  .day.blank { background: transparent; }
+  .day.future { background: transparent; border: 1px dotted var(--line-2); }
+  .day.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  @container cal (max-width: 520px) { .day { min-height: 40px; padding: 4px; } .day .amt { font-size: 11px; } .day .amt .cur { display: none; } }
+  @container cal (max-width: 360px) { .cal { gap: 2px; } .dow .rest { display: none; } .day { min-height: 36px; padding: 3px 2px 3px 3px; } .day .dn { font-size: 10px; } .day .amt { font-size: 10px; letter-spacing: -.03em; } .day.off .amt { display: none; } }
+  .cal-legend { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .cal-legend .sw { width: 15px; height: 10px; border-radius: 2px; }
+  .cal-legend .gap { width: 8px; }
+
+  /* stock view */
+  .ranges { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; }
+  .ranges button { border: 0; background: none; border-radius: 8px; padding: 5px 12px; font-weight: 750; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+  .ranges button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; touch-action: none; }
+  .chart .ax { fill: var(--faint); font-size: 11px; }
+  .chart .gl { stroke: var(--line); }
+  .chart .read { font-size: 13px; color: var(--muted); margin-bottom: 4px; min-height: 20px; }
+  .chart .read b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .vs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  .vsb { border-radius: 14px; padding: 12px 14px; border: 1px solid var(--line); min-width: 0; }
+  .vsb.px { background: var(--surface-2); }
+  .vsb.me { background: var(--brok-soft); border-color: color-mix(in srgb, var(--brok) 30%, transparent); }
+  .vsb .k { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .vsb.me .k { color: var(--brok); }
+  .vsb .who { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+  .vsb .v { font-size: 26px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .vsb .s { font-size: 13.5px; color: var(--muted); }
+  .vsb .s b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .vsb hr { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 18px; }
+  .facts .r { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+  .facts .r span { color: var(--muted); }
+  .facts .r b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* bank views */
+  .rows .r { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; align-items: baseline; }
+  .rows .r:last-child { border-bottom: 0; }
+  .rows .r small { color: var(--faint); display: block; font-size: 12px; }
+  .rows .r .a { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 650; }
+  .cf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .cf > div { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; border: 1px solid transparent; }
+  .cf > div:hover { border-color: var(--accent); }
+  .cf .l { font-size: 12.5px; color: var(--muted); font-weight: 650; }
+  .cf .v { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .cf .s { font-size: 12.5px; color: var(--muted); }
+  .cat { display: grid; grid-template-columns: 86px minmax(0, 1fr) 62px; gap: 10px; align-items: center; padding: 5px 6px; font-size: 14px; border-radius: 8px; }
+  .cat:hover { background: var(--hover); }
+  .cat .bar { height: 9px; border-radius: 5px; background: var(--surface-2); position: relative; overflow: hidden; }
+  .cat .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bank); border-radius: 5px; }
+  .cat .bar u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); opacity: .45; }
+  .cat.hot .bar i { background: var(--loss); }
+  .cat b { text-align: right; font-variant-numeric: tabular-nums; }
+  .cats-key { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  /* assistant panel */
+  .assist { position: sticky; top: 72px; max-height: calc(100vh - 90px); display: flex; flex-direction: column; overflow: hidden; }
+  .as-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 0; }
+  .as-head .t { font-weight: 800; font-size: 15px; display: flex; gap: 6px; align-items: center; }
+  .as-tog { display: none; margin-left: auto; background: none; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 13px; }
+  .tabs { display: flex; gap: 4px; padding: 8px 14px 0; border-bottom: 1px solid var(--line); }
+  .tab { border: 0; background: none; padding: 8px 10px; font-weight: 700; font-size: 14.5px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }
+  .tab .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--wif); margin-left: 5px; vertical-align: 2px; }
+  .as-body { padding: 14px; overflow-y: auto; flex: 1; }
+  .x-what { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--accent); margin-bottom: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .x-title { font-size: 18px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 6px; line-height: 1.25; }
+  .x-text { font-size: 15px; margin: 0 0 10px; }
+  .x-nums { background: var(--surface-2); border-radius: 12px; padding: 4px 12px; margin-bottom: 12px; }
+  .x-nums .r { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .x-nums .r:last-child { border-bottom: 0; }
+  .x-nums .r b { font-variant-numeric: tabular-nums; text-align: right; }
+  .x-back { border: 0; background: none; color: var(--accent); font-weight: 650; cursor: pointer; padding: 0; font-size: 13px; margin-bottom: 8px; }
+  .x-next { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chipq { font-size: 13px; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 4px 10px; cursor: pointer; font-weight: 600; text-align: left; }
+  .chipq:hover { border-color: var(--accent); color: var(--accent); }
+  .chipq[aria-expanded="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chipq.w { border-color: color-mix(in srgb, var(--wif) 50%, transparent); color: var(--wif); }
+  .ans { margin-top: 10px; font-size: 14.5px; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; }
+  .fine { font-size: 12.5px; color: var(--faint); margin-top: 12px; }
+  .lev { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+  .lev.on { border-color: var(--wif); background: var(--wif-soft); }
+  .lev label { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; cursor: pointer; }
+  .lev .nm { font-weight: 700; font-size: 14px; }
+  .lev .ds { font-size: 12.5px; color: var(--muted); }
+  .lev input[type="checkbox"] { width: 19px; height: 19px; accent-color: var(--wif); }
+  .lev input[type="range"] { width: 100%; accent-color: var(--wif); margin: 6px 0 0; }
+  .lev .val { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--wif); }
+  .lev.dis { opacity: .5; }
+  .lev.ctx { border-style: dashed; }
+  .res { background: var(--wif-soft); border-radius: 12px; padding: 12px; margin-top: 10px; font-size: 14px; }
+  .res .h { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--wif); margin-bottom: 4px; }
+  .res .r { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; font-variant-numeric: tabular-nums; }
+  .res .r b { white-space: nowrap; }
+  .res p { margin: 8px 0 0; }
+  .ask { display: flex; gap: 6px; border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 4px 4px 12px; margin: 12px 14px 0; align-items: center; }
+  .ask input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14.5px; padding: 4px; outline: none; }
+
+  /* below */
+  .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 30px; }
+  .three > div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+  .three b { display: block; font-size: 16.5px; margin-bottom: 4px; }
+  .three p { margin: 0; color: var(--muted); font-size: 15px; }
+  .final { text-align: center; padding: 10px 20px 50px; }
+  .final h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .final p { color: var(--muted); margin: 0 0 18px; }
+  footer { border-top: 1px solid var(--line); padding: 18px 0 34px; font-size: 13px; color: var(--faint); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  /* demo */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+  .demo-body { flex: 1; overflow-y: auto; padding: 14px 0 30px; }
+  .demo .list, .demo .assist { top: 0; max-height: calc(100vh - 100px); }
+
+  /* ---------- v21: shared context ---------- */
+  @keyframes ctxIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes flash { from { background: color-mix(in srgb, var(--cc) 22%, transparent); } to { background: var(--surface-2); } }
+  .enter { animation: ctxIn .22s ease-out; }
+  .ctxbar.flash { animation: flash .6s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .enter, .ctxbar.flash { animation: none; } }
+  .detail, .assist { border-top: 3px solid var(--cc, var(--accent)); }
+  .list .row.on, .list .hrow.on { background: color-mix(in srgb, var(--cc) 12%, var(--surface)); border-color: color-mix(in srgb, var(--cc) 40%, transparent); box-shadow: inset -4px 0 0 var(--cc); }
+  .list .hrow.on { border-left-color: var(--cc); }
+  .list .row.parent { background: var(--hover); }
+  .peek { outline: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -2px; }
+  tr.peek td { background: var(--accent-soft); }
+  .crumbs .bk { border: 1px solid var(--line-2); border-radius: 999px; padding: 1px 9px; background: var(--surface); color: var(--ink); }
+  .crumbs .sep { color: var(--line-2); }
+  .ctxbar { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 10px 14px 0; padding: 8px 11px; border-radius: 11px; background: var(--surface-2); font-size: 14px; border-left: 4px solid var(--cc); }
+  .ctxbar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cc); align-self: center; }
+  .ctxbar .lk { color: var(--muted); font-size: 12.5px; }
+  .ctxbar .sep { color: var(--faint); }
+  .ctxbar small { flex-basis: 100%; color: var(--muted); font-size: 12.5px; padding-left: 14px; }
+  .as-ctx { display: none; font-size: 13px; font-weight: 700; color: var(--cc); }
+  .sub-h { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin: 14px 0 6px; }
+  .wi { border: 1px solid var(--line); border-radius: 12px; margin-top: 14px; overflow: hidden; }
+  .wi.open { border-color: color-mix(in srgb, var(--wif) 45%, transparent); }
+  .wi-h { width: 100%; display: flex; justify-content: space-between; gap: 8px; align-items: center; border: 0; background: var(--wif-soft); padding: 9px 12px; cursor: pointer; font-weight: 700; font-size: 14px; color: var(--ink); text-align: left; }
+  .wi-h b { color: var(--wif); }
+  .wi-b { padding: 10px 10px 4px; }
+  .wi-b > p.ds { font-size: 13px; color: var(--muted); }
+  .actv { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .actv .sub-h { flex-basis: 100%; margin: 0; }
+  .actv .ds { text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .ach { display: inline-flex; border: 1px solid color-mix(in srgb, var(--wif) 50%, transparent); border-radius: 999px; overflow: hidden; font-size: 12.5px; }
+  .ach.here { background: var(--wif-soft); }
+  .ach button { border: 0; background: none; padding: 3px 8px; cursor: pointer; color: var(--wif); font-weight: 700; }
+  .ach button + button { border-left: 1px solid color-mix(in srgb, var(--wif) 35%, transparent); padding: 3px 7px; }
+  .lnk { border: 0; background: none; color: var(--accent); font-weight: 700; cursor: pointer; padding: 0; font-size: 13px; }
+  .ov-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .ovc { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+  .ovc h3 { margin: -4px -6px 6px; padding: 4px 6px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .ovc h3[data-x]:hover { background: var(--hover); }
+  .ovc h3 .r { margin-left: auto; font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; text-align: right; }
+  .ovc h3 .r .after { font-size: 12px; }
+  .ovc h3 .r.dt { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .ovr { width: 100%; display: flex; justify-content: space-between; gap: 10px; align-items: center; border: 0; background: none; border-radius: 9px; padding: 6px 6px; cursor: pointer; text-align: left; font-size: 14px; }
+  .ovr:hover { background: var(--hover); }
+  .ovr small { display: block; color: var(--faint); font-size: 12px; }
+  .ovr .a { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ovn { font-size: 13px; color: var(--muted); margin: 8px 0 4px; line-height: 1.5; }
+  .ovn small { color: var(--faint); }
+  .fl { display: grid; grid-template-columns: 34px minmax(0, 1fr) 70px; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin: 4px 0; }
+  .fl .track { height: 12px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+  .fl .track i { display: block; height: 100%; border-radius: 6px; opacity: .8; }
+  .fl b { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .d-head .fig .v[data-x] { border-radius: 8px; }
+  .d-head .fig .v[data-x]:hover { background: var(--hover); }
+
+  /* ---------- v22: dates, empty states, scripted answers ---------- */
+  .hero p.asof { margin-top: 10px; font-size: 14px; color: var(--muted); }
+  .hero p.asof b { color: var(--ink); }
+  .list-note b { color: var(--muted); }
+  .empty { border: 1px dashed var(--line-2); border-radius: 14px; padding: 16px; background: var(--surface-2); }
+  .empty b { font-size: 16px; }
+  .empty p { margin: 4px 0 10px; color: var(--muted); font-size: 14.5px; }
+  .ask-ans { border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 14px; border: 1px solid var(--line); }
+  .ask-ans .h { font-size: 11px; font-weight: 800; letter-spacing: .06em; margin-bottom: 4px; display: flex; gap: 6px; align-items: center; }
+  .ask-ans p { margin: 0 0 8px; }
+  .ask-ans .x-next { margin-bottom: 8px; }
+  .ask-ans.applied { background: var(--wif-soft); border-color: color-mix(in srgb, var(--wif) 45%, transparent); }
+  .ask-ans.applied .h { color: var(--wif); }
+  .ask-ans.clarify, .ask-ans.info { background: var(--accent-soft); }
+  .ask-ans.clarify .h, .ask-ans.info .h { color: var(--accent); }
+  .ask-ans.unsupported, .ask-ans.blocked { background: var(--surface-2); }
+  .ask-ans.unsupported .h, .ask-ans.blocked .h { color: var(--muted); }
+  .ach.paused { opacity: .55; border-style: dashed; }
+  .ach.paused button:first-child::after { content: " · paused"; font-weight: 500; }
+
+  /* ---------- v23: compact list, net worth, breakdown, collapsible assistant ---------- */
+  .list .pick { grid-template-columns: minmax(0, 1fr) auto; padding: 6px 7px 6px 3px; }
+  .list .pick .nm { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .pick .bal { font-size: 13.5px; }
+  .list .pick .chg { grid-column: 1 / -1; text-align: left; font-size: 11.5px; }
+  .list .row.ov .pick .chg { font-size: 11.5px; }
+  .list .grp { margin: 10px 6px 3px; }
+  .list .grp .dt { margin-left: auto; letter-spacing: 0; text-transform: none; font-weight: 600; color: var(--faint); }
+  .list .seg button { font-size: 12px; padding: 4px 2px; }
+  .exp { display: block; margin: 0 0 2px 24px; border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 650; cursor: pointer; padding: 1px 4px; border-radius: 6px; }
+  .exp:hover { color: var(--accent); }
+  .nw-head { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+  .nw-head .k { font-size: 12.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .nw-head .big { font-size: clamp(36px, 4vw, 48px); font-weight: 800; letter-spacing: -.035em; line-height: 1.05; font-variant-numeric: tabular-nums; border-radius: 8px; display: inline-block; }
+  .nw-head .big:hover { background: var(--hover); }
+  .nw-head .sub { font-size: 15px; color: var(--muted); margin-top: 2px; }
+  .nw-head .sub .pill { font-size: 11px; font-weight: 750; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 7px; }
+  .nw-head .dates { font-size: 12.5px; color: var(--faint); }
+  .nw-head .ranges { margin-left: auto; }
+  .nwkey { border-radius: 10px; }
+  .nwkey:focus-visible { outline-offset: 4px; }
+  .nwc svg { cursor: crosshair; }
+  .wf { display: grid; gap: 2px; }
+  .wr { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 10px; border: 0; background: none; text-align: left; font-size: 14.5px; }
+  button.wr { cursor: pointer; } button.wr:hover { background: var(--hover); }
+  .wr small { display: block; font-size: 12px; color: var(--faint); }
+  .wr b { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; min-width: 92px; }
+  .wr b small { display: inline; font-size: 12.5px; }
+  .wr.edge { background: var(--surface-2); font-weight: 650; }
+  .wb { position: relative; height: 12px; }
+  .wb::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; border-left: 1px solid var(--line-2); }
+  .wb i { position: absolute; top: 0; height: 12px; border-radius: 3px; opacity: .8; }
+  .wnote { display: block; width: 100%; text-align: left; margin-top: 8px; border: 1px dashed var(--line-2); border-radius: 10px; background: none; padding: 8px 11px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+  .wnote:hover { border-color: var(--accent); }
+  .wnote b { color: var(--ink); }
+  .alloc { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 6px 10px; align-items: center; font-size: 12.5px; color: var(--muted); font-weight: 650; margin-bottom: 8px; }
+  .al-bar { display: flex; height: 16px; border-radius: 6px; overflow: hidden; background: var(--surface-2); }
+  .al-bar i { display: block; height: 100%; border-right: 2px solid var(--surface); }
+  .al-bar.debt { height: 10px; }
+  .arows { display: grid; gap: 2px; }
+  .ar { display: grid; grid-template-columns: 12px minmax(0, 1fr) 44px auto; gap: 10px; align-items: center; padding: 7px 8px; border: 0; background: none; border-radius: 9px; text-align: left; font-size: 14.5px; }
+  button.ar { cursor: pointer; } button.ar:hover { background: var(--hover); }
+  .ar .sw { width: 12px; height: 12px; border-radius: 3px; }
+  .ar small { display: block; font-size: 12px; color: var(--faint); }
+  .ar .pc { font-size: 12.5px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .ar b { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+  .ar.tot { border-top: 1px solid var(--line-2); border-radius: 0; font-weight: 750; }
+  .eq { margin: 8px 0 0; font-size: 14px; color: var(--muted); background: var(--surface-2); border-radius: 10px; padding: 8px 11px; }
+  .eq b { color: var(--ink); }
+  .as-min { margin-left: auto; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; cursor: pointer; color: var(--muted); white-space: nowrap; }
+  .as-min:hover { color: var(--ink); }
+  .assist.rail { padding: 0; }
+  .rail-b { width: 100%; min-height: 320px; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0; color: var(--ink); }
+  .rail-b .ri { font-size: 18px; color: var(--cc); }
+  .rail-b .rt { writing-mode: vertical-rl; font-size: 13px; font-weight: 700; color: var(--muted); max-height: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rail-b .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wif); }
+  .rail-b .ro { margin-top: auto; color: var(--muted); }
+  .rail-b:hover .rt { color: var(--ink); }
+
+  /* ---------- v24: dates, explorer, manage accounts ---------- */
+  .dates-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .dates-row label, .fx label { display: grid; gap: 3px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .dates-row input, .fx input, .fx select { font: inherit; font-size: 15px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; padding: 7px 9px; min-height: 40px; min-width: 0; }
+  [data-theme="dark"] input[type="date"] { color-scheme: dark; }
+  .dates-row input[aria-invalid="true"] { border-color: var(--loss); }
+  .dr-note { font-size: 12.5px; color: var(--faint); padding-bottom: 10px; }
+  .dr-err { flex-basis: 100%; margin: 0; font-size: 13.5px; color: var(--loss); background: color-mix(in srgb, var(--loss) 8%, transparent); border-radius: 9px; padding: 7px 10px; }
+  .pstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .pstats > div { background: var(--surface-2); border-radius: 12px; padding: 9px 12px; }
+  .pstats span { display: block; font-size: 12.5px; color: var(--muted); font-weight: 650; }
+  .pstats b { display: block; font-size: 21px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .pstats small { font-size: 12px; color: var(--faint); }
+  .pstats .chg { background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)); }
+  .splitline { margin: -6px 0 0; font-size: 14px; color: var(--muted); }
+  .splitline b { font-variant-numeric: tabular-nums; }
+  .fx { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .fx .q { grid-column: 1 / -1; }
+  .cf .v { white-space: nowrap; font-size: clamp(17px, 1.6vw, 21px); }
+  .fx .amt span { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .fx-sum { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14.5px; margin-bottom: 6px; min-height: 34px; }
+  .fx-sum b { font-variant-numeric: tabular-nums; } .fx-sum small { color: var(--faint); }
+  .fx-sum .btn { margin-left: auto; }
+  .tx-wrap { max-height: 420px; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; }
+  table.tx { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.tx th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font-size: 11.5px; color: var(--faint); font-weight: 700; padding: 7px 10px; }
+  table.tx td { padding: 7px 10px; border-top: 1px solid var(--line); vertical-align: top; }
+  table.tx .r { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 650; }
+  table.tx tr[data-x] { cursor: pointer; } table.tx tr[data-x]:hover td { background: var(--hover); }
+  table.tx tr.xon td { background: var(--accent-soft); box-shadow: none !important; }
+  table.tx tr.xon td:first-child { box-shadow: inset 3px 0 0 var(--accent) !important; }
+  table.tx small.m { display: none; color: var(--faint); font-size: 12px; }
+  .to-ov { justify-self: start; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 6px 13px; font-weight: 700; font-size: 14px; cursor: pointer; color: var(--ink); }
+  .to-ov small { font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .to-ov:hover { border-color: var(--accent); }
+  .mng { border: 1px solid var(--line-2); border-radius: 14px; padding: 12px; background: var(--surface-2); display: grid; gap: 4px; }
+  .mng-h { display: flex; align-items: center; gap: 10px; justify-content: space-between; margin-bottom: 6px; }
+  .mng .seg { margin: 0 0 4px; }
+  .mgrp { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 8px 0 2px; display: flex; gap: 6px; align-items: center; }
+  .mrow { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 9px 10px; font-size: 14.5px; cursor: pointer; min-height: 48px; }
+  .mrow input { width: 20px; height: 20px; accent-color: var(--accent); margin: 0; }
+  .mrow small { display: block; color: var(--faint); font-size: 12px; }
+  .mrow b { font-variant-numeric: tabular-nums; }
+  .chip.mng-b { border-color: var(--accent); color: var(--accent); }
+  .chip.mng-b[aria-expanded="true"] { background: var(--accent); color: #fff; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1240px) {
+    .ws { grid-template-columns: minmax(0, 1fr) 320px; }
+    .ws.ai-min { grid-template-columns: minmax(0, 1fr) 54px; }
+    .list { display: none; }
+    .fx { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .fx .q { grid-column: 1 / -1; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; margin: -4px 0 0; scrollbar-width: thin; }
+    .chip { flex: none; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; font-weight: 650; white-space: nowrap; }
+    .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .chip small { font-weight: 500; opacity: .75; margin-left: 4px; }
+    .chip.kind { border-style: dashed; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 1000px) {
+    .ov-grid { grid-template-columns: minmax(0, 1fr); }
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .two { grid-template-columns: minmax(0, 1fr); }
+  }
+  /* the assistant becomes a bottom drawer */
+  @media (max-width: 860px) {
+    .ws, .ws.ai-min { grid-template-columns: minmax(0, 1fr); padding-bottom: 70px; }
+    .as-min { display: none; }
+    .assist { position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto !important; z-index: 50; max-height: 60px !important; transition: max-height .2s; box-shadow: 0 -6px 30px rgba(0,0,0,.18); }
+    .assist.up { max-height: 70vh !important; }
+    .as-tog { display: inline-block; white-space: nowrap; }
+    .as-head .t { white-space: nowrap; }
+    .as-head .t .mock { display: none; }
+    .as-ctx { display: block; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .as-head { padding-bottom: 6px; }
+    .three { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .hide-sm, .brand small { display: none; }
+    header.top .wrap { gap: 8px; }
+    header.top .btn { padding: 8px 12px; font-size: 14px; }
+    .conn-opts { grid-template-columns: minmax(0, 1fr); }
+    .copt span { display: inline; margin-left: 6px; }
+    .copt b { display: inline; }
+    .detail { padding: 14px 12px 18px; }
+    .d-head .fig { margin-left: 0; text-align: left; width: 100%; }
+    .vs, .facts, .cf { grid-template-columns: minmax(0, 1fr); }
+    .since li button { grid-template-columns: 64px minmax(0, 1fr); }
+    .since li .go { display: none; }
+    table.hold .opt { display: none; }
+    table.hold td, table.hold th { padding-left: 5px; padding-right: 5px; font-size: 13px; }
+    .cat { grid-template-columns: 76px minmax(0, 1fr) 56px; gap: 8px; }
+    .ranges button { padding: 5px 9px; }
+    .nw-head .ranges { margin-left: 0; }
+    .wr { grid-template-columns: minmax(0, 1fr) auto; }
+    .wr .wb { display: none; }
+    .wr.edge > span:nth-child(2) { display: none; }
+    .ar { grid-template-columns: 12px minmax(0, 1fr) auto; }
+    .ar .pc { display: none; }
+    .pstats { grid-template-columns: 1fr 1fr; }
+    .pstats .chg { grid-column: 1 / -1; }
+    .dates-row label { flex: 1 1 130px; }
+    .dr-note { padding-bottom: 0; flex-basis: 100%; }
+    .fx { grid-template-columns: 1fr 1fr; }
+    .fx .q, .fx .amt { grid-column: 1 / -1; }
+    table.tx .opt { display: none; }
+    table.tx small.m { display: block; }
+    .tx-wrap { max-height: 360px; }
+  }
+  @media (max-width: 420px) { header.top .btn { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note"><b>Design prototype · v24.</b> Every account, price, chart, history and AI explanation here is <b>mock data</b>. Price and net-worth histories are simulated. What-ifs are illustrations, not advice. No real bank or brokerage connection is implemented.</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <a class="brand" href="#top"><span class="logo">L</span> Ledgerline <small>v24</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <section class="hero">
+    <div>
+      <div class="k">Bank + brokerage accounts, explained</div>
+      <h1>See all your money in one place, and understand what changed.</h1>
+      <p>Ledgerline brings checking, savings, cards and brokerage accounts like Schwab and IBKR into one view. Its AI explains every change in plain language, so you know where you stand without switching between apps.</p>
+      <p class="asof"><span class="mock">MOCK DATA</span> <span class="nw">Bank balances as of <b>Mon, Oct 5, 2026</b></span> · <span class="nw">stock prices as of <b>Fri, Oct 2 close</b></span></p>
+    </div>
+    <div class="connect" data-connect></div>
+  </section>
+
+  <div class="ws" data-root="land"></div>
+
+  <section class="three" aria-label="How it works">
+    <div><b>Any dates you choose</b><p>Pick a preset, drag across the chart or type exact dates. The chart, the breakdown and the assistant all use the same period.</p></div>
+    <div><b>Why it changed</b><p>Every change is split into income, spending and investment gains. Moving money between your own accounts never counts as a gain.</p></div>
+    <div><b>Every transaction, searchable</b><p>Search and filter bank and card transactions by date, merchant, category, account or amount. Click one to see how it changed your balance.</p></div>
+  </section>
+</main>
+
+<section class="final">
+  <h2>Open the full demo</h2>
+  <p>Full screen, with a question box in the assistant. Everything is mock data.</p>
+  <button class="btn" data-open-demo>View Demo →</button>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Ledgerline is a fictional product concept. v24 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. Stock prices are simulated. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline workspace demo">
+  <div class="demo-top">
+    <span class="brand"><span class="logo">L</span><span class="hide-sm">Ledgerline</span></span>
+    <span class="mock">DEMO · ALL DATA IS MOCK</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <button class="btn ghost sm" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-body"><div class="wrap"><div class="ws" data-root="demo"></div></div></div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v19.
+   Average costs and price charts are new in v20 and are simulated.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", short: "Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", short: "Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", short: "Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", short: "Schwab", inst: "Schwab (mock)", mask: "••5512", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", short: "IBKR", inst: "IBKR (mock)", mask: "U•••908", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  name: "Vanguard Total Stock Market ETF", acct: "sch", qty: 120, px: 287.40, vol: 0.8, cost: 241.10, since: "Mar 2023" },
+    { sym: "AAPL", name: "Apple", acct: "sch", qty: 45,  px: 228.10, vol: 1.4, cost: 182.40, since: "Jun 2023" },
+    { sym: "MSFT", name: "Microsoft", acct: "sch", qty: 30,  px: 431.20, vol: 1.2, cost: 362.00, since: "Jan 2024" },
+    { sym: "NVDA", name: "NVIDIA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8, cost: 98.50, since: "Aug 2024" },
+    { sym: "TSLA", name: "Tesla", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2, cost: 268.90, since: "Dec 2024" },
+    { sym: "QQQ",  name: "Invesco QQQ (Nasdaq-100)", acct: "ibk", qty: 25,  px: 489.50, vol: 1.1, cost: 431.75, since: "Apr 2024" }
+  ],
+  tech: ["AAPL", "MSFT", "NVDA", "QQQ"],
+  // checking activity over the past 30 days (same events as v08 / v16)
+  chkEvents: [
+    { date: "2026-10-03", t: "Paycheck", amt: 3425 }, { date: "2026-10-03", t: "Rent, October", amt: -2100 },
+    { date: "2026-10-02", t: "Transfer to savings", amt: -500 }, { date: "2026-09-30", t: "Card payment", amt: -1250 },
+    { date: "2026-09-19", t: "Paycheck", amt: 3425 }, { date: "2026-09-15", t: "Utilities", amt: -290 }
+  ],
+  september: { income: 6850, spending: 5120, kept: 1730, avgSpend: 5262, avgKept: 1630,
+    cats: [["Housing", 2100, 2100], ["Groceries", 640, 655], ["Dining", 612, 518], ["Shopping", 520, 560], ["Transport", 380, 402], ["Utilities", 290, 301], ["Other", 578, 726]] },
+  upcoming: [
+    { date: "2026-10-17", t: "Paycheck", acct: "chk", amt: 3425 },
+    { date: "2026-10-22", t: "Card payment due (full balance)", acct: "cc", amt: -1236.40 },
+    { date: "2026-11-02", t: "Transfer to savings", acct: "sav", amt: -500 },
+    { date: "2026-11-03", t: "Rent, November", acct: "chk", amt: -2100 }
+  ],
+  holidays: { "2026-09-07": "Labor Day" },
+  months: [[2026, 7], [2026, 8], [2026, 9]],
+  lastDataDay: "2026-10-02",
+  weekStart: "2026-09-28",
+  lastChecked: "Mon, Sep 28",
+  bankAsOf: "Mon, Oct 5",
+  priceAsOf: "Fri, Oct 2 close"
+};
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 0) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 0) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (n, d = 1) => (n >= 0 ? "+" : "−") + Math.abs(n).toFixed(d) + "%";
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const gl = n => (n >= 0 ? "gain" : "loss");
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const isoD = t => iso(t.getFullYear(), t.getMonth(), t.getDate());
+const toDate = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const nice = s => { const t = toDate(s); return `${DOW[t.getDay()]}, ${MONTHS[t.getMonth()].slice(0, 3)} ${t.getDate()}`; };
+const short = s => { const t = toDate(s); return `${MONTHS[t.getMonth()].slice(0, 3)} ${t.getDate()}`; };
+
+MOCK.positions.forEach(p => p.val = p.qty * p.px);
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const acct = id => ALL.find(a => a.id === id);
+const pos = sym => MOCK.positions.find(p => p.sym === sym);
+const holdOf = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0);
+const value = id => isBank(id) ? acct(id).bal : holdOf(id) + acct(id).cash;
+
+/* deterministic mock daily P&L (same generator as v02–v19) */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, bs) { const moves = rawDay(date).filter(m => bs.has(m.acct)).sort((a, b) => b.amt - a.amt); return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0) }; }
+function statusD(t) { const date = isoD(t), dw = t.getDay(); if (date > MOCK.lastDataDay) return "future"; if (dw === 0 || dw === 6) return "weekend"; if (MOCK.holidays[date]) return "holiday"; return "trade"; }
+const status = (y, m, d) => statusD(new Date(y, m, d));
+function tradeDays(from, to) { const out = [], t = toDate(from); while (isoD(t) <= to) { if (statusD(t) === "trade") out.push(isoD(t)); t.setDate(t.getDate() + 1); } return out; }
+function lastTradeDays(n) { const out = [], t = toDate(MOCK.lastDataDay); while (out.length < n) { if (statusD(t) === "trade") out.unshift(isoD(t)); t.setDate(t.getDate() - 1); } return out; }
+function rangeStats(dates, bs) {
+  const days = dates.map(d => dayFor(d, bs)), bySym = {};
+  days.forEach(dd => dd.moves.forEach(mv => bySym[mv.sym] = (bySym[mv.sym] || 0) + mv.amt));
+  const sorted = [...days].sort((a, b) => b.total - a.total);
+  return { days, bySym, total: days.reduce((s, x) => s + x.total, 0), up: days.filter(x => x.total >= 0).length, down: days.filter(x => x.total < 0).length, best: sorted[0], worst: sorted[sorted.length - 1] };
+}
+const monthStats = (y, m, bs) => rangeStats(tradeDays(iso(y, m, 1), iso(y, m, new Date(y, m + 1, 0).getDate())), bs);
+const weekStats = bs => rangeStats(tradeDays(MOCK.weekStart, MOCK.lastDataDay), bs);
+
+/* =========================================================
+   SIMULATED PRICE HISTORY
+   Daily closes come from the same generator as the calendar, so a holding's
+   gain over any period equals the sum of its calendar days.
+   ========================================================= */
+const pxCache = {};
+function closes(sym) {   // 263 points: the close before the first of 262 trading days, then each close
+  if (pxCache[sym]) return pxCache[sym];
+  const p = pos(sym), days = lastTradeDays(262), out = new Array(days.length + 1);
+  out[days.length] = { d: days[days.length - 1], px: p.px };
+  for (let i = days.length - 1; i >= 0; i--) {
+    const mv = rawDay(days[i]).find(m => m.sym === sym);
+    out[i] = { d: i ? days[i - 1] : "start", px: out[i + 1].px - p.px * mv.pct / 100 };
+  }
+  return pxCache[sym] = out;
+}
+function bridge(seed, a, b, n, amp) {  // smooth random path from a to b in n steps
+  const r = seeded(seed), w = [0];
+  for (let i = 1; i <= n; i++) w.push(w[i - 1] + (r() - .5));
+  return w.map((v, i) => a + (b - a) * i / n + (v - w[n] * i / n) * amp);
+}
+const RANGES = { "1D": "1D", "1W": "1W", "1M": "1M", "1Y": "1Y" };
+function series(sym, range) {
+  const p = pos(sym), c = closes(sym), N = c.length - 1;
+  if (range === "1Y") return { pts: c.slice(N - 252).map(x => ({ px: x.px, lab: x.d === "start" ? "Oct 2025" : short(x.d) })), start: c[N - 252].px, from: "1 year ago", label: "past year" };
+  if (range === "1M") { const s = c.slice(N - 21); return { pts: s.map(x => ({ px: x.px, lab: short(x.d) })), start: s[0].px, from: `${short(s[0].d)} close`, label: `${short(s[1].d)} – Oct 2` }; }
+  const amp = p.px * p.vol * 0.0016;
+  if (range === "1W") {
+    const s = c.slice(N - 5), pts = [{ px: s[0].px, lab: short(s[0].d) }];
+    for (let i = 1; i < s.length; i++) bridge(sym + s[i].d, s[i - 1].px, s[i].px, 12, amp).slice(1).forEach((v, k) => pts.push({ px: v, lab: `${DOW[toDate(s[i].d).getDay()]} ${k < 11 ? `${9 + Math.floor((k + 1) * 6.5 / 12)}:${k % 2 ? "30" : "00"}` : "close"}` }));
+    return { pts, start: s[0].px, from: `${short(s[0].d)} close`, label: "Sep 28 – Oct 2" };
+  }
+  const prev = c[N - 1].px, path = bridge(sym + "intraday", prev, p.px, 78, amp * .7);
+  return { pts: path.map((v, i) => { const m = 570 + i * 5; return { px: v, lab: i ? `${Math.floor(m / 60) > 12 ? Math.floor(m / 60) - 12 : Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} ${m >= 720 ? "pm" : "am"}` : "Thu close" }; }), start: prev, from: "Thu close", label: "Fri, Oct 2" };
+}
+
+/* =========================================================
+   MOCK HISTORY (new in v23): one year of clearly mock daily activity.
+   Bank balances are rebuilt BACKWARD from today's balances, one transaction at a time,
+   so every past balance reconciles with what's shown today. Brokerage values come from the
+   same daily price moves as the gains calendar. No money enters or leaves the brokerages,
+   so their change is purely investment gains or losses.
+   ========================================================= */
+const HIST = (() => {
+  const START = "2025-10-06", END = "2026-10-05", RATE = 0.04 / 12;
+  // monthly card purchases (C), debit purchases (D) and utilities; Apr–Sep averages match the “usual” figures
+  const PLAN = {
+    "2025-10": { C: 1100, D: 1400, util: 298 }, "2025-11": { C: 1330, D: 1610, util: 305 }, "2025-12": { C: 1980, D: 1850, util: 329 },
+    "2026-01": { C: 1240, D: 1700, util: 342 }, "2026-02": { C: 1150, D: 1480, util: 335 }, "2026-03": { C: 1290, D: 1640, util: 318 },
+    "2026-04": { C: 1220, D: 1559, util: 301 }, "2026-05": { C: 1405, D: 1606, util: 299 }, "2026-06": { C: 1310, D: 1529, util: 296 },
+    "2026-07": { C: 1180, D: 1710, util: 312 }, "2026-08": { C: 1250, D: 1667, util: 308 }, "2026-09": { C: 952.25, D: 1777.75, util: 290 }
+  };
+  const CATS = ["Groceries", "Dining", "Shopping", "Transport", "Other"];
+  const SEP = { Groceries: 640, Dining: 612, Shopping: 520, Transport: 380, Other: 578 };                 // September, as shown since v02
+  const APR_AUG = { Groceries: 3290, Dining: 2496, Shopping: 2840, Transport: 2032, Other: 3778 };        // makes Apr–Sep averages $655, $518, $560, $402, $726
+  const SHARE = {}; CATS.forEach(c => SHARE[c] = APR_AUG[c] / 14436);
+  const MERCH = { Groceries: ["Fresh Market", "Corner Grocer", "Green Basket", "Bulk Foods Co.", "Weekend Farmers Market"], Dining: ["Noodle House", "Corner Café", "Pizza Place", "Burger Joint", "Sushi Spot", "Taqueria", "Bakery"],
+    Shopping: ["Online Retailer", "Home Goods Store", "Bookshop", "Clothing Store", "Electronics Shop"], Transport: ["Gas Station", "Transit Card Reload", "Rideshare", "Parking Garage"],
+    Other: ["Pharmacy", "Gym Membership", "Streaming Service", "Phone Bill", "Hair Salon", "Pet Supplies", "Gift Shop"] };
+  const COUNT = { Groceries: 7, Dining: 8, Shopping: 4, Transport: 5, Other: 5 };
+  const CARD_PAID = { "2025-10": 1215, "2025-11": 1275 };   // these pay charges from before the history starts
+  const EXTRA_SAVE = { "2025-11-24": 3000, "2026-01-20": 1500, "2026-03-20": 2500, "2026-06-05": 4500, "2026-07-17": 2000 };
+  // exact transactions shown in earlier versions (v08 dining charges, v16 past-7-days activity)
+  const FIXED_CARD = { "2026-09-05": [[74.20, "Italian restaurant", "Dining"]], "2026-09-12": [[96.50, "Sushi bar", "Dining"]], "2026-09-13": [[48.30, "Brunch café", "Dining"]],
+    "2026-09-19": [[142.60, "Steakhouse", "Dining"]], "2026-09-20": [[31.40, "Taco shop", "Dining"]], "2026-09-26": [[58.90, "Thai restaurant", "Dining"]], "2026-09-27": [[118.70, "Bistro", "Dining"]],
+    "2026-10-01": [[142.18, "Fresh Market", "Groceries"], [86.40, "Corner Café", "Dining"]], "2026-10-04": [[21.30, "Pharmacy", "Other"], [18.92, "Hardware store", "Other"], [15.35, "Bookshop", "Other"]] };
+  const FIXED_DEBIT = { "2026-09-29": [[64.20, "Corner Grocer", "Groceries"]], "2026-09-30": [[38.75, "Gas Station", "Transport"]], "2026-10-01": [[92.40, "Green Basket", "Groceries"]],
+    "2026-10-02": [[71.15, "Rideshare", "Transport"]], "2026-10-04": [[126.80, "Home Goods Store", "Shopping"]], "2026-10-05": [[94.00, "Weekend Farmers Market", "Groceries"]] };
+  const QUIET = ["2026-09-28"];   // no bank activity on the day you last checked
+
+  const days = []; for (const t = toDate(START); isoD(t) <= END; t.setDate(t.getDate() + 1)) days.push(isoD(t));
+  const idx = {}; days.forEach((d, i) => idx[d] = i);
+  const tx = days.map(() => []);
+  let pair = 0;
+  const add = (d, a, amt, k, t, cat, extra) => { if (idx[d] == null) return null; const o = { d, a, amt: Math.round(amt * 100) / 100, k, t, cat, ...extra }; tx[idx[d]].push(o); return o; };
+  const xfer = (d, from, to, amt, t) => { if (idx[d] == null) return; pair++; add(d, from, -amt, "xfer", t, "Transfer", { other: to, pair }); add(d, to, amt, "xfer", t, "Transfer", { other: from, pair }); };
+  const cents = (total, n, r) => { const w = Array.from({ length: n }, () => .3 + r()), sum = w.reduce((a, b) => a + b, 0); let left = Math.round(total * 100); return w.map((x, i) => { const c = i === n - 1 ? left : Math.round(total * 100 * x / sum); left -= c; return c / 100; }); };
+  const ymOf = d => d.slice(0, 7), months = [...new Set(days.map(ymOf))];
+  const prevYM = ym => { const [y, m] = ym.split("-").map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`; };
+  // category totals for each month's purchases (card + debit)
+  const catTot = {}, apr = ["2026-04", "2026-05", "2026-06", "2026-07"];
+  Object.keys(PLAN).forEach(ym => { const P = PLAN[ym].C + PLAN[ym].D, o = {}; let acc = 0; CATS.slice(0, -1).forEach(c => { o[c] = Math.round(P * SHARE[c] * 100) / 100; acc += o[c]; }); o.Other = Math.round((P - acc) * 100) / 100; catTot[ym] = o; });
+  catTot["2026-09"] = { ...SEP };
+  catTot["2026-08"] = {}; CATS.forEach(c => catTot["2026-08"][c] = Math.round((APR_AUG[c] - apr.reduce((s, m) => s + catTot[m][c], 0)) * 100) / 100);
+
+  for (const t = toDate("2026-10-03"); isoD(t) >= START; t.setDate(t.getDate() - 14)) add(isoD(t), "chk", 3425, "pay", "Paycheck", "Income");
+  months.forEach(ym => {
+    add(`${ym}-03`, "chk", -2100, "spend", "Rent", "Housing");
+    if (PLAN[ym]) add(`${ym}-15`, "chk", -PLAN[ym].util, "spend", "Utilities", "Utilities");
+    if (ym !== "2026-09") xfer(`${ym}-02`, "chk", "sav", 500, "Automatic transfer to savings");
+    if (ym <= "2026-09") { const day = ym.endsWith("-02") ? "28" : "30", amt = CARD_PAID[ym] ?? PLAN[prevYM(ym)].C; xfer(`${ym}-${day}`, "chk", "cc", amt, "Card payment"); }
+    if (!PLAN[ym]) return;
+    // purchases: split each category into transactions, then put them on the card or debit so both monthly totals match exactly
+    const r = seeded("purchases-" + ym), inMonth = days.filter(d => ymOf(d) === ym && !QUIET.includes(d)), open = inMonth.filter(d => !(d >= "2026-09-28" && d <= "2026-10-05"));
+    const fixed = (F, a) => inMonth.flatMap(d => (F[d] || []).map(f => ({ d, a, amt: f[0], t: f[1], cat: f[2] })));
+    const fc = fixed(FIXED_CARD, "cc"), fd = fixed(FIXED_DEBIT, "chk"), need = { ...catTot[ym] };
+    [...fc, ...fd].forEach(f => need[f.cat] = Math.round((need[f.cat] - f.amt) * 100) / 100);
+    const share = open.length / new Date(+ym.slice(0, 4), +ym.slice(5), 0).getDate(), list = [];
+    CATS.forEach(c => { if (need[c] <= 0) return; const n = Math.max(1, Math.round(COUNT[c] * share)); cents(need[c], n, r).forEach(v => list.push({ d: open[Math.floor(r() * open.length)], amt: v, t: MERCH[c][Math.floor(r() * MERCH[c].length)], cat: c })); });
+    let cardLeft = Math.round((PLAN[ym].C - fc.reduce((s, f) => s + f.amt, 0)) * 100) / 100;
+    list.sort(() => r() - .5).forEach(o => { if (o.amt <= cardLeft + 1e-9) { o.a = "cc"; cardLeft = Math.round((cardLeft - o.amt) * 100) / 100; } else o.a = "chk"; });
+    if (cardLeft > 0) {   // move the last few cents/dollars between a card and a debit purchase in the same category
+      const c = list.find(o => o.a === "cc" && list.some(q => q.a === "chk" && q.cat === o.cat && q.amt > cardLeft + 1)), q = c && list.find(q => q.a === "chk" && q.cat === c.cat && q.amt > cardLeft + 1);
+      if (c && q) { c.amt = Math.round((c.amt + cardLeft) * 100) / 100; q.amt = Math.round((q.amt - cardLeft) * 100) / 100; cardLeft = 0; }
+    }
+    if (Math.abs(cardLeft) > .001) console.warn("card total off for", ym, cardLeft);
+    [...list, ...fc, ...fd].forEach(o => add(o.d, o.a, -o.amt, "spend", o.t, o.cat));
+  });
+  // Oct 1–5, 2026 (no monthly plan): only the exact transactions
+  ["2026-10-01", "2026-10-04"].forEach(d => (FIXED_CARD[d] || []).forEach(f => add(d, "cc", -f[0], "spend", f[1], f[2])));
+  ["2026-10-01", "2026-10-02", "2026-10-04", "2026-10-05"].forEach(d => (FIXED_DEBIT[d] || []).forEach(f => add(d, "chk", -f[0], "spend", f[1], f[2])));
+  Object.entries(EXTRA_SAVE).forEach(([d, amt]) => xfer(d, "chk", "sav", amt, "Extra transfer to savings"));
+
+  // walk backward from today's balances; savings interest (4% a year, mock) is credited on the 25th
+  const bal = { chk: [], sav: [], cc: [] }, b = { chk: 8412.55, sav: 24180, cc: -1236.40 };
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].endsWith("-25")) { const it = Math.round((b.sav - b.sav / (1 + RATE)) * 100) / 100; tx[i].push({ d: days[i], a: "sav", amt: it, k: "int", t: "Savings interest", cat: "Income" }); }
+    for (const a in b) bal[a][i] = Math.round(b[a] * 100) / 100;
+    for (const t of tx[i]) if (t.a in b) b[t.a] -= t.amt;
+  }
+  const hv = { sch: days.map(() => 0), ibk: days.map(() => 0) };
+  MOCK.positions.forEach(p => { const c = closes(p.sym); let k = 0; days.forEach((d, i) => { while (k + 1 < c.length && c[k + 1].d <= d) k++; hv[p.acct][i] += p.qty * c[k].px; }); });
+  let id = 0; const byId = {}, flat = [];
+  tx.forEach(list => list.forEach(t => { t.id = ++id; byId[id] = t; flat.push(t); }));
+  flat.sort((a, b) => b.d.localeCompare(a.d) || a.id - b.id);
+  return { days, idx, tx, bal, hv, byId, flat, last: days.length - 1 };
+})();
+const LAST = HIST.last;
+const counted = () => new Set(ALL.filter(a => inc(a.id)).map(a => a.id));
+function nwAt(i, S) { let v = 0; for (const a of ["chk", "sav", "cc"]) if (S.has(a)) v += HIST.bal[a][i]; for (const a of ["sch", "ibk"]) if (S.has(a)) v += HIST.hv[a][i] + acct(a).cash; return v; }
+// explain a period through income, spending, investment gains and transfers; money moved between counted accounts cancels out
+function decompose(i0, i1, S) {
+  const r = { pay: 0, payN: 0, int: 0, spend: 0, sp: {}, inv: {}, invT: 0, ext: [], extT: 0, internal: [], intT: 0, i0, i1 };
+  for (let i = i0 + 1; i <= i1; i++) for (const t of HIST.tx[i]) {
+    if (!S.has(t.a)) continue;
+    if (t.k === "pay") { r.pay += t.amt; r.payN++; }
+    else if (t.k === "int") r.int += t.amt;
+    else if (t.k === "spend") { r.spend += t.amt; r.sp[t.cat] = (r.sp[t.cat] || 0) + t.amt; }
+    else if (S.has(t.other)) { if (t.amt < 0) { r.internal.push(t); r.intT -= t.amt; } }
+    else { r.ext.push(t); r.extT += t.amt; }
+  }
+  ["sch", "ibk"].forEach(a => { if (S.has(a)) { r.inv[a] = HIST.hv[a][i1] - HIST.hv[a][i0]; r.invT += r.inv[a]; } });
+  r.start = nwAt(i0, S); r.end = nwAt(i1, S); r.total = r.end - r.start;
+  r.gap = r.pay + r.int + r.spend + r.invT + r.extT - r.total;   // should be ~0 (reconciliation check)
+  return r;
+}
+// 7-day changes and September figures now come straight from the history
+MOCK.bank.forEach(a => a.wk = Math.round((HIST.bal[a.id][LAST] - HIST.bal[a.id][HIST.idx["2026-09-28"]]) * 100) / 100);
+(() => {   // 6-month (Apr–Sep) averages from the history
+  const m = ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"], inc = {}, sp = {};
+  HIST.tx.forEach(list => list.forEach(t => { const ym = t.d.slice(0, 7); if (!m.includes(ym)) return; if (t.k === "pay") inc[ym] = (inc[ym] || 0) + t.amt; if (t.k === "spend") sp[ym] = (sp[ym] || 0) - t.amt; }));
+  MOCK.september.avgSpend = Math.round(m.reduce((s, k) => s + sp[k], 0) / 6);
+  MOCK.september.avgKept = Math.round(m.reduce((s, k) => s + inc[k] - sp[k], 0) / 6);
+  MOCK.september.threePay = m.filter(k => inc[k] > 3425 * 2);
+})();
+const RANGE_DEF = { since: { lab: "Since Sep 28", i0: () => HIST.idx["2026-09-27"] }, "1M": { lab: "1M", i0: () => LAST - 30 }, "3M": { lab: "3M", i0: () => LAST - 91 }, "1Y": { lab: "1Y", i0: () => 0 } };
+const perLabel = (i0, i1) => { const a = HIST.days[Math.min(i0 + 1, i1)], b = HIST.days[i1], y = a.slice(0, 4) !== b.slice(0, 4); return `${short(a)}${y ? ", " + a.slice(0, 4) : ""} – ${short(b)}${y ? ", " + b.slice(0, 4) : ""}`; };
+function period(key) { const u = ui[key], i0 = u.per ? u.per.i0 : RANGE_DEF[u.nwr].i0(), i1 = u.per ? u.per.i1 : LAST; return { w0: i0, i0, i1, custom: !!u.per, label: perLabel(i0, i1), from: HIST.days[i0 + 1], to: HIST.days[i1] }; }
+const niceY = d => `${nice(d)}, ${d.slice(0, 4)}`;
+const FIRST_START = () => HIST.days[1];   // the first day with a known opening balance
+function checkDates(a, b) {
+  if (!a || !b) return "Pick both a start date and an end date.";
+  if (a < FIRST_START()) return `The mock history begins ${niceY(HIST.days[0])}, so the earliest start date is ${niceY(FIRST_START())}.`;
+  if (b > HIST.days[LAST]) return `The latest data is ${niceY(HIST.days[LAST])}. Pick an end date on or before it.`;
+  if (a > HIST.days[LAST]) return `The start date is after the latest data (${niceY(HIST.days[LAST])}).`;
+  if (b < FIRST_START()) return `The end date is before the history begins.`;
+  if (a > b) return "The start date is after the end date. Swap them or pick a later end date.";
+  return null;
+}
+function datesHTML(key) {
+  const u = ui[key], P = period(key), dr = u.dateDraft || { a: P.from, b: P.to };
+  return `<div class="dates-row" role="group" aria-label="Selected period"><label>Start<input type="date" data-date="${key}|start" value="${dr.a}" ${u.dateDraft ? 'aria-invalid="true"' : ""} min="${FIRST_START()}" max="${HIST.days[LAST]}"></label><label>End<input type="date" data-date="${key}|end" value="${dr.b}" ${u.dateDraft ? 'aria-invalid="true"' : ""} min="${FIRST_START()}" max="${HIST.days[LAST]}"></label>
+    <span class="dr-note">History available ${short(FIRST_START())}, ${FIRST_START().slice(0, 4)} – ${short(HIST.days[LAST])}, ${HIST.days[LAST].slice(0, 4)}</span>${u.dateErr ? `<p class="dr-err" role="alert">⚠ ${u.dateErr}</p>` : ""}</div>`;
+}
+
+
+/* ---------- state ---------- */
+const sel = new Set(ALL.map(a => a.id));          // ticked = counted in totals
+let conn = "both";                                // v19: bank, brokerage or both
+const W = { pay: false, dine: false, move: 0, moveTo: null, mkt: 0, acct: {}, stk: {} };
+const BASE = { pay: false, dine: false, move: 0, moveTo: null, mkt: 0, acct: {}, stk: {} };
+const mkFX = () => ({ q: "", from: "", to: "", acct: "", cat: "all", min: "", max: "", n: 40, err: null });
+const mkUI = () => ({ fx: mkFX(), mng: false, dateErr: null, item: "all", range: "1M", x: null, q: null, up: false, hover: null, wopen: false, hist: [], prev: null, prevX: null, ans: null, nwr: "1M", per: null, nwDay: null, drag: null, exp: {}, collapsed: false });
+const ui = { land: mkUI(), demo: mkUI() };
+const cals = {};
+const connected = id => conn === "both" || (conn === "bank") === isBank(id);
+const inc = id => sel.has(id) && connected(id);
+const incBrok = () => new Set(MOCK.brok.filter(a => inc(a.id)).map(a => a.id));
+
+/* ---------- numbers, before and after a what-if ---------- */
+const ETFS = ["VTI", "QQQ"];
+const can = () => ({ pay: inc("chk") && inc("cc"), dine: inc("cc"), move: inc("sav") && incBrok().size > 0, mkt: incBrok().size > 0 });
+const moveTarget = w => w.moveTo && inc(w.moveTo) ? w.moveTo : inc("sch") ? "sch" : "ibk";
+const moveTo = () => moveTarget(W);
+function numbers(w) {
+  const c = can(), bs = incBrok(), pay = w.pay && c.pay, move = c.move ? w.move : 0, mkt = c.mkt ? w.mkt : 0, to = moveTarget(w);
+  const pv = {}; MOCK.positions.forEach(p => pv[p.sym] = p.val * (1 + mkt / 100 + (w.acct[p.acct] || 0) / 100 + (w.stk[p.sym] || 0) / 100));
+  const hold = MOCK.positions.filter(p => bs.has(p.acct)).reduce((s, p) => s + pv[p.sym], 0);
+  const cash = MOCK.brok.filter(a => bs.has(a.id)).reduce((s, a) => s + a.cash, 0);
+  const chk = inc("chk") ? 8412.55 - (pay ? 1236.40 : 0) : 0, sav = inc("sav") ? 24180 - move : 0, cc = inc("cc") ? (pay ? 0 : -1236.40) : 0;
+  const acctV = {}; MOCK.brok.forEach(a => acctV[a.id] = MOCK.positions.filter(p => p.acct === a.id).reduce((s, p) => s + pv[p.sym], 0) + a.cash + (move && a.id === to ? move : 0));
+  const etf = MOCK.positions.filter(p => bs.has(p.acct) && ETFS.includes(p.sym)).reduce((s, p) => s + pv[p.sym], 0);
+  return { bs, pv, acctV, hold, chk, sav, cc, bankCash: chk + sav, brokCash: cash + move, stocks: hold, etf, debt: -cc, assets: chk + sav + cash + move + hold, inv: hold + cash + move, cash: chk + sav + cc, kept: MOCK.september.kept + (w.dine && c.dine ? 94 : 0), nw: chk + sav + cc + hold + cash + move };
+}
+const active = () => W.pay || W.dine || W.move > 0 || W.mkt !== 0 || Object.values(W.stk).some(v => v) || Object.values(W.acct).some(v => v);
+const aft = (b, a, d = 0) => active() && Math.abs(a - b) > .5 ? `<span class="after">${money(a, d)}</span>` : "";
+
+/* =========================================================
+   LEFT: account list (v01 / v16) with the v19 connect choice
+   ========================================================= */
+/* ---------- shared context: one description of “what's selected”, used by all three columns ---------- */
+function ctxInfo(item) {
+  if (item === "all") { const n = ALL.filter(a => inc(a.id)).length; return { label: "Overview", sub: n ? `${n} account${n === 1 ? "" : "s"} selected · ${money(numbers(BASE).nw)}` : "no accounts selected", color: "var(--ink)", kind: "all" }; }
+  if (item.startsWith("h-")) { const p = pos(item.slice(2)); return { label: p.sym, sub: `${acct(p.acct).short} · ${p.qty} shares · ${money(p.val)} at ${MOCK.priceAsOf}${sel.has(p.acct) ? "" : " · account not selected"}`, color: "var(--brok)", kind: "stock", parent: p.acct }; }
+  const a = acct(item); return { label: a.name, sub: `${a.inst} ${a.mask} · ${money(item === "cc" ? 1236.40 : value(item), 2)}${item === "cc" ? " due" : ""} ${isBank(item) ? `as of ${MOCK.bankAsOf}` : `at ${MOCK.priceAsOf}`}${sel.has(item) ? "" : " · not selected"}`, color: isBank(item) ? "var(--bank)" : "var(--brok)", kind: isBank(item) ? "bank" : "brok" };
+}
+const X_LABEL = { "dc-income": "Income", "dc-spend": "Spending", "dc-inv": "Investment gains/losses", "dc-ext": "Transfers with accounts not counted", "dc-int": "Moves between your accounts", "a-bank": "Bank cash", "a-bcash": "Brokerage cash", "a-stocks": "Stocks & ETFs", "a-debt": "Credit card debt", nw: "Net worth", cash: "Bank total", inv: "Investments", kept: "Kept in September", income: "Income", spend: "Spending", pxchg: "Price change", mygain: "Your gain or loss", flow: "Recent cash flow", movers: "Top movers" };
+const xLabel = (x, key) => x.startsWith("tx-") ? (t => `${t.t} · ${short(t.d)}`)(HIST.byId[x.slice(3)]) : x === "nwd" ? nice(HIST.days[ui[key].nwDay]) : x === "nwp" ? period(key).label : X_LABEL[x] || (x.startsWith("cat-") ? x.slice(4) : x.startsWith("day-") ? nice(x.slice(4)) : x);
+
+// one definition of “nothing to show”, used by the overview AND the assistant
+function emptyState() {
+  if (ALL.some(a => inc(a.id))) return null;
+  return { title: "No accounts selected", text: conn === "both" ? "Nothing is counted right now. Tick at least one account in the list, or pick a quick option." : `No ${conn === "bank" ? "bank" : "brokerage"} accounts are selected. Tick one in the list, or pick a quick option.` };
+}
+const emptyActions = key => `<div class="x-next">${[["all", "Select all accounts"], ["bank", "Bank accounts only"], ["brok", "Brokerages only"]].map(([k, l]) => `<button type="button" class="chipq" data-quick="${k}">${l}</button>`).join("")}</div>`;
+// “not connected” (the kind is switched off) vs. “not selected” (connected but unticked)
+const missing = (kind, what, tick) => conn !== "both" && conn !== kind
+  ? `<p class="ovn">${what} ${what.endsWith("s") ? "aren't" : "isn't"} connected. <button type="button" class="lnk" data-conn="both">Connect mock ${kind === "bank" ? "bank" : "brokerage"} →</button></p>`
+  : `<p class="ovn">${what} ${what.endsWith("s") ? "aren't" : "isn't"} selected. <button type="button" class="lnk" data-tick="${tick}">Select ${tick === "bank" ? "bank accounts" : tick === "brok" ? "brokerages" : "it"} →</button></p>`;
+
+function listHTML(key) {
+  const u = ui[key], B = numbers(BASE), cx = ctxInfo(u.item), S = counted();
+  const since = S.size ? nwAt(LAST, S) - nwAt(HIST.idx["2026-09-27"], S) : 0;
+  const wk = id => isBank(id) ? acct(id).wk : weekStats(new Set([id])).total;
+  const nm = a => a.id === "cc" ? "Rewards Card" : a.short;
+  const row = a => { const on = u.item === a.id, w = wk(a.id), parent = cx.parent === a.id;
+    let h = `<div class="row${on ? " on" : ""}${parent ? " parent" : ""}${sel.has(a.id) ? "" : " out"}"><label class="chk" title="Count ${a.name} in totals"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""} aria-label="Count ${a.name} in totals"></label>
+      <button type="button" class="pick" data-item="${a.id}" aria-current="${on}" title="${a.name} · ${a.inst} ${a.mask}"><span class="nm">${nm(a)}</span><span class="bal">${money(value(a.id))}</span><span class="chg ${gl(w)}">${signed(w)} 7d</span></button></div>`;
+    if (!isBank(a.id)) {
+      const open = u.exp[a.id] || on || parent, hs = MOCK.positions.filter(p => p.acct === a.id);
+      h += `<button type="button" class="exp" data-expand="${key}|${a.id}" aria-expanded="${!!open}">${open ? "▾" : "▸"} ${hs.length} holdings</button>`;
+      if (open) h += hs.map(p => `<button type="button" class="hrow${u.item === "h-" + p.sym ? " on" : ""}" data-item="h-${p.sym}" aria-current="${u.item === "h-" + p.sym}"><b>${p.sym}</b><span class="v">${money(p.val)}</span></button>`).join("");
+    }
+    return h; };
+  const nc = (k, label) => `<div class="notconn">${label} not connected. <button type="button" data-conn="${conn === "bank" && k === "brok" || conn === "brok" && k === "bank" ? "both" : k}">Connect →</button></div>`;
+  return `<nav class="card list" aria-label="Accounts: choose what to look at" style="--cc:${cx.color}">
+    <div class="seg" role="group" aria-label="What's connected">${[["bank", "Bank"], ["brok", "Brokers"], ["both", "Both"]].map(([k, l]) => `<button type="button" data-conn="${k}" aria-pressed="${conn === k}">${l}</button>`).join("")}</div>
+    <div class="row ov${u.item === "all" ? " on" : ""}"><span></span><button type="button" class="pick" data-item="all" aria-current="${u.item === "all"}"><span class="nm">Overview</span>${emptyState() ? `<span class="bal">—</span><span class="chg"></span>` : `<span class="bal">${money(B.nw)}</span><span class="chg ${gl(since)}" title="since you last checked, Sep 28">${signed(since)} since 9/28</span>`}</button></div>
+    <div class="grp"><span class="tag bank">Bank</span><span class="dt">Oct 5</span></div>
+    ${conn !== "brok" ? MOCK.bank.map(row).join("") : nc("bank", "Bank")}
+    <div class="grp"><span class="tag brok">Brokerage</span><span class="dt">Oct 2 close</span></div>
+    ${conn !== "bank" ? MOCK.brok.map(row).join("") : nc("brok", "Brokerages")}
+    <div class="list-note">Ticked = counted in totals. ↑ ↓ moves through the list.</div>
+  </nav>`;
+}
+function chipsHTML(key) {   // compact navigation for narrower screens
+  const u = ui[key], items = [["all", "Overview"], ...ALL.filter(a => connected(a.id)).map(a => [a.id, a.id === "cc" ? "Card" : a.short]), ...MOCK.positions.filter(p => connected(p.acct)).map(p => ["h-" + p.sym, p.sym])];
+  const n = ALL.filter(a => inc(a.id)).length;
+  return `<div class="chips" role="group" aria-label="Accounts and holdings"><button type="button" class="chip mng-b" data-mng="${key}" aria-expanded="${u.mng}">⚙ Manage accounts <small>${n}/${ALL.length}</small></button>${items.map(([id, l]) => `<button type="button" class="chip" data-item="${id}" aria-pressed="${u.item === id}">${l}</button>`).join("")}</div>${u.mng ? manageHTML(key) : ""}`;
+}
+function manageHTML(key) {
+  const row = a => `<label class="mrow"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""} ${connected(a.id) ? "" : "disabled"}><span>${a.name}<small>${a.inst} ${a.mask}${connected(a.id) ? "" : " · not connected"}</small></span><b>${money(value(a.id), 2)}</b></label>`;
+  return `<div class="mng" role="region" aria-label="Manage accounts"><div class="mng-h"><b>Which accounts count toward totals?</b><button type="button" class="btn sm" data-mng="${key}">Done</button></div>
+    <div class="seg" role="group" aria-label="What's connected">${[["bank", "Bank only"], ["brok", "Brokerages only"], ["both", "Both"]].map(([k, l]) => `<button type="button" data-conn="${k}" aria-pressed="${conn === k}">${l}</button>`).join("")}</div>
+    <div class="mgrp"><span class="tag bank">Bank</span> as of Oct 5</div>${MOCK.bank.map(row).join("")}
+    <div class="mgrp"><span class="tag brok">Brokerage</span> Oct 2 close</div>${MOCK.brok.map(row).join("")}
+    <div class="x-next" style="margin-top:8px"><button type="button" class="chipq" data-quick="all">Select all</button><button type="button" class="chipq" data-tick="bank">Tick all bank</button><button type="button" class="chipq" data-tick="brok">Tick all brokerages</button></div>
+    <p class="ovn">Your selected dates stay the same when you change accounts.</p></div>`;
+
+}
+
+/* =========================================================
+   MIDDLE: the selected item
+   ========================================================= */
+const xa = (key, id, cls = "") => `data-x="${id}" class="${cls}${ui[key].x === id ? " xon" : ""}"`;
+function crumbs(key, parts) { const h = ui[key].hist, back = h.length && h[h.length - 1] !== "all" ? h[h.length - 1] : null; return `<div class="crumbs">${back ? `<button type="button" class="bk" data-back="${key}">← ${ctxInfo(back).label}</button><span class="sep">|</span>` : ""}${parts.map(([id, l], i) => i < parts.length - 1 ? `<button type="button" data-item="${id}">${l}</button> ›` : `<span>${l}</span>`).join(" ")} <span class="mock">MOCK</span></div>`; }
+
+function overviewHTML(key) {
+  const em = emptyState();
+  if (em) return crumbs(key, [["all", "Overview"]]) + `<div class="d-head"><div><span class="tag" style="background:var(--surface-2);color:var(--ink)">All accounts</span><h2>Net worth</h2></div><div class="fig"><div class="v">—</div><div class="l">nothing selected</div></div></div>
+    <div class="empty"><b>${em.title}</b><p>${em.text}</p>${emptyActions(key)}</div>`;
+  const u = ui[key], S = counted(), B = numbers(BASE), A = numbers(W), P = period(key), D = decompose(P.i0, P.i1, S), bs = B.bs;
+  let h = crumbs(key, [["all", "Overview"]]);
+  // 1. the total
+  h += `<div class="nw-head"><div><div class="k">Latest net worth <span class="mock">MOCK</span></div><div ${xa(key, "nw", "big")}>${money(B.nw)}</div>${aft(B.nw, A.nw)}
+      <div class="dates">${S.size} account${S.size === 1 ? "" : "s"} counted · bank as of Oct 5 · prices at Oct 2 close</div></div>
+    <div class="ranges" role="group" aria-label="Preset periods">${Object.entries(RANGE_DEF).map(([k, r]) => `<button type="button" data-nwr="${key}|${k}" aria-pressed="${!P.custom && u.nwr === k}">${r.lab}</button>`).join("")}</div></div>
+    ${datesHTML(key)}
+    <div class="pstats" aria-label="Selected period"><div><span>Start value</span><b>${money(D.start)}</b><small>end of ${short(HIST.days[P.i0])}</small></div><div><span>End value</span><b>${money(D.end)}</b><small>end of ${short(HIST.days[P.i1])}</small></div><div class="chg"><span>Change · ${P.label}</span><b class="${gl(D.total)}">${signed(D.total)}</b><small>${P.custom ? "custom dates" : RANGE_DEF[u.nwr].lab}</small></div></div>
+    <p class="splitline">Change = balance changes <b class="${gl(D.total - D.invT)}">${signed(D.total - D.invT)}</b> <small>(income, spending${D.ext.length ? ", transfers with accounts outside your selection" : ""})</small>${bs.size ? ` plus investment gains/losses <b class="${gl(D.invT)}">${signed(D.invT)}</b>` : ""}</p>`;
+  // 2. the chart
+  const pts = []; for (let i = P.i0; i <= P.i1; i++) pts.push({ v: nwAt(i, S), lab: nice(HIST.days[i]) + (i === P.i0 ? " (start value)" : "") });
+  const n = pts.length - 1, color = pts[n].v >= pts[0].v ? "var(--gain)" : "var(--loss)";
+  const shade = u.drag && u.hover && u.hover.id === "nw" ? [Math.min(u.drag.a, u.hover.i), Math.max(u.drag.a, u.hover.i)] : null;
+  const yr = HIST.days[P.i0].slice(0, 4) !== HIST.days[P.i1].slice(0, 4);
+  h += `<div class="sec nwc"><h3>Net-worth history · ${P.label} <span class="mock">SIMULATED</span>${P.custom || u.nwDay != null ? `<span class="r"><button type="button" class="lnk" data-nwclear="${key}">Back to ${RANGE_DEF[u.nwr].lab}</button></span>` : ""}</h3>
+    <div tabindex="0" class="nwkey" data-nwkey="${key}" aria-label="Net worth chart. Left and right arrow keys select a day.">${lineSVG(key, pts, { color, base: pts[0].v, id: "nw", fmt: (v, full) => full ? money(v) : "$" + (v / 1000).toFixed(0) + "k", shade, sel: u.nwDay != null ? u.nwDay - P.w0 : null, attr: `data-nw="${key}|${P.w0}"`,
+      labels: { aria: `Net worth over ${P.label}, simulated`, hint: "Click a day to explain it, or drag across days to zoom into them · dashed line = start value", x: [[0, short(HIST.days[P.i0]) + (yr ? ", " + HIST.days[P.i0].slice(0, 4) : "")], ...(n >= 2 ? [[Math.round(n / 2), short(HIST.days[P.i0 + Math.round(n / 2)])]] : []), [n, short(HIST.days[P.i1])]] } })}</div></div>`;
+  // 3. why it changed
+  const rows = [["dc-income", "Income", `${D.payN} paycheck${D.payN === 1 ? "" : "s"}${D.int ? ` + ${money(D.int, 2)} savings interest` : ""}`, D.pay + D.int, S.has("chk") || S.has("sav")],
+    ["dc-spend", "Spending", `bank and card${S.has("cc") ? "" : " (card not counted)"}`, D.spend, S.has("chk") || S.has("cc")],
+    ["dc-inv", "Investment gains/losses", bs.size ? MOCK.brok.filter(a => bs.has(a.id)).map(a => `${a.short} ${signed(D.inv[a.id])}`).join(" · ") : "no brokerage counted", D.invT, bs.size > 0],
+    ["dc-ext", "Transfers with accounts not counted", `${D.ext.length} transfer${D.ext.length === 1 ? "" : "s"}`, D.extT, D.ext.length > 0]].filter(r => r[4]);
+  const mx = Math.max(1, ...rows.map(r => Math.abs(r[3])), Math.abs(D.total));
+  const bar = v => `<span class="wb"><i style="${v >= 0 ? "left:50%" : "right:50%"};width:${Math.abs(v) / mx * 50}%;background:var(--${gl(v)})"></i></span>`;
+  h += `<div class="sec"><h3>What changed · ${P.label}</h3><div class="wf">
+      <div class="wr edge"><span>Net worth, end of ${short(HIST.days[P.i0])}</span><span></span><b>${money(D.start)}</b></div>
+      ${rows.map(([id, l, sub, v]) => `<button type="button" ${xa(key, id, "wr")}><span>${l}<small>${sub}</small></span>${bar(v)}<b class="${gl(v)}">${signed(v)}</b></button>`).join("")}
+      <div class="wr edge"><span>Net worth, end of ${short(HIST.days[P.i1])}</span>${bar(D.total)}<b>${money(D.end)} <small class="${gl(D.total)}">(${signed(D.total)})</small></b></div></div>
+    ${D.internal.length ? `<button type="button" ${xa(key, "dc-int", "wnote")}><b>Not counted:</b> ${money(D.intT)} moved between your counted accounts (${[...new Set(D.internal.map(t => t.t.replace("Automatic ", "").replace("Extra ", "extra ")))].join(", ").toLowerCase()}). Moving your own money doesn't change net worth, so it isn't income, spending or a gain.</button>` : ""}</div>`;
+  // 4. what it's made of
+  const parts = [["a-bank", "Bank cash", "Checking + savings", B.bankCash, "var(--bank)", S.has("chk") || S.has("sav")], ["a-bcash", "Brokerage cash", "Uninvested cash at your brokerages", B.brokCash, "#8f7bd8", bs.size > 0], ["a-stocks", "Stocks & ETFs", `ETFs ${money(B.etf)} · stocks ${money(B.stocks - B.etf)}`, B.stocks, "var(--brok)", bs.size > 0]].filter(p => p[5]);
+  const scale = Math.max(B.assets, 1);
+  h += `<div class="sec"><h3>What your net worth is made of <span class="r">bank as of Oct 5 · prices Oct 2 close</span></h3>
+    <div class="alloc"><div class="al-l">Assets</div><div class="al-bar">${parts.map(([id, l, , v, c]) => `<i title="${l} ${money(v)}" style="width:${v / scale * 100}%;background:${c}"></i>`).join("")}</div>
+      <div class="al-l">Debt</div><div class="al-bar debt">${B.debt ? `<i title="Credit card ${money(B.debt)}" style="width:${B.debt / scale * 100}%;background:var(--loss)"></i>` : ""}</div></div>
+    <div class="arows">${parts.map(([id, l, sub, v, c]) => `<button type="button" ${xa(key, id, "ar")}><span class="sw" style="background:${c}"></span><span>${l}<small>${sub}</small></span><span class="pc">${Math.round(v / scale * 100)}%</span><b>${money(v)}</b></button>`).join("")}
+      <div class="ar tot"><span></span><span>Total assets</span><span></span><b>${money(B.assets)}${aft(B.assets, A.assets)}</b></div>
+      ${S.has("cc") ? `<button type="button" ${xa(key, "a-debt", "ar")}><span class="sw" style="background:var(--loss)"></span><span>Credit card debt<small>Rewards Card balance owed</small></span><span class="pc"></span><b class="loss">−${money(B.debt)}</b></button>` : ""}
+      <div class="ar tot"><span></span><span>Net worth</span><span></span><b>${money(B.nw)}</b></div></div>
+    <p class="eq">${money(B.assets)} total assets − ${money(B.debt)} debt = <b>${money(B.nw)}</b> net worth</p></div>`;
+  // 5. details
+  if (bs.size) {
+    const ws = weekStats(bs), mv = Object.entries(ws.bySym).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 4);
+    const ovr = (id, l, sb, v, c) => `<button type="button" class="ovr" data-item="${id}"><span><b>${l}</b><small>${sb}</small></span><span class="a ${c || ""}">${v}</span></button>`;
+    h += `<div class="two"><div class="sec"><h3 ${xa(key, "movers")}>Top movers <span class="r dt">this week · Sep 28 – Oct 2</span></h3>${mv.map(([sym, v]) => { const p = pos(sym); return ovr("h-" + sym, `${v >= 0 ? "▲" : "▼"} ${sym}`, `${acct(p.acct).short} · ${pct(v / p.val * 100)} on your shares`, signed(v), gl(v)); }).join("")}</div>
+      <div class="sec"><h3>Daily gains and losses</h3>${calHTML(key, bs)}</div></div>`;
+  }
+  return h;
+}
+const TX_ACCTS = ["chk", "sav", "cc"];
+const txCats = () => [...new Set(HIST.flat.filter(t => TX_ACCTS.includes(t.a)).map(t => t.cat))].sort();
+function fxRange(key) { const f = ui[key].fx, P = period(key); return { from: f.from || P.from, to: f.to || P.to }; }
+function explorerRows(key, acctId) {
+  const f = ui[key].fx, { from, to } = fxRange(key), a = f.acct || acctId, q = f.q.trim().toLowerCase(), mn = f.min === "" ? null : +f.min, mx = f.max === "" ? null : +f.max;
+  return HIST.flat.filter(t => (a === "all" ? TX_ACCTS.includes(t.a) : t.a === a) && t.d >= from && t.d <= to && (f.cat === "all" || t.cat === f.cat)
+    && (!q || t.t.toLowerCase().includes(q) || t.cat.toLowerCase().includes(q)) && (mn == null || Math.abs(t.amt) >= mn) && (mx == null || Math.abs(t.amt) <= mx));
+}
+function explorerHTML(key, acctId) {
+  const u = ui[key], f = u.fx, { from, to } = fxRange(key), a = f.acct || acctId, P = period(key);
+  const err = checkDates(from, to) || (f.min !== "" && f.max !== "" && +f.min > +f.max ? "The minimum amount is larger than the maximum." : null);
+  const rows = err ? [] : explorerRows(key, acctId), tot = rows.reduce((s, t) => s + t.amt, 0);
+  const changed = f.q || f.from || f.to || f.acct || f.cat !== "all" || f.min !== "" || f.max !== "";
+  const acctName = id => id === "cc" ? "Rewards Card" : acct(id).short;
+  return `<div class="sec ex" id="ex-${key}"><h3>Transactions <span class="mock">MOCK LEDGER</span><span class="r">same data as the overview</span></h3>
+    <div class="fx">
+      <label class="q">Search<input type="search" data-fx="${key}|q" value="${f.q.replace(/"/g, "&quot;")}" placeholder="Merchant or description" autocomplete="off"></label>
+      <label>From<input type="date" data-fx="${key}|from" value="${from}" min="${FIRST_START()}" max="${HIST.days[LAST]}"></label>
+      <label>To<input type="date" data-fx="${key}|to" value="${to}" min="${FIRST_START()}" max="${HIST.days[LAST]}"></label>
+      <label>Account<select data-fx="${key}|acct">${[["all", "All bank & card"], ...TX_ACCTS.map(id => [id, acctName(id)])].map(([v, l]) => `<option value="${v}" ${a === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label>Category<select data-fx="${key}|cat"><option value="all">All categories</option>${txCats().map(c => `<option ${f.cat === c ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+      <label class="amt">Amount $<span><input type="number" min="0" step="1" inputmode="decimal" data-fx="${key}|min" value="${f.min}" placeholder="min" aria-label="Minimum amount"><input type="number" min="0" step="1" inputmode="decimal" data-fx="${key}|max" value="${f.max}" placeholder="max" aria-label="Maximum amount"></span></label>
+    </div>
+    <div class="fx-sum" role="status">${err ? `<span class="dr-err">⚠ ${err}</span>` : `<b>${rows.length}</b> transaction${rows.length === 1 ? "" : "s"} · total <b class="${gl(tot)}">${signed(tot, 2)}</b> <small>${short(from)} – ${short(to)}${!f.from && !f.to ? " (the overview's dates)" : ""}</small>`}
+      ${changed ? `<button type="button" class="btn ghost sm" data-fxreset="${key}">Reset filters</button>` : ""}</div>
+    ${rows.length ? `<div class="tx-wrap"><table class="tx"><thead><tr><th>Date</th><th>Description</th><th class="opt">Category</th><th class="opt">Account</th><th class="r">Amount</th></tr></thead><tbody>
+      ${rows.slice(0, f.n).map(t => `<tr data-x="tx-${t.id}" tabindex="0" class="${u.x === "tx-" + t.id ? "xon" : ""}"><td class="nw">${short(t.d)}</td><td>${t.t}<small class="m">${t.cat} · ${acctName(t.a)}</small></td><td class="opt">${t.cat}</td><td class="opt">${acctName(t.a)}</td><td class="r ${t.amt > 0 ? "gain" : ""}">${signed(t.amt, 2)}</td></tr>`).join("")}
+    </tbody></table></div>${rows.length > f.n ? `<button type="button" class="lnk" data-fxmore="${key}">Show ${Math.min(40, rows.length - f.n)} more of ${rows.length - f.n}</button>` : ""}` : err ? "" : `<p class="ovn">No transactions match. <button type="button" class="lnk" data-fxreset="${key}">Reset filters</button></p>`}
+    <p class="ovn">Amounts are from the account's point of view: on the card, a purchase (−) means you owe more and a payment (+) means you owe less.</p></div>`;
+}
+function holdTable(key, list, fri, ms) {
+  const A = numbers(W);
+  return `<table class="hold"><thead><tr><th>Holding</th><th>Value</th><th>Fri</th><th class="opt">Sep</th><th></th></tr></thead><tbody>
+    ${list.map(p => { const f = fri.moves.find(m => m.sym === p.sym).amt, s = ms.bySym[p.sym]; return `<tr class="go" data-item="h-${p.sym}" tabindex="0" role="button" aria-label="Open ${p.sym}"><td><b>${p.sym}</b><small>${acct(p.acct).short} · ${p.qty} sh</small></td><td>${money(p.val)}${aft(p.val, A.pv[p.sym])}</td><td class="${gl(f)}">${signed(f)}</td><td class="opt ${gl(s)}">${signed(s)}</td><td>›</td></tr>`; }).join("")}</tbody></table>`;
+}
+
+function cashFlowHTML(key) {
+  const S = MOCK.september, max = Math.max(...S.cats.map(c => Math.max(c[1], c[2])));
+  return `<div class="two"><div class="sec"><h3>Cash flow · September</h3>
+      <div class="cf"><div ${xa(key, "income")}><div class="l">Income</div><div class="v gain">+${money(S.income)}</div><div class="s">2 paychecks</div></div><div ${xa(key, "spend")}><div class="l">Spending</div><div class="v">−${money(S.spending)}</div><div class="s">6-mo avg ${money(S.avgSpend)}</div></div><div ${xa(key, "kept")}><div class="l">Kept</div><div class="v">${money(S.kept)}</div><div class="s">6-mo avg ${money(S.avgKept)}</div></div></div></div>
+    <div class="sec"><h3>Spending by category</h3>${S.cats.map(([n, v, u]) => `<div ${xa(key, "cat-" + n, "cat" + (v - u > 50 ? " hot" : ""))}><span>${n}</span><span class="bar"><i style="width:${v / max * 100}%"></i><u style="left:${u / max * 100}%"></u></span><b>${money(v)}</b></div>`).join("")}<div class="cats-key">Bar = September · line = your usual · click a category</div></div></div>`;
+}
+
+/* checking balance over the past 30 days, straight from the mock history */
+function chkHistory() {
+  const out = [];
+  for (let i = LAST - 29; i <= LAST; i++) out.push({ d: HIST.days[i], bal: HIST.bal.chk[i], ev: HIST.tx[i].filter(t => t.a === "chk" && (t.k !== "spend" || t.cat === "Housing" || t.cat === "Utilities")).map(t => ({ t: t.t, amt: t.amt })) });
+  return out;
+}
+function lineSVG(key, pts, { color, base, fmt, labels, id, shade, sel, attr }) {
+  const w = innerWidth < 600 ? 360 : ui[key].collapsed && innerWidth > 1240 ? 880 : 640, h = innerWidth < 600 ? 200 : 220, vals = pts.map(p => p.v), lo = Math.min(...vals, base ?? Infinity), hi = Math.max(...vals, base ?? -Infinity), pad = (hi - lo) * .12 || 1;
+  const x = i => 46 + i * (w - 56) / Math.max(1, pts.length - 1), y = v => 14 + (hi + pad - v) / (hi - lo + 2 * pad) * (h - 44);
+  const d = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+  let g = `<svg viewBox="0 0 ${w} ${h}" data-chart="${key}|${id}" role="img" aria-label="${labels.aria}">`;
+  [hi, (hi + lo) / 2, lo].forEach(v => g += `<line class="gl" x1="46" x2="${w - 10}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="0" y="${y(v) + 4}">${fmt(v)}</text>`);
+  if (shade) g += `<rect x="${x(shade[0])}" y="8" width="${Math.max(3, x(shade[1]) - x(shade[0]))}" height="${h - 38}" rx="4" style="fill:var(--accent);opacity:.14"/>`;
+  if (base != null) g += `<line x1="46" x2="${w - 10}" y1="${y(base)}" y2="${y(base)}" style="stroke:var(--muted);stroke-dasharray:4 4;opacity:.6"/>`;
+  g += `<path d="${d} L${x(pts.length - 1)},${h - 30} L${x(0)},${h - 30}Z" style="fill:${color};opacity:.10"/><path d="${d}" style="fill:none;stroke:${color};stroke-width:2.2;stroke-linejoin:round"/>`;
+  (labels.marks || []).forEach(([i, txt, c]) => g += `<circle cx="${x(i)}" cy="${y(pts[i].v)}" r="5" style="fill:${c};stroke:var(--surface);stroke-width:2"><title>${txt}</title></circle>`);
+  labels.x.forEach(([i, t]) => g += `<text class="ax" x="${x(i)}" y="${h - 10}" text-anchor="${i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"}">${t}</text>`);
+  if (sel != null && pts[sel]) g += `<line x1="${x(sel)}" x2="${x(sel)}" y1="8" y2="${h - 30}" style="stroke:var(--accent);stroke-width:2"/><circle cx="${x(sel)}" cy="${y(pts[sel].v)}" r="5.5" style="fill:var(--accent);stroke:var(--surface);stroke-width:2"/>`;
+  const hv = ui[key].hover && ui[key].hover.id === id ? ui[key].hover.i : null;
+  if (hv != null && pts[hv]) g += `<line x1="${x(hv)}" x2="${x(hv)}" y1="10" y2="${h - 30}" style="stroke:var(--muted);opacity:.5"/><circle cx="${x(hv)}" cy="${y(pts[hv].v)}" r="4.5" style="fill:${color}"/>`;
+  g += `<rect x="46" y="0" width="${w - 56}" height="${h - 30}" fill="transparent" data-hover="${key}|${id}|${pts.length}" ${attr || ""}/></svg>`;
+  const rd = hv != null && pts[hv] ? hv : sel;
+  return `<div class="chart">${rd != null && pts[rd] ? `<div class="read">${pts[rd].lab}: <b>${fmt(pts[rd].v, true)}</b></div>` : `<div class="read">${labels.hint}</div>`}${g}</div>`;
+}
+
+function bankHTML(key, id) {
+  const a = acct(id), A = numbers(W), B = numbers(BASE);
+  const base = B[id], after = A[id];
+  let h = crumbs(key, [["all", "Overview"], [id, a.name]]);
+  h += `<div class="d-head"><div><span class="tag bank">Bank</span> <span style="font-size:13px;color:var(--muted)">${a.inst} ${a.mask}</span><h2>${a.name}</h2></div><div class="fig"><div class="v">${money(id === "cc" ? 1236.40 : a.bal, 2)}</div>${inc(id) ? aft(id === "cc" ? -base : base, id === "cc" ? -after : after, 2) : ""}<div class="l">${id === "cc" ? `owed as of ${MOCK.bankAsOf} · payment due Thu, Oct 22<br>${money(a.wk, 2)} less than 7 days ago (paid $1,250, charged $284.15)` : `as of ${MOCK.bankAsOf} · ${signed(a.wk, 2)} over 7 days`}</div></div></div>`;
+  if (!sel.has(id)) h += `<div class="notconn" style="margin:0">Unticked, so it isn't counted in your totals.</div>`;
+  if (id === "chk") {
+    const hist = chkHistory(), pts = hist.map(p => ({ v: p.bal, lab: nice(p.d) }));
+    const marks = []; hist.forEach((p, i) => p.ev.forEach(e => marks.push([i, `${nice(p.d)}: ${e.t} ${signed(e.amt, 2)}`, e.amt > 0 ? "var(--gain)" : "var(--loss)"])));
+    h += `<div class="sec"><h3>Balance, past 30 days <span class="mock">MOCK</span><span class="r">dots = paychecks and bills</span></h3>${lineSVG(key, pts, { color: "var(--bank)", fmt: (v, full) => full ? money(v, 2) : (v / 1000).toFixed(1) + "k", id: "chk", labels: { aria: "Checking balance over the past 30 days", hint: "Hover or tap the chart for the balance", marks, x: [[0, short(hist[0].d)], [14, short(hist[14].d)], [29, "Oct 5"]] } })}</div>`;
+    h += explorerHTML(key, "chk");
+    h += cashFlowHTML(key);
+    h += `<div class="sec"><h3>Coming up</h3><div class="rows">${MOCK.upcoming.map(e => `<div class="r"><span>${e.t}<small>${nice(e.date)}</small></span><span class="a ${e.amt > 0 ? "gain" : ""}">${signed(e.amt, 2)}</span></div>`).join("")}</div></div>`;
+  }
+  if (id === "sav") {
+    const bars = [["Aug", 500], ["Sep", 0], ["Oct", 500], ["Nov", 500, true]];
+    h += `<div class="sec"><h3>Monthly transfers in <span class="mock">MOCK</span></h3><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end;height:150px">${bars.map(([m, v, plan]) => `<div style="text-align:center;font-size:13px"><div style="height:${v ? 100 : 4}px;border-radius:8px 8px 3px 3px;background:${plan ? "transparent" : v ? "var(--bank)" : "var(--loss)"};${plan ? "border:2px dashed var(--line-2);" : ""}opacity:${v ? 1 : .6}"></div><b style="display:block;margin-top:4px">${v ? "+$500" : "$0"}</b>${m}${plan ? " · planned" : ""}</div>`).join("")}</div></div>
+      ${explorerHTML(key, "sav")}`;
+  }
+  if (id === "cc") {
+    h += `<div class="sec"><h3>Balance <span class="mock">MOCK</span></h3><div class="rows"><div class="r"><span>Balance owed<small>as of Mon, Oct 5 · payment due Thu, Oct 22</small></span><span class="a">$1,236.40</span></div><div class="r"><span>September charges still unpaid<small>billed in September</small></span><span class="a">$952.25</span></div><div class="r"><span>New charges since Oct 1<small>3 purchases</small></span><span class="a">$284.15</span></div><div class="r"><span>Payment from checking<small>Wed, Sep 30 · paid August's charges</small></span><span class="a gain">−$1,250.00</span></div></div></div>`;
+    h += explorerHTML(key, "cc");
+    h += cashFlowHTML(key);
+  }
+  return h;
+}
+
+function brokHTML(key, id) {
+  const a = acct(id), bs = new Set([id]), ms = monthStats(2026, 8, bs), ws = weekStats(bs), fri = dayFor(MOCK.lastDataDay, bs), A = numbers(W);
+  let h = crumbs(key, [["all", "Overview"], [id, a.name]]);
+  h += `<div class="d-head"><div><span class="tag brok">Brokerage</span> <span style="font-size:13px;color:var(--muted)">${a.inst} ${a.mask}</span><h2>${a.name}</h2></div><div class="fig"><div class="v">${money(value(id), 2)}</div>${inc(id) ? aft(value(id), A.acctV[id], 2) : ""}<div class="l">value at ${MOCK.priceAsOf}</div><div class="l">${signed(fri.total)} Fri · ${signed(ws.total)} this week · ${signed(ms.total)} Sep</div></div></div>`;
+  if (!sel.has(id)) h += `<div class="notconn" style="margin:0">Unticked, so it isn't counted in your totals.</div>`;
+  h += `<div class="two"><div class="sec"><h3>Holdings <span class="r">${money(a.cash)} cash</span></h3>${holdTable(key, MOCK.positions.filter(p => p.acct === id), fri, ms)}</div><div class="sec"><h3>Daily gains and losses</h3>${calHTML(key + "-" + id, bs, key)}</div></div>`;
+  return h;
+}
+
+function stockHTML(key, sym) {
+  const p = pos(sym), a = acct(p.acct), u = ui[key], s = series(sym, u.range), A = numbers(W);
+  const chg = p.px - s.start, chgPct = chg / s.start * 100, myChg = chg * p.qty, total = (p.px - p.cost) * p.qty, totalPct = (p.px / p.cost - 1) * 100;
+  const color = chg >= 0 ? "var(--gain)" : "var(--loss)";
+  const xs = s.pts.length - 1, xl = [[0, s.pts[0].lab], [Math.round(xs / 2), s.pts[Math.round(xs / 2)].lab], [xs, u.range === "1D" ? "4:00 pm" : "Oct 2"]];
+  let h = crumbs(key, [["all", "Overview"], [p.acct, a.name], ["h-" + sym, sym]]);
+  h += `<div class="d-head"><div><span class="tag brok">${a.short}</span> <span style="font-size:13px;color:var(--muted)">${p.name}</span><h2>${sym} <small>${money(p.px, 2)} a share · ${MOCK.priceAsOf}</small></h2></div>
+    <div class="fig"><div class="v">${money(p.val)}</div>${aft(p.val, A.pv[sym])}<div class="l">your ${p.qty} shares</div></div></div>`;
+  h += `<div class="sec"><h3>Price chart <span class="mock">SIMULATED</span><span class="r"><span class="ranges" role="group" aria-label="Chart range">${Object.keys(RANGES).map(r => `<button type="button" data-range="${key}|${r}" aria-pressed="${u.range === r}">${r}</button>`).join("")}</span></span></h3>
+    ${lineSVG(key, s.pts.map(x => ({ v: x.px, lab: x.lab })), { color, base: s.start, fmt: (v, full) => full ? money(v, 2) : "$" + v.toFixed(0), id: "px", labels: { aria: `${sym} simulated price, ${s.label}`, hint: `${s.label} · dashed line = price at the start`, x: xl } })}</div>`;
+  h += `<div class="vs">
+    <div ${xa(key, "pxchg", "vsb px")}><div class="k">Stock price change · ${u.range}</div><p class="who">Per share. The same for everyone who owns ${sym}.</p><div class="v ${gl(chg)}">${signed(chg, 2)} <span style="font-size:17px">(${pct(chgPct)})</span></div><div class="s">${money(s.start, 2)} → <b>${money(p.px, 2)}</b> since ${s.from}</div></div>
+    <div ${xa(key, "mygain", "vsb me")}><div class="k">Your gain or loss · ${u.range}</div><p class="who">On your ${p.qty} shares. Depends on how much you own.</p><div class="v ${gl(myChg)}">${signed(myChg)}</div><div class="s">${p.qty} shares × ${signed(chg, 2)}</div><hr><div class="s">Since you bought: <b class="${gl(total)}">${signed(total)} (${pct(totalPct)})</b><br>avg cost ${money(p.cost, 2)} · ${p.since}</div></div></div>`;
+  const m = monthStats(2026, 8, new Set([p.acct])), fri = dayFor(MOCK.lastDataDay, new Set([p.acct])).moves.find(x => x.sym === sym), hold = holdOf(p.acct);
+  h += `<div class="sec"><h3>Your position <span class="mock">MOCK</span></h3><div class="facts">${[["Shares", p.qty], ["Avg cost", money(p.cost, 2)], ["Cost basis", money(p.cost * p.qty)], ["Market value", money(p.val)], ["Share of " + a.short, Math.round(p.val / hold * 100) + "%"], ["Account", a.short], ["Fri, Oct 2", `<span class="${gl(fri.amt)}">${signed(fri.amt)}</span>`], ["September", `<span class="${gl(m.bySym[sym])}">${signed(m.bySym[sym])}</span>`], ["Held since", p.since]].map(([l, v]) => `<div class="r"><span>${l}</span><b>${v}</b></div>`).join("")}</div></div>`;
+  return h;
+}
+
+function calHTML(key, bs, rootKey) {
+  const c = cals[key] || (cals[key] = { mi: 1, day: null }), [y, m] = MOCK.months[c.mi], ms = monthStats(y, m, bs), root = rootKey || key;
+  const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d[0]}<span class="rest">${d.slice(1)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="day blank"></div>`;
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) {
+    const t = status(y, m, d), date = iso(y, m, d);
+    if (t === "trade") { const v = dayFor(date, bs).total, a = Math.abs(v); cells += `<button type="button" class="day ${v >= 0 ? "up" : "down"} l${lvl(v)}${ui[root].x === "day-" + date ? " sel" : ""}" data-x="day-${date}" aria-label="${nice(date)}: ${v >= 0 ? "gain" : "loss"} of ${money(a)}. Explain."><span class="dn">${d}</span><span class="amt">${v >= 0 ? "+" : "−"}<span class="cur">$</span>${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`; }
+    else if (t === "future") cells += `<div class="day future"><span class="dn">${d}</span></div>`;
+    else cells += `<div class="day off"${t === "holiday" ? ` title="Market closed: ${MOCK.holidays[date]}"` : ""}><span class="dn">${d}</span><span class="amt">${t === "holiday" ? "Closed" : ""}</span></div>`;
+  }
+  const sw = (k, a) => `<span class="sw" style="background:rgba(var(--${k}-rgb),${a})"></span>`;
+  return `<div class="cal-host"><div class="cal-head"><span style="font-size:13.5px;color:var(--muted)">${MONTHS[m]}: ${sg(ms.total)}</span><div class="cal-nav"><button type="button" data-cal="${key}|-1" aria-label="Previous month" ${c.mi === 0 ? "disabled" : ""}>‹</button><span class="m">${MONTHS[m].slice(0, 3)} ${y}</span><button type="button" data-cal="${key}|1" aria-label="Next month" ${c.mi === MOCK.months.length - 1 ? "disabled" : ""}>›</button></div></div>
+    <div class="cal" role="group" aria-label="Daily gains and losses, ${MONTHS[m]} ${y}">${cells}</div>
+    <div class="cal-legend" aria-hidden="true">Loss ${sw("loss", .52)}${sw("loss", .22)}<span class="gap"></span>${sw("gain", .22)}${sw("gain", .52)} Gain<span class="gap"></span>click a day to explain it</div></div>`;
+}
+
+function detailHTML(key) {
+  const it = ui[key].item, cx = ctxInfo(it), P = period(key);
+  const body = it === "all" ? overviewHTML(key) : it.startsWith("h-") ? stockHTML(key, it.slice(2)) : isBank(it) ? bankHTML(key, it) : brokHTML(key, it);
+  const back = it !== "all" ? `<button type="button" class="to-ov" data-item="all">← Back to overview <small>${P.label} · ${ALL.filter(a => inc(a.id)).length} accounts</small></button>` : "";
+  return `<section class="card detail" aria-live="polite" style="--cc:${cx.color}">${chipsHTML(key)}${back}${body}</section>`;
+}
+
+/* =========================================================
+   RIGHT: assistant (Explain first, What if second)
+   ========================================================= */
+function explain(key) {
+  const u = ui[key], it = u.item, x = u.x, B = numbers(BASE), bs = B.bs, S = MOCK.september;
+  const nums = rows => `<div class="x-nums">${rows.map(([l, v]) => `<div class="r"><span>${l}</span><b>${v}</b></div>`).join("")}</div>`;
+  const X = (what, title, text, rows, qs) => ({ what, title, text, rows: rows ? nums(rows) : "", qs: qs || [] });
+  // a single transaction from the explorer
+  if (x && x.startsWith("tx-")) {
+    const t = HIST.byId[x.slice(3)], A = id => id === "cc" ? "Rewards Card" : acct(id).name, Sx = counted(), i = HIST.idx[t.d], own = Sx.has(t.a);
+    const after = HIST.bal[t.a][i], amt = Math.abs(t.amt);
+    const bal = t.a === "cc" ? `The card's balance owed ${t.amt < 0 ? "went up" : "went down"} by ${money(amt, 2)}; it ended that day at ${money(-after, 2)} owed.` : `${A(t.a)} ${t.amt < 0 ? "went down" : "went up"} by ${money(amt, 2)}; it ended that day at ${money(after, 2)}.`;
+    let nw, kind;
+    if (t.k === "xfer") {
+      kind = "TRANSFER";
+      const other = t.other, both = own && Sx.has(other);
+      nw = both ? `It moved money between two accounts you're counting (${A(t.amt < 0 ? t.a : other)} → ${A(t.amt < 0 ? other : t.a)}), so your combined net worth didn't change. It isn't income, spending or an investment gain.`
+        : own ? `${A(other)} isn't counted, so this changed your selected total by ${signed(t.amt, 2)}. It's a transfer involving an account outside your selection, not income, spending or an investment gain.`
+        : `${A(t.a)} isn't counted right now, so this doesn't change the total you're looking at.`;
+    } else if (t.k === "spend") { kind = "SPENDING · " + t.cat.toUpperCase(); nw = own ? `It counts as spending in ${t.cat}, so it lowered your net worth by ${money(amt, 2)}${t.a === "cc" ? ". Paying the card later is a transfer, not more spending" : ""}.` : `${A(t.a)} isn't counted right now, so it doesn't change the total you're looking at.`; }
+    else { kind = t.k === "int" ? "INCOME · INTEREST" : "INCOME"; nw = own ? `It counts as income and raised your net worth by ${money(amt, 2)}.` : `${A(t.a)} isn't counted right now, so it doesn't change the total you're looking at.`; }
+    const ym = t.d.slice(0, 7), mTot = t.k === "spend" ? HIST.flat.filter(z => z.k === "spend" && z.cat === t.cat && z.d.slice(0, 7) === ym && TX_ACCTS.includes(z.a)).reduce((s, z) => s - z.amt, 0) : null;
+    return X(kind, `${t.t}: ${signed(t.amt, 2)}`, `${nice(t.d)}, ${A(t.a)}. ${bal} ${nw}`, [["Account", A(t.a)], ["Category", t.cat], ...(mTot != null ? [[`All ${t.cat} in ${MONTHS[+ym.slice(5) - 1]}`, money(mTot, 2)]] : []), ["Counted in totals", own ? "yes" : "no"]],
+      [["q:xfer", "How do transfers count?", `When both accounts are counted, a transfer cancels out: one goes down, the other goes up, and net worth stays the same. If only one side is counted, the selected total changes, and it's shown as a transfer with an account outside your selection, never as income, spending or an investment gain.`]]);
+  }
+  // net-worth history, its explanation and its breakdown (overview)
+  if (it === "all" && !emptyState()) {
+    const Sx = counted(), P = period(key), D = decompose(P.i0, P.i1, Sx);
+    const whyQ = ["q:xfer", "Why don't transfers count?", `A transfer moves money from one of your accounts to another, like paying the card from checking or adding to savings. Your total doesn't change, so counting it as spending or a gain would double-count. If one side isn't counted (say you untick savings), it shows up separately as a transfer with an account that isn't counted.`];
+    if (x === "nwd") {   // one day uses exactly the same rules as a period
+      const i = u.nwDay, Dd = i > 0 ? decompose(i - 1, i, Sx) : null, list = HIST.tx[i].filter(t => Sx.has(t.a));
+      if (!Dd) return X("NET WORTH · ONE DAY", `${nice(HIST.days[i])}: ${money(nwAt(i, Sx))}`, "This is the first day of the mock history, so there's no day before it to compare with.");
+      const bits = []; if (Dd.pay + Dd.int) bits.push(`income ${signed(Dd.pay + Dd.int, 2)}`); if (Dd.spend) bits.push(`spending ${signed(Dd.spend, 2)}`); if (bs.size && Math.abs(Dd.invT) > .005) bits.push(`investments ${signed(Dd.invT)}`); if (Dd.ext.length) bits.push(`transfers with accounts outside your selection ${signed(Dd.extT, 2)}`);
+      const xin = Dd.internal.length ? ` ${money(Dd.intT, 2)} moved between accounts you're counting (${[...new Set(Dd.internal.map(t => t.t.toLowerCase()))].join(", ")}), which doesn't change the combined total.` : "";
+      const xout = Dd.ext.length ? ` ${Dd.ext.map(t => `${t.t} (${signed(t.amt, 2)}, ${t.amt < 0 ? "to" : "from"} ${acct(t.other).name})`).join(", ")}: that account isn't counted, so it changed your selected total, but it's a transfer, not income, spending or an investment gain.` : "";
+      return X("NET WORTH · ONE DAY", `${nice(HIST.days[i])}: ${signed(Dd.total)}`, `${money(Dd.start)} → ${money(Dd.end)}. ${bits.length ? bits.join(", ") + "." : "No changes from income, spending or investments."}${statusD(toDate(HIST.days[i])) !== "trade" && bs.size ? " Markets were closed." : ""}${xin}${xout}`,
+        [...list.filter(t => !(t.k === "xfer" && Sx.has(t.other) && t.amt > 0)).map(t => [t.k === "xfer" ? `${t.t} <small>${Sx.has(t.other) ? "between counted accounts" : "with an account outside your selection"}</small>` : `${t.t} <small>${t.cat} · ${acct(t.a).short}</small>`, t.k === "xfer" && Sx.has(t.other) ? money(Math.abs(t.amt), 2) + " (no change)" : `<span class="${gl(t.amt)}">${signed(t.amt, 2)}</span>`]), ...(bs.size && Math.abs(Dd.invT) > .005 ? [["Investment gains/losses", `<span class="${gl(Dd.invT)}">${signed(Dd.invT)}</span>`]] : [])].slice(0, 10), [whyQ]);
+    }
+    if (x === "dc-income") return X("INCOME · " + P.label.toUpperCase(), money(D.pay + D.int, 2), `${D.payN} paycheck${D.payN === 1 ? "" : "s"} of $3,425 into checking${D.int ? `, plus ${money(D.int, 2)} of savings interest (4% a year, mock)` : ""}.`, HIST.tx.slice(P.i0 + 1, P.i1 + 1).flat().filter(t => Sx.has(t.a) && (t.k === "pay" || t.k === "int")).slice(-8).map(t => [`${t.t} <small>${short(t.d)}</small>`, signed(t.amt, 2)]));
+    if (x === "dc-spend") { const days = P.i1 - P.i0, mo = days / 30.4; return X("SPENDING · " + P.label.toUpperCase(), money(-D.spend, 2), `Rent, utilities, card purchases and debit purchases. ${days >= 28 ? `That's about ${money(-D.spend / mo)} a month; your Apr–Sep average was ${money(S.avgSpend)}.` : ""} Card payments aren't spending here: the purchases were already counted when you made them.`, Object.entries(D.sp).filter(([, v]) => v).map(([k, v]) => [k === "Housing" ? "Rent" : k, money(-v, 2)]), [whyQ]); }
+    if (x === "dc-inv") { const dd = tradeDays(HIST.days[P.i0 + 1], HIST.days[P.i1]).map(d => dayFor(d, bs)).sort((a, b) => b.total - a.total);
+      return X("INVESTMENT GAINS · " + P.label.toUpperCase(), signed(D.invT), `Only price changes. No money was added to or taken out of your brokerages in this history, so nothing else is mixed in. Brokerage cash stays the same.`, [...MOCK.brok.filter(a => bs.has(a.id)).map(a => [a.short, `<span class="${gl(D.inv[a.id])}">${signed(D.inv[a.id])}</span>`]), ...(dd.length ? [["Best day", `${short(dd[0].date)} ${signed(dd[0].total)}`], ["Worst day", `${short(dd[dd.length - 1].date)} ${signed(dd[dd.length - 1].total)}`]] : [])]); }
+    if (x === "dc-ext") return X("TRANSFERS WITH ACCOUNTS OUTSIDE YOUR SELECTION", signed(D.extT, 2), `These moved money between an account you're counting and one you aren't. They change your selected total, but they're transfers, not income, spending or investment gains. Count both accounts and they cancel out.`, D.ext.slice(-8).map(t => [`${t.t} <small>${short(t.d)} · ${acct(t.a).short} ${t.amt < 0 ? "→" : "←"} ${acct(t.other).short}</small>`, signed(t.amt, 2)]), [whyQ]);
+    if (x === "dc-int") return X("MOVES BETWEEN YOUR ACCOUNTS", money(D.intT, 2), `Money moved between accounts you're counting. It leaves one and arrives in another, so net worth doesn't change, and it's left out of income, spending and gains.`, D.internal.slice(-8).map(t => [`${t.t} <small>${short(t.d)}</small>`, money(-t.amt, 2)]), [whyQ]);
+    if (x === "nw") return X("NET WORTH", money(B.nw), `What you own minus what you owe: ${money(B.assets)} in assets minus ${money(B.debt)} of card debt.`, [["Bank cash", money(B.bankCash)], ["Brokerage cash", money(B.brokCash)], ["Stocks & ETFs", money(B.stocks)], ["Credit card debt", "−" + money(B.debt)]]);
+    if (x === "a-bank") return X("BANK CASH", money(B.bankCash, 2), `Money in checking and savings. ${Sx.has("chk") && Sx.has("sav") ? `It covers about ${(B.bankCash / S.avgSpend).toFixed(1)} months of your average spending.` : ""} The card isn't subtracted here; it's listed separately as debt.`, [["Everyday Checking", Sx.has("chk") ? money(B.chk, 2) : "not counted"], ["High-Yield Savings", Sx.has("sav") ? money(B.sav, 2) : "not counted"]]);
+    if (x === "a-bcash") return X("BROKERAGE CASH", money(B.brokCash), `Cash sitting uninvested in your brokerage accounts. It's cash, not an investment, so it doesn't rise or fall with the market.`, MOCK.brok.filter(a => bs.has(a.id)).map(a => [a.short, money(a.cash)]));
+    if (x === "a-stocks") return X("STOCKS & ETFS", money(B.stocks), `Your holdings at Friday's close. ETFs (VTI, QQQ) hold many companies at once; the rest are single stocks.`, MOCK.positions.filter(p => bs.has(p.acct)).sort((a, b) => b.val - a.val).map(p => [`${p.sym} <small>${ETFS.includes(p.sym) ? "ETF" : "stock"} · ${acct(p.acct).short}</small>`, money(p.val)]));
+    if (x === "a-debt") return X("CREDIT CARD DEBT", money(B.debt, 2), `The Rewards Card balance you owe. It's subtracted once from your total assets to get net worth.`, [["Unpaid September charges", "$952.25"], ["New charges since Oct 1", "$284.15"]]);
+    if (!x || x === "nwp") {
+      const bits = [`income ${signed(D.pay + D.int)}`, `spending ${signed(D.spend)}`]; if (bs.size) bits.push(`investment gains/losses ${signed(D.invT)}`); if (D.ext.length) bits.push(`transfers with accounts outside your selection ${signed(D.extT)}`);
+      return X(`NET WORTH · ${P.custom ? "YOUR DATES" : u.nwr === "since" ? "SINCE YOU LAST CHECKED" : u.nwr}`, `${signed(D.total)} over ${P.label}`, `Start value ${money(D.start)}, end value ${money(D.end)}. Balance changes ${signed(D.total - D.invT)} (${bits.filter(b => !b.startsWith("investment")).join(", ")})${bs.size ? `; investment gains/losses ${signed(D.invT)}` : ""}.${D.internal.length ? ` ${money(D.intT)} moved between accounts you're counting, which doesn't change the combined total.` : ""}${D.ext.length ? ` Transfers with an account outside your selection changed the total by ${signed(D.extT)}; they're transfers, not income, spending or gains.` : ""}`,
+        [["Start value", money(D.start)], ["Income", signed(D.pay + D.int)], ["Spending", signed(D.spend)], ...(D.ext.length ? [["Transfers (outside selection)", signed(D.extT)]] : []), ["= Balance changes", signed(D.total - D.invT)], ...(bs.size ? [["+ Investment gains/losses", signed(D.invT)]] : []), ["End value", money(D.end)]],
+        [["x:dc-spend", "What did I spend?"], ["x:dc-inv", "How did investments do?"], ["x:nw", "What is my net worth made of?"], whyQ]);
+    }
+  }
+  // something specific inside the selected item
+  if (x === "nw") return X("NET WORTH", money(B.nw), `What you own minus what you owe.`, [["Total assets", money(B.assets)], ["Credit card debt", "−" + money(B.debt)]]);
+  if (x === "inv") { const ms = monthStats(2026, 8, bs); return X("BROKERAGE ACCOUNTS", `${money(B.inv)}, ${signed(ms.total)} in September`, `${ms.up} up days and ${ms.down} down days in September. ${bs.has("ibk") ? "IBKR swings more because it's mostly tech and holds NVDA and TSLA." : ""}`, MOCK.brok.filter(a => bs.has(a.id)).map(a => [a.short, signed(monthStats(2026, 8, new Set([a.id])).total) + " Sep"])); }
+  if (x === "kept") return X("CASH FLOW · SEPTEMBER", `You kept ${money(S.kept)}`, `Income ${money(S.income)} minus spending ${money(S.spending)}. That's ${money(Math.abs(S.kept - S.avgKept))} ${S.kept >= S.avgKept ? "more" : "less"} than your Apr–Sep average of ${money(S.avgKept)}${S.threePay.length ? `, which is lifted by ${S.threePay.map(k => MONTHS[+k.slice(5) - 1]).join(" and ")}: paydays are every other Saturday, so ${S.threePay.length === 1 ? "that month" : "those months"} had three paychecks` : ""}. Spending was below average.`, [["Apr–Sep average kept", money(S.avgKept)], ["Apr–Sep average spending", money(S.avgSpend)]]);
+  if (x === "flow") return X("RECENT CASH FLOW", "More came in than went out", `Two paychecks ($6,850) came into checking over the past month. The biggest outflows were rent ($2,100) and two moves to your own accounts: $1,250 to pay off the card and $500 to savings. Those moves don't change your net worth.`, null, [["x:kept", "How much did I keep in September?"]]);
+  if (x === "movers") { const ws = weekStats(bs), mv = Object.entries(ws.bySym).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])); return X("TOP MOVERS · THIS WEEK", `${mv[0][0]} moved the most: ${signed(mv[0][1])}`, `Ranked by the dollar change on your shares, not the stock's percentage move, so bigger positions rank higher. Click a mover to open its chart.`, mv.map(([s, v]) => [s, `<span class="${gl(v)}">${signed(v)}</span>`])); }
+  if (x === "income") return X("INCOME · SEPTEMBER", money(S.income), `Two paychecks of $3,425, on Sep 5 and Sep 19. The next one is Oct 17.`);
+  if (x === "spend") return X("SPENDING · SEPTEMBER", money(S.spending), `A little under your usual ${money(S.avgSpend)}. Only dining was clearly higher than usual.`);
+  if (x && x.startsWith("cat-")) { const c = S.cats.find(z => "cat-" + z[0] === x), d = c[1] - c[2]; return X("SPENDING · " + c[0].toUpperCase(), `${money(c[1])} in September`, c[0] === "Dining" ? `$94 above your usual $518. The biggest single dining charge was $142.60 on Sep 19.` : Math.abs(d) < 20 ? "About the same as usual." : d > 0 ? `${money(d)} more than usual.` : `${money(-d)} less than usual.`, [["Usual", money(c[2])], ["Difference", signed(d)]], c[0] === "Dining" ? [["w:dine", "What if dining was usual?"]] : []); }
+  if (x && x.startsWith("day-")) { const date = x.slice(4), dbs = it === "sch" || it === "ibk" ? new Set([it]) : bs, d = dayFor(date, dbs); return X("MARKET DAY", `${nice(date)}: ${signed(d.total)}`, `${d.total >= 0 ? `${d.moves[0].sym} led (${signed(d.moves[0].amt)}).` : `${d.moves[d.moves.length - 1].sym} weighed most (${signed(d.moves[d.moves.length - 1].amt)}).`}`, d.moves.map(m => [m.sym, `<span class="${gl(m.amt)}">${signed(m.amt)}</span>`])); }
+  if ((x === "pxchg" || x === "mygain") && it.startsWith("h-")) { const p = pos(it.slice(2)), s = series(p.sym, u.range), chg = p.px - s.start;
+    return X("PRICE CHANGE VS. YOUR GAIN", x === "pxchg" ? `${p.sym} moved ${signed(chg, 2)} a share` : `You ${chg >= 0 ? "gained" : "lost"} ${money(Math.abs(chg * p.qty))}`, `The <b>price change</b> is what one share did over ${u.range}: ${pct(chg / s.start * 100)}. <b>Your gain or loss</b> is that change times your ${p.qty} shares. <b>Since you bought</b> compares today's price with your average cost of ${money(p.cost, 2)}, so it can be ${(p.px - p.cost) * chg < 0 ? "the opposite sign, as it is here" : "much bigger than any one period"}.`, [["Price change, " + u.range, signed(chg, 2) + " / share"], ["× your shares", p.qty], ["= your " + u.range + " gain", signed(chg * p.qty)], ["Since you bought", signed((p.px - p.cost) * p.qty)]]); }
+
+  // the selected item itself
+  if (it === "all" && emptyState()) { const em = emptyState(); return X("OVERVIEW", em.title, em.text + " The assistant explains whatever is counted, so there's nothing to summarize yet.", null, []); }
+  if (it === "all") {
+    const bankWk = MOCK.bank.filter(a => inc(a.id)).reduce((s, a) => s + a.wk, 0), ws = bs.size ? weekStats(bs) : null;
+    const pts = [];
+    if (inc("chk")) pts.push(`checking is down $912, mostly money moved to your own accounts ($1,250 to the card, $500 to savings)`);
+    if (ws) pts.push(`investments ${ws.total >= 0 ? "gained" : "lost"} ${money(Math.abs(ws.total))} over ${ws.days.length} market days, a normal dip after a ${signed(monthStats(2026, 8, bs).total)} September`);
+    if (inc("cc")) pts.push(`the $1,236.40 card bill is due Oct 22, after your Oct 17 paycheck`);
+    return X("OVERVIEW · SINCE SEP 28", `${signed(bankWk + (ws ? ws.total : 0))} since you last checked`, pts.length ? `Here's what changed: ${pts.join("; ")}. Nothing needs action right now.` : "Tick some accounts to see a summary.", null,
+      [["q:usual", "Is this week normal?", `Yes. Rent, the paycheck and the card payment happen every month. The $500 savings transfer is also monthly; it skipped September and came back Oct 2.`], ["q:mix", "How much is invested?", B.nw > 0 && bs.size ? `${Math.round(B.inv / B.nw * 100)}% of your net worth is invested and ${100 - Math.round(B.inv / B.nw * 100)}% is in the bank.` : ""], ...(can().mkt ? [["w:mkt", "What if the market drops 10%?"]] : [])]);
+  }
+  if (it.startsWith("h-")) { const p = pos(it.slice(2)), s = series(p.sym, u.range), chg = p.px - s.start, m = monthStats(2026, 8, new Set([p.acct])), tech = MOCK.tech.includes(p.sym);
+    return X(`${p.sym} · ${u.range} VIEW`, `${p.sym} ${chg >= 0 ? "rose" : "fell"} ${Math.abs(chg / s.start * 100).toFixed(1)}% over ${u.range === "1D" ? "the day" : u.range === "1W" ? "the week" : u.range === "1M" ? "the month" : "the year"}`,
+      `On your ${p.qty} shares that's <b>${signed(chg * p.qty)}</b>. Overall you're <b>${signed((p.px - p.cost) * p.qty)}</b> since you bought at an average of ${money(p.cost, 2)}. ${p.vol >= 2.5 ? `${p.sym} is one of your most volatile holdings, so bigger swings are normal.` : p.vol <= .9 ? `As a broad fund, ${p.sym} usually moves less than single stocks.` : ""} ${tech ? `It counts toward your tech share.` : ""} Prices are simulated.`,
+      [["Shares", p.qty], ["September (from the calendar)", `<span class="${gl(m.bySym[p.sym])}">${signed(m.bySym[p.sym])}</span>`]],
+      [["x:pxchg", "Price change vs. my gain?"], ["w:stk", `What if ${p.sym} drops 20%?`], ["q:sell", "Should I sell?", `I can't tell you whether to buy or sell; that's personal financial advice. I can show what changed and run a what-if so you can see the effect.`]]); }
+  const a = acct(it);
+  if (it === "chk") return X("EVERYDAY CHECKING", "Down $912 over 7 days", `Rent ($2,100) and your paycheck ($3,425) both landed Oct 3. The rest went to your own accounts: $1,250 to pay off the card and $500 to savings. The chart shows the usual pattern: up on paydays, down on rent.`, [["Lowest point, past 30 days", money(Math.min(...chkHistory().map(p => p.bal)), 2)], ["Next paycheck", "$3,425 · Oct 17"]], [["q:bill", "Can I cover the card bill?", `Yes. $1,236.40 is due Oct 22, after your Oct 17 paycheck. Checking would be about $10,601 after paying it.`], ["w:pay", "What if I pay the card now?"]]);
+  if (it === "sav") return X("HIGH-YIELD SAVINGS", "Back on track", `The $500 monthly transfer ran Oct 2 after skipping September. The mock data doesn't say why it skipped, so the assistant doesn't guess.`, null, [["w:move", "What if I invest $5,000 of it?"]]);
+  if (it === "cc") return X("REWARDS CARD", "$1,236.40 owed", `You owe $952.25 of September charges plus $284.15 since Oct 1. The $1,250 you paid on Sep 30 covered August, which is why the balance is ${money(acct("cc").wk, 2)} lower than a week ago. ${inc("chk") ? "Checking covers the full balance, and your Oct 17 paycheck lands before Oct 22." : ""}`, null, [["x:cat-Dining", "Why was dining high?"], ["w:pay", "What if I pay it now?"]]);
+  const ms = monthStats(2026, 8, new Set([it])), sep = Object.entries(ms.bySym).sort((p, q) => q[1] - p[1]);
+  return X(a.short.toUpperCase(), `${signed(ms.total)} in September`, `${sep[0][0]} added the most (${signed(sep[0][1])}). ${it === "ibk" ? "IBKR is about 84% tech and holds NVDA and TSLA, so its days swing more than Schwab's." : "About 40% is tech; VTI, a broad fund, keeps daily swings smaller."} Click a holding for its chart.`, null, [["x:inv", "How do my brokerages compare?"], ["w:mkt", "What if the market drops 10%?"]]);
+}
+const pctF = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v)}%`;
+function leversFor(key) {
+  const it = ui[key].item, c = can(), L = [];
+  const R = (id, nm, ds, min, max, step, v, fmt, ok, need) => ({ t: "r", id, nm, ds, min, max, step, v, fmt, ok, need });
+  const T = (id, nm, ds, v, ok, need) => ({ t: "t", id, nm, ds, v, ok, need });
+  const payL = T("pay", "Pay the card in full now", "$1,236.40 from checking instead of on Oct 22", W.pay, c.pay, "Checking and the card ticked");
+  if (it.startsWith("h-")) { const sym = it.slice(2), p = pos(sym); L.push(R("stk:" + sym, `If ${sym} moves`, `Only ${sym}, your ${p.qty} shares`, -40, 40, 1, W.stk[sym] || 0, pctF, inc(p.acct), `${acct(p.acct).short} ticked`), R("mkt", "If the whole market moves", `All holdings, ${sym} included`, -20, 20, 1, W.mkt, pctF, c.mkt, "a brokerage ticked")); }
+  else if (it === "sch" || it === "ibk") { const a = acct(it); L.push(R("acct:" + it, `If ${a.short} moves`, `Every holding in ${a.short}`, -30, 30, 1, W.acct[it] || 0, pctF, inc(it), `${a.short} ticked`), R("move:" + it, `Add savings to ${a.short}`, "From High-Yield Savings", 0, 10000, 500, moveTo() === it ? W.move : 0, v => money(v), c.move && inc(it), "Savings and this account ticked")); }
+  else if (it === "chk") L.push(payL);
+  else if (it === "sav") L.push(R("move:" + moveTo(), `Invest some savings in ${acct(moveTo()).short}`, "Amount", 0, 10000, 500, W.move, v => money(v), c.move, "Savings and a brokerage ticked"));
+  else if (it === "cc") L.push(payL, T("dine", "Dining back to usual", "$518 a month instead of $612", W.dine, c.dine, "the card ticked"));
+  else L.push(R("mkt", "If the market moves", "All your holdings", -20, 20, 1, W.mkt, pctF, c.mkt, "a brokerage ticked"), payL, T("dine", "Dining back to usual", "$518 a month instead of $612", W.dine, c.dine, "the card ticked"));
+  return L;
+}
+function applies(id) { const [k, arg] = id.split(":"), c = can(); if (k === "stk") return inc(pos(arg).acct); if (k === "acct") return inc(arg); if (k === "move") return c.move; return c[k]; }
+function activeList() {
+  const a = [];
+  Object.entries(W.stk).forEach(([s, v]) => v && a.push(["h-" + s, `${s} ${pctF(v)}`, "stk:" + s]));
+  Object.entries(W.acct).forEach(([id, v]) => v && a.push([id, `${acct(id).short} ${pctF(v)}`, "acct:" + id]));
+  if (W.mkt) a.push(["all", `Market ${pctF(W.mkt)}`, "mkt"]);
+  if (W.move) a.push([moveTo(), `${money(W.move)} savings → ${acct(moveTo()).short}`, "move:" + moveTo()]);
+  if (W.pay) a.push(["cc", "Card paid now", "pay"]);
+  if (W.dine) a.push(["cc", "Dining at usual", "dine"]);
+  return a;
+}
+function assistHTML(key) {
+  const u = ui[key], cx = ctxInfo(u.item), x = explain(key), qs = x.qs.filter(q => !q[0].startsWith("w:")), q = qs.find(z => z[0] === u.q);
+  const levers = leversFor(key), mine = levers.some(l => l.t === "r" ? l.v : l.v), open = u.wopen || mine, act = activeList();
+  const B = numbers(BASE), A = numbers(W);
+  const diff = [["Net worth", B.nw, A.nw], ["Checking", B.chk, A.chk], ["Savings", B.sav, A.sav], ["Card owed", B.cc, A.cc], ["Invested", B.inv, A.inv], ["Kept per month", B.kept, A.kept]].filter(r => Math.abs(r[2] - r[1]) > .5);
+  if (u.item.startsWith("h-")) { const sym = u.item.slice(2); if (Math.abs(A.pv[sym] - pos(sym).val) > .5) diff.unshift([`${sym} position`, pos(sym).val, A.pv[sym]]); }
+  else if (u.item === "sch" || u.item === "ibk") { if (Math.abs(A.acctV[u.item] - value(u.item)) > .5) diff.unshift([acct(u.item).short, value(u.item), A.acctV[u.item]]); }
+  const lev = l => `<div class="lev${(l.t === "r" ? l.v : l.v) && l.ok ? " on" : ""}${l.ok ? "" : " dis"}">${l.t === "t"
+      ? `<label><span><span class="nm">${l.nm}</span><br><span class="ds">${l.ds}</span></span><input type="checkbox" data-w="${key}|${l.id}" ${l.v ? "checked" : ""} ${l.ok ? "" : "disabled"}></label>`
+      : `<div class="nm">${l.nm}</div><div class="ds">${l.ds}: <span class="val">${l.fmt(l.v)}</span></div><input type="range" min="${l.min}" max="${l.max}" step="${l.step}" value="${l.v}" data-w="${key}|${l.id}" aria-label="${l.nm}" ${l.ok ? "" : "disabled"}>`}${l.ok ? "" : `<div class="ds">Needs ${l.need}.</div>`}</div>`;
+  const em = u.item === "all" ? emptyState() : null;
+  const ans = u.ans ? `<div class="ask-ans ${u.ans.kind}" role="status"><div class="h">${{ applied: "✓ SCENARIO APPLIED", clarify: "? WHICH WAY?", unsupported: "NOT AVAILABLE IN THIS DEMO", blocked: "CAN'T RUN YET", info: "✦ ANSWER" }[u.ans.kind]} <span class="mock">SCRIPTED</span></div><p>${u.ans.text}</p>${u.ans.options && u.ans.options.length ? `<div class="x-next">${u.ans.options.map((o, i) => `<button type="button" class="chipq w" data-apply="${key}|${i}">${o.label}</button>`).join("")}</div>` : ""}<button type="button" class="lnk" data-ansclear="${key}">Dismiss</button></div>` : "";
+  const body = ans + `${u.x ? `<button type="button" class="x-back" data-xclear="${key}">← Back to ${cx.label}</button>` : ""}
+    <div class="x-what">✦ ${x.what} <span class="mock">AI · MOCK</span></div><h3 class="x-title">${x.title}</h3><p class="x-text">${x.text}</p>${x.rows}
+    ${qs.length ? `<div class="sub-h">Ask about ${u.x ? xLabel(u.x, key).toLowerCase() : cx.label}</div><div class="x-next">${qs.map(([t, l]) => `<button type="button" class="chipq" data-next="${key}|${t}" aria-expanded="${u.q === t}">${l}</button>`).join("")}</div>` : ""}
+    ${q && q[2] ? `<div class="ans">${q[2]}</div>` : ""}
+    ${em ? `${emptyActions(key)}<div class="wi"><div class="wi-h" style="cursor:default"><span>What if…</span></div><div class="wi-b"><p class="ds" style="margin:0">Select at least one account to try a scenario.${active() ? " Your active what-ifs are kept and will apply again when their accounts are selected." : ""}</p></div></div>` : `<div class="wi${open ? " open" : ""}"><button type="button" class="wi-h" data-wopen="${key}" aria-expanded="${open}"><span>What if… <b>${cx.label}</b></span><span>${open ? "▾" : "▸"}</span></button>
+      ${open ? `<div class="wi-b"><p class="ds" style="margin:0 0 8px">Scenarios for this selection. Illustrations only; nothing real changes.</p>${levers.map(lev).join("")}
+        ${diff.length ? `<div class="res"><div class="h">RESULT · ILLUSTRATION</div>${diff.map(([l, b, a]) => `<div class="r"><span>${l}</span><b>${money(b)} → ${money(a)}</b></div>`).join("")}<p>${narrate(B, A)}</p></div>` : ""}</div>` : ""}</div>`}
+    ${act.length ? `<div class="actv"><div class="sub-h">Active what-ifs <span class="ds">(shared across every view)</span></div>${act.map(([item, l, id]) => `<span class="ach${item === u.item ? " here" : ""}${applies(id) ? "" : " paused"}" title="${applies(id) ? "" : "Paused: its account isn't selected"}"><button type="button" data-item="${item}" title="Go to ${ctxInfo(item).label}">${l}</button><button type="button" data-wclear="${key}|${id}" aria-label="Remove ${l}">×</button></span>`).join("")}<button type="button" class="lnk" data-reset>Reset all</button></div>` : ""}`;
+  if (u.collapsed && innerWidth > 860) return `<aside class="card assist rail" aria-label="Assistant (collapsed)" style="--cc:${cx.color}"><button type="button" class="rail-b" data-aimin="${key}" aria-expanded="false" title="Open the assistant"><span class="ri">✦</span><span class="rt">Assistant · ${cx.label}${u.x ? " › " + xLabel(u.x, key) : ""}</span>${active() ? `<span class="dot" title="What-ifs are on"></span>` : ""}<span class="ro">‹</span></button></aside>`;
+  return `<aside class="card assist${u.up ? " up" : ""}" aria-label="Assistant" style="--cc:${cx.color}">
+    <div class="as-head"><span class="t">✦ Assistant <span class="mock">MOCK</span></span><span class="as-ctx">${cx.label}</span><button type="button" class="as-tog" data-tog="${key}" aria-expanded="${u.up}">${u.up ? "Hide ▾" : "Open ▴"}</button><button type="button" class="as-min" data-aimin="${key}" aria-expanded="true" title="Collapse the assistant to give the center more room">Collapse ›</button></div>
+    <div class="ctxbar"><span class="dot"></span><span class="lk">Looking at</span> <b>${cx.label}</b>${u.x ? ` <span class="sep">›</span> <b>${xLabel(u.x, key)}</b>` : ""}<small>${cx.sub}${u.item === "all" && !emptyState() ? ` · showing ${period(key).label}` : ""}</small></div>
+    ${key === "demo" ? `<form class="ask" data-ask><input type="text" placeholder="Ask, e.g. “how is NVDA doing?”" aria-label="Ask the assistant" autocomplete="off"><button class="btn sm" type="submit">Ask</button></form>` : ""}
+    <div class="as-body">${body}</div></aside>`;
+}
+function narrate(B, A) {
+  const c = can(), out = [];
+  Object.entries(W.stk).filter(([s, v]) => v && inc(pos(s).acct)).forEach(([s, v]) => out.push(`${s} ${v < 0 ? "falling" : "rising"} ${Math.abs(v)}% would change your position by ${signed(pos(s).val * v / 100)}.`));
+  Object.entries(W.acct).filter(([id, v]) => v && inc(id)).forEach(([id, v]) => out.push(`${acct(id).short} ${v < 0 ? "falling" : "rising"} ${Math.abs(v)}% would change its holdings by ${signed(holdOf(id) * v / 100)}.`));
+  if (W.mkt && c.mkt) out.push(`A ${Math.abs(W.mkt)}% market ${W.mkt < 0 ? "drop" : "rise"} would change your holdings by about ${signed(B.hold * W.mkt / 100)}. For scale, September's biggest day was ${signed(monthStats(2026, 8, B.bs).best.total)}.`);
+  if (W.pay && c.pay) out.push(`Paying the card now leaves checking at ${money(A.chk)}; net worth doesn't change.`);
+  if (W.dine && c.dine) out.push(`Usual dining would keep about $94 more a month.`);
+  if (W.move && c.move) out.push(`Moving ${money(W.move)} into ${acct(moveTo()).short} keeps net worth the same today, but that money would then rise and fall with the market.`);
+  return out.join(" ");
+}
+
+/* ---------- render ---------- */
+function connectHTML() {
+  const o = (k, b, s) => `<button type="button" class="copt ${k}" data-conn="${k}" aria-pressed="${conn === k}"><b>${b}</b><span>${s}</span></button>`;
+  return `<div class="q">What would you connect? <span class="mock">MOCK</span></div><div class="conn-opts">${o("bank", "Bank accounts", "cash flow, spending, bills")}${o("brok", "Brokerages", "holdings, charts, gains")}${o("both", "Both", "everything together")}</div>
+    <div class="cta"><button class="btn sm" data-open-demo>View Demo</button><span>Changes the preview below. Nothing is really connected.</span></div>`;
+}
+function render(key) {
+  const r = $(`[data-root="${key}"]`), u = ui[key];
+  const keep = { list: r.querySelector(".list")?.scrollTop || 0, body: r.querySelector(".as-body")?.scrollTop || 0, chips: r.querySelector(".chips")?.scrollLeft || 0 };
+  const moved = u.prev !== u.item, xMoved = u.prevX !== u.x;
+  const af = document.activeElement, afKey = af && r.contains(af) && (af.dataset.fx || af.dataset.date), caret = af && af.type === "search" ? af.selectionStart : null;
+  r.classList.toggle("ai-min", u.collapsed && innerWidth > 860);
+  r.innerHTML = listHTML(key) + detailHTML(key) + assistHTML(key);
+  const l = r.querySelector(".list"), on = l.querySelector(".row.on, .hrow.on");
+  l.scrollTop = keep.list;
+  if (on && (on.offsetTop < l.scrollTop || on.offsetTop + on.offsetHeight > l.scrollTop + l.clientHeight)) l.scrollTop = on.offsetTop - 60;
+  const ch = r.querySelector(".chips"); if (ch) { ch.scrollLeft = keep.chips; const c = ch.querySelector('[aria-pressed="true"]'); if (c && moved) ch.scrollLeft = c.offsetLeft - 40; }
+  const b = r.querySelector(".as-body"); b.scrollTop = moved || xMoved ? 0 : keep.body;
+  if (moved && u.prev !== null) { r.querySelector(".detail").classList.add("enter"); b.classList.add("enter"); r.querySelector(".ctxbar").classList.add("flash"); }
+  else if (xMoved) b.classList.add("enter");
+  if (afKey) { const n = r.querySelector(`[data-fx="${afKey}"], [data-date="${afKey}"]`); if (n) { n.focus({ preventScroll: true }); if (caret != null) try { n.setSelectionRange(caret, caret); } catch (e) {} } }
+  u.prev = u.item; u.prevX = u.x;
+}
+function renderAll() { $("[data-connect]").innerHTML = connectHTML(); render("land"); if ($("#demo").classList.contains("open")) render("demo"); }
+const rootOf = el => el.closest("[data-root]")?.dataset.root;
+function valid(item) { if (item === "all") return true; if (item.startsWith("h-")) return connected(pos(item.slice(2)).acct); return connected(item); }
+// one function changes the context for all three columns
+function go(key, item, opts = {}) {
+  const u = ui[key];
+  if (item !== u.item && !opts.back) { u.hist.push(u.item); if (u.hist.length > 20) u.hist.shift(); }
+  if (item !== u.item) u.fx = mkFX();   // filters belong to the view; the shared dates and accounts stay
+  u.item = item; u.x = null; u.q = null; u.hover = null; u.wopen = false; u.mng = false; if (!opts.keepAns) u.ans = null;
+  render(key);
+}
+
+/* ---------- events ---------- */
+function setW(id, v) { const [k, arg] = id.split(":"); if (k === "stk") W.stk[arg] = v; else if (k === "acct") W.acct[arg] = v; else if (k === "move") { W.move = v; W.moveTo = arg; } else W[k] = v; }
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-acct]");
+  if (c) { const id = c.dataset.acct, key = rootOf(c); c.checked ? sel.add(id) : sel.delete(id); renderAll(); $(`[data-root="${key}"] [data-acct="${id}"]`)?.focus(); return; }
+  const fx = e.target.closest("[data-fx]");
+  if (fx && fx.type !== "search" && fx.type !== "number") { const [key, k] = fx.dataset.fx.split("|"); setFx(key, k, fx.value); return; }
+  const dt = e.target.closest("[data-date]");
+  if (dt) { const [key] = dt.dataset.date.split("|"), u = ui[key], r = $(`[data-root="${key}"]`), a = r.querySelector(`[data-date="${key}|start"]`).value, b = r.querySelector(`[data-date="${key}|end"]`).value, err = checkDates(a, b);
+    if (err) { u.dateErr = `${err} You entered ${a ? short(a) + ", " + a.slice(0, 4) : "no start"} – ${b ? short(b) + ", " + b.slice(0, 4) : "no end"}; the chart still shows ${period(key).label}.`; u.dateDraft = { a, b }; render(key); return; }
+    u.dateErr = null; u.dateDraft = null; u.per = { i0: HIST.idx[a] - 1, i1: HIST.idx[b] }; u.nwDay = null; if (["nwd", "nwp"].includes(u.x)) u.x = "nwp"; render(key); return; }
+  const w = e.target.closest("[data-w]");
+  if (w) { const [key, id] = w.dataset.w.split("|"); setW(id, w.type === "checkbox" ? w.checked : +w.value); renderAll(); $(`[data-w="${key}|${id}"]`)?.focus(); }
+});
+function setFx(key, k, v) {
+  const f = ui[key].fx;
+  if (k === "acct") f.acct = v; else if (k === "cat") f.cat = v; else if (k === "q") f.q = v; else if (k === "min" || k === "max") f[k] = v === "" ? "" : String(Math.max(0, +v));
+  else f[k] = v;
+  f.n = 40; render(key);
+}
+document.addEventListener("input", e => {
+  const fx = e.target.closest("[data-fx]");
+  if (fx && (fx.type === "search" || fx.type === "number")) { const [key, k] = fx.dataset.fx.split("|"); setFx(key, k, fx.value); return; }
+  const w = e.target.closest("[data-w]");
+  if (w && w.type === "range") {   // while dragging: refresh the main view, the list and the label, not the slider itself
+    const [key, id] = w.dataset.w.split("|"); setW(id, +w.value);
+    ["land", "demo"].forEach(r => { const d = $(`[data-root="${r}"] .detail`); if (d) d.outerHTML = detailHTML(r); });
+    w.closest(".lev").querySelector(".val").textContent = id.startsWith("move") ? money(+w.value) : pctF(+w.value);
+  }
+});
+document.addEventListener("click", e => {
+  const it = e.target.closest("[data-item]");
+  if (it) { const key = rootOf(it); if (!key) return; const fromList = !!it.closest(".list, .chips"); go(key, it.dataset.item);
+    if (fromList) $(`[data-root="${key}"] .list [data-item="${it.dataset.item}"], [data-root="${key}"] .chips [data-item="${it.dataset.item}"]`)?.focus({ preventScroll: true });
+    if (innerWidth <= 1240) $(`[data-root="${key}"] .detail`).scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  const qk = e.target.closest("[data-quick]");
+  if (qk) { const k = qk.dataset.quick; conn = k === "all" ? "both" : k; sel.clear(); ALL.forEach(a => { if (k === "all" || (k === "bank") === isBank(a.id)) sel.add(a.id); }); ["land", "demo"].forEach(r => { ui[r].hist = ui[r].hist.filter(valid); if (!valid(ui[r].item)) go(r, "all", { back: true }); }); renderAll(); return; }
+  const tk = e.target.closest("[data-tick]");
+  if (tk) { const k = tk.dataset.tick; ALL.forEach(a => { if (k === a.id || (k === "bank" && isBank(a.id)) || (k === "brok" && !isBank(a.id))) sel.add(a.id); }); renderAll(); return; }
+  const ap = e.target.closest("[data-apply]");
+  if (ap) { const [key, i] = ap.dataset.apply.split("|"), o = ui[key].ans.options[+i]; applyScenario(key, o.act); return; }
+  const ac = e.target.closest("[data-ansclear]");
+  if (ac) { const key = ac.dataset.ansclear; ui[key].ans = null; render(key); return; }
+  const fr = e.target.closest("[data-fxreset]");
+  if (fr) { const key = fr.dataset.fxreset; ui[key].fx = mkFX(); render(key); return; }
+  const fm = e.target.closest("[data-fxmore]");
+  if (fm) { const key = fm.dataset.fxmore; ui[key].fx.n += 40; render(key); return; }
+  const mg = e.target.closest("[data-mng]");
+  if (mg) { const key = mg.dataset.mng; ui[key].mng = !ui[key].mng; render(key); $(`[data-root="${key}"] .mng-b`)?.focus(); return; }
+  const nr = e.target.closest("[data-nwr]");
+  if (nr) { const [key, r] = nr.dataset.nwr.split("|"), u = ui[key]; u.nwr = r; u.per = null; u.nwDay = null; u.dateErr = null; u.dateDraft = null; if (["nwd", "nwp"].includes(u.x)) u.x = null; render(key); $(`[data-nwr="${key}|${r}"]`)?.focus(); return; }
+  const nc = e.target.closest("[data-nwclear]");
+  if (nc) { const key = nc.dataset.nwclear, u = ui[key]; u.per = null; u.nwDay = null; u.dateErr = null; u.dateDraft = null; if (["nwd", "nwp"].includes(u.x)) u.x = null; render(key); return; }
+  const ex = e.target.closest("[data-expand]");
+  if (ex) { const [key, id] = ex.dataset.expand.split("|"); ui[key].exp[id] = ex.getAttribute("aria-expanded") !== "true"; render(key); $(`[data-expand="${key}|${id}"]`)?.focus(); return; }
+  const am = e.target.closest("[data-aimin]");
+  if (am) { const key = am.dataset.aimin; ui[key].collapsed = !ui[key].collapsed; render(key); $(`[data-root="${key}"] [data-aimin]`)?.focus(); return; }
+  const bk = e.target.closest("[data-back]");
+  if (bk) { const key = bk.dataset.back, prev = ui[key].hist.pop(); if (prev && valid(prev)) go(key, prev, { back: true }); else render(key); return; }
+  const cn = e.target.closest("[data-conn]");
+  if (cn) { conn = cn.dataset.conn; ["land", "demo"].forEach(k => { ui[k].hist = ui[k].hist.filter(valid); if (!valid(ui[k].item)) go(k, "all", { back: true }); }); renderAll(); return; }
+  const x = e.target.closest("[data-x]");
+  if (x) { const key = rootOf(x); ui[key].x = ui[key].x === x.dataset.x ? null : x.dataset.x; ui[key].q = null; ui[key].up = true; render(key); return; }
+  const xc = e.target.closest("[data-xclear]");
+  if (xc) { const key = xc.dataset.xclear; ui[key].x = null; render(key); return; }
+  const rg = e.target.closest("[data-range]");
+  if (rg) { const [key, r] = rg.dataset.range.split("|"); ui[key].range = r; ui[key].hover = null; render(key); $(`[data-range="${key}|${r}"]`)?.focus(); return; }
+  const n = e.target.closest("[data-next]");
+  if (n) { const [key, t] = n.dataset.next.split("|"), u = ui[key];
+    if (t.startsWith("q:")) u.q = u.q === t ? null : t; else { u.x = t.slice(2); u.q = null; }
+    render(key); $(`[data-next="${n.dataset.next}"]`)?.focus(); return; }
+  const wo = e.target.closest("[data-wopen]");
+  if (wo) { const key = wo.dataset.wopen; ui[key].wopen = !(ui[key].wopen || leversFor(key).some(l => l.v)); render(key); $(`[data-wopen="${key}"]`)?.focus(); return; }
+  const wc = e.target.closest("[data-wclear]");
+  if (wc) { const [, id] = wc.dataset.wclear.split("|"); setW(id, id === "pay" || id === "dine" ? false : 0); renderAll(); return; }
+  const tg = e.target.closest("[data-tog]");
+  if (tg) { const key = tg.dataset.tog; ui[key].up = !ui[key].up; render(key); $(`[data-tog="${key}"]`)?.focus(); return; }
+  if (e.target.closest("[data-reset]")) { W.pay = W.dine = false; W.move = W.mkt = 0; W.moveTo = null; W.acct = {}; W.stk = {}; renderAll(); return; }
+  const cl = e.target.closest("[data-cal]");
+  if (cl) { const [k, d] = cl.dataset.cal.split("|"); cals[k].mi = Math.max(0, Math.min(MOCK.months.length - 1, cals[k].mi + +d)); render(rootOf(cl)); $(`[data-cal="${k}|${d}"]`)?.focus(); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr[data-item], tr[data-x]")) { e.preventDefault(); e.target.click(); }
+  // ↑ ↓ move the context through the account list
+  if ((e.key === "ArrowDown" || e.key === "ArrowUp") && e.target.closest(".list [data-item]")) {
+    e.preventDefault(); const l = e.target.closest(".list"), items = $$("[data-item]", l), i = items.indexOf(e.target.closest("[data-item]")), nx = items[i + (e.key === "ArrowDown" ? 1 : -1)];
+    if (nx) { const key = rootOf(l), id = nx.dataset.item; go(key, id); $(`[data-root="${key}"] .list [data-item="${id}"]`)?.focus(); }
+  }
+  const nk = e.target.closest && e.target.closest("[data-nwkey]");
+  if (nk && (e.key === "ArrowLeft" || e.key === "ArrowRight")) { e.preventDefault(); const key = nk.dataset.nwkey, u = ui[key], w0 = period(key).w0; const P = period(key); u.nwDay = Math.max(P.i0, Math.min(P.i1, (u.nwDay ?? P.i1 + (e.key === "ArrowLeft" ? 0 : -1)) + (e.key === "ArrowLeft" ? -1 : 1))); u.x = "nwd"; render(key); $(`[data-root="${key}"] [data-nwkey]`)?.focus(); return; }
+  if (e.key === "Escape" && $("#demo").classList.contains("open")) closeDemo();
+});
+// hovering any item highlights the same item everywhere (list, chips, center)
+document.addEventListener("pointerover", e => {
+  const it = e.target.closest("[data-item]"), root = it && it.closest("[data-root]"); if (!root) return;
+  $$(".peek", root).forEach(el => el.classList.remove("peek"));
+  $$(`[data-item="${it.dataset.item}"]`, root).forEach(el => el !== it && el.classList.add("peek"));
+});
+document.addEventListener("pointerout", e => { const it = e.target.closest("[data-item]"); if (it && !it.contains(e.relatedTarget)) $$(".peek").forEach(el => el.classList.remove("peek")); });
+// net-worth chart: click a day, or drag across days to pick a period
+let nwDrag = null;
+const nwIndex = (g, clientX) => Math.max(0, Math.min(g.n - 1, Math.round((clientX - g.left) / g.width * (g.n - 1))));
+document.addEventListener("pointerdown", e => {
+  const r = e.target.closest("[data-nw]"); if (!r) return; e.preventDefault();
+  const [key, w0] = r.dataset.nw.split("|"), b = r.getBoundingClientRect(), n = +r.dataset.hover.split("|")[2];
+  nwDrag = { key, w0: +w0, n, left: b.left, width: b.width }; nwDrag.a = nwIndex(nwDrag, e.clientX); ui[key].drag = { a: nwDrag.a };
+});
+document.addEventListener("pointerup", e => {
+  if (!nwDrag) return; const g = nwDrag, u = ui[g.key], b = nwIndex(g, e.clientX), lo = Math.min(g.a, b), hi = Math.max(g.a, b); nwDrag = null; u.drag = null;
+  if (hi - lo < 2) { u.nwDay = g.w0 + b; u.x = "nwd"; }
+  else { u.dateErr = null; u.dateDraft = null; u.per = { i0: Math.max(0, g.w0 + lo - 1), i1: g.w0 + hi };   // from the start of the first day dragged over
+    u.nwDay = null; u.x = "nwp"; }
+  u.q = null; u.up = true; render(g.key);
+});
+// chart hover / touch readout
+document.addEventListener("pointermove", e => {
+  const r = e.target.closest("[data-hover]"); if (!r) return;
+  const [key, id, n] = r.dataset.hover.split("|"), b = r.getBoundingClientRect(), i = Math.max(0, Math.min(+n - 1, Math.round((e.clientX - b.left) / b.width * (+n - 1))));
+  if (ui[key].hover && ui[key].hover.id === id && ui[key].hover.i === i) return;
+  ui[key].hover = { id, i }; const sec = r.closest(".chart"), tmp = document.createElement("div"); tmp.innerHTML = detailHTML(key);
+  const fresh = $$(".chart", tmp).find(c => c.querySelector(`[data-hover^="${key}|${id}|"]`)); if (fresh) sec.replaceWith(fresh);
+});
+document.addEventListener("pointerout", e => { const r = e.target.closest("[data-hover]"); if (!r || r.contains(e.relatedTarget)) return; const [key] = r.dataset.hover.split("|"); if (ui[key].hover) { const id = ui[key].hover.id; ui[key].hover = null; const sec = r.closest(".chart"), tmp = document.createElement("div"); tmp.innerHTML = detailHTML(key); const fresh = $$(".chart", tmp).find(c => c.querySelector(`[data-hover^="${key}|${id}|"]`)); if (fresh && sec) sec.replaceWith(fresh); } });
+/* ---------- scripted questions ----------
+   What-if questions run exactly the scenario asked for (target, direction and size).
+   If something is missing or unsupported, the assistant asks or lists what's available,
+   and never applies a different scenario. */
+const LIMITS = { stk: [-40, 40], acct: [-30, 30], mkt: [-20, 20], move: [0, 10000] };
+function scenarioLabel(act) {
+  const [k, arg] = act.id.split(":");
+  if (k === "stk") return `${arg} ${pctF(act.v)}`;
+  if (k === "acct") return `${acct(arg).short} ${pctF(act.v)}`;
+  if (k === "mkt") return `Whole market ${pctF(act.v)}`;
+  if (k === "move") return `Move ${money(act.v)} from savings to ${acct(arg).short}`;
+  if (k === "pay") return "Pay the card in full now";
+  if (k === "dine") return "Dining back to usual ($518)";
+}
+function availableScenarios(key) {   // what this demo can run, starting with the current selection
+  const it = ui[key].item, c = can(), out = [];
+  const add = act => out.push({ label: scenarioLabel(act), act });
+  if (it.startsWith("h-") && inc(pos(it.slice(2)).acct)) { add({ id: "stk:" + it.slice(2), v: -10, item: it }); add({ id: "stk:" + it.slice(2), v: 10, item: it }); }
+  if ((it === "sch" || it === "ibk") && inc(it)) add({ id: "acct:" + it, v: -10, item: it });
+  if (c.mkt) add({ id: "mkt", v: -10, item: "all" });
+  if (c.pay) add({ id: "pay", v: true, item: "cc" });
+  if (c.dine) add({ id: "dine", v: true, item: "cc" });
+  if (c.move) add({ id: "move:" + moveTo(), v: 5000, item: "sav" });
+  return out;
+}
+function applyScenario(key, act) {
+  const before = numbers(W);
+  setW(act.id, act.v);
+  if (act.item && act.item !== ui[key].item) go(key, act.item, { keepAns: true });
+  ui[key].wopen = true;
+  const A = numbers(W), [k, arg] = act.id.split(":");
+  let res;
+  if (k === "stk") res = `Your ${arg} position: ${money(before.pv[arg])} → ${money(A.pv[arg])} (${signed(A.pv[arg] - before.pv[arg])}).`;
+  else if (k === "acct") res = `${acct(arg).short}: ${money(before.acctV[arg])} → ${money(A.acctV[arg])} (${signed(A.acctV[arg] - before.acctV[arg])}).`;
+  else if (k === "mkt") res = `Your investments: ${money(before.inv)} → ${money(A.inv)} (${signed(A.inv - before.inv)}).`;
+  else if (k === "move") res = `Savings ${money(before.sav)} → ${money(A.sav)}; ${acct(arg).short} ${money(before.acctV[arg])} → ${money(A.acctV[arg])}. Net worth is unchanged.`;
+  else if (k === "pay") res = `Checking ${money(before.chk, 2)} → ${money(A.chk, 2)}; card owed → $0. Net worth is unchanged.`;
+  else res = `Kept per month: ${money(before.kept)} → ${money(A.kept)}.`;
+  ui[key].ans = { kind: "applied", text: `<b>${scenarioLabel(act)}.</b> ${act.note ? act.note + " " : ""}${res} Adjust or remove it below.` };
+  renderAll();
+}
+function parseWhatIf(key, t) {
+  const u = ui[key], c = can();
+  const offer = (kind, text) => ({ kind, text, options: availableScenarios(key) });
+  if (/\b(sell|buy|short|rates?|inflation|job|salary|raise|rent|bitcoin|crypto|tax|loan|mortgage|house|car|recession)\b/.test(t))
+    return offer("unsupported", `This demo can't run that scenario. It only models price moves, paying the card, dining and moving savings into a brokerage. Pick one of these instead:`);
+  const pm = t.replace(/−/g, "-").match(/([+\-]?\d+(?:\.\d+)?)\s*(%|percent)/), dm = t.match(/\$\s?(\d[\d,]*)|(\d[\d,]{2,})\s*dollars/);
+  const down = /\b(drops?|dropped|falls?|fell|crash(es)?|down|loses?|declines?|sinks?|tanks?|plunges?|dips?)\b/.test(t) || (pm && pm[1].startsWith("-"));
+  const up = /\b(rises?|rose|up|gains?|jumps?|rall(y|ies)|grows?|climbs?|soars?|surges?)\b/.test(t) || (pm && pm[1].startsWith("+"));
+  const sym = MOCK.positions.find(p => new RegExp(`\\b${p.sym.toLowerCase()}\\b`).test(t) || t.includes(p.name.toLowerCase().split(" ")[0]));
+  const br = /\bschwab\b/.test(t) ? "sch" : /\bibkr\b|interactive brokers/.test(t) ? "ibk" : null;
+  // card, dining and savings scenarios
+  if (/\bpay\b/.test(t) && /card|bill|statement|balance/.test(t)) {
+    if (/half|part|some|\$|\d/.test(t)) return offer("unsupported", `This demo can only pay the card <b>in full</b> ($1,236.40), not part of it.`);
+    return c.pay ? { act: { id: "pay", v: true, item: "cc" } } : { kind: "blocked", text: `Paying the card needs both Everyday Checking and the Rewards Card selected.`, options: [] };
+  }
+  if (/dining|eat(ing)? out|restaurant/.test(t)) {
+    if (!c.dine) return { kind: "blocked", text: `The dining scenario needs the Rewards Card selected.`, options: [] };
+    if (/usual|normal|average|typical/.test(t) && !/double|more|increase|higher/.test(t)) return { act: { id: "dine", v: true, item: "cc" } };
+    return { kind: "clarify", text: `The only dining scenario here is going <b>back to your usual $518</b> a month (from $612). Run that one?`, options: [{ label: scenarioLabel({ id: "dine" }), act: { id: "dine", v: true, item: "cc" } }] };
+  }
+  if (/saving/.test(t) && /move|put|invest|transfer|add/.test(t)) {
+    const to = br || moveTo(), raw = dm ? +(dm[1] || dm[2]).replace(/,/g, "") : null;
+    if (!c.move || !inc(to)) return { kind: "blocked", text: `Moving savings needs High-Yield Savings and ${acct(to).short} selected.`, options: [] };
+    if (raw == null) return { kind: "clarify", text: `How much should move from savings into ${acct(to).short}?`, options: [1000, 5000, 10000].map(v => ({ label: money(v), act: { id: "move:" + to, v, item: to } })) };
+    if (raw <= 0 || raw > 10000) return { kind: "unsupported", text: `This demo can move between $1 and $10,000 from savings, so it can't model ${money(raw)}.`, options: [10000, 5000].map(v => ({ label: scenarioLabel({ id: "move:" + to, v }), act: { id: "move:" + to, v, item: to } })) };
+    return { act: { id: "move:" + to, v: raw, item: to } };
+  }
+  // price moves: stock, brokerage, or the whole market
+  let kind = null, id = null, item = null;
+  if (sym) { kind = "stk"; id = "stk:" + sym.sym; item = "h-" + sym.sym; }
+  else if (br) { kind = "acct"; id = "acct:" + br; item = br; }
+  else if (/market|stocks|everything|portfolio|investments|all my/.test(t)) { kind = "mkt"; id = "mkt"; item = u.item; }
+  else if (/\b(it|this|that)\b/.test(t) && (u.item.startsWith("h-") || u.item === "sch" || u.item === "ibk")) {   // “it” = the current selection
+    if (u.item.startsWith("h-")) { kind = "stk"; id = "stk:" + u.item.slice(2); } else { kind = "acct"; id = "acct:" + u.item; } item = u.item; }
+  if (!kind) return offer("unsupported", `I couldn't tell which scenario you meant. These are the ones this demo can run:`);
+  const need = kind === "stk" ? pos(sym ? sym.sym : u.item.slice(2)).acct : kind === "acct" ? id.slice(5) : null;
+  if (kind === "mkt" ? !c.mkt : !inc(need)) return { kind: "blocked", text: `${kind === "mkt" ? "A brokerage" : acct(need).name} needs to be selected to run this.`, options: [] };
+  const name = kind === "stk" ? id.slice(4) : kind === "acct" ? acct(id.slice(5)).short : "the whole market";
+  if (down === up) {   // no direction, or both
+    const mag = pm ? Math.abs(parseFloat(pm[1])) : 10;
+    if (mag > LIMITS[kind][1]) return { kind: "unsupported", text: `This demo models moves of up to ${LIMITS[kind][1]}% here, so it can't run ${mag}%.`, options: [-1, 1].map(sg => ({ label: scenarioLabel({ id, v: sg * LIMITS[kind][1] }), act: { id, v: sg * LIMITS[kind][1], item } })) };
+    return { kind: "clarify", text: `Should ${name} go <b>up</b> or <b>down</b>${pm ? ` by ${mag}%` : ""}?`, options: [-1, 1].map(sg => ({ label: scenarioLabel({ id, v: sg * mag }), act: { id, v: sg * mag, item } })) };
+  }
+  const sgn = down ? -1 : 1, hi = LIMITS[kind][1], what = kind === "stk" ? "a stock" : kind === "acct" ? "an account" : "the market";
+  const opt = v => ({ label: scenarioLabel({ id, v }), act: { id, v, item } });
+  if (!pm) return { kind: "clarify", text: `By how much should ${name} ${down ? "fall" : "rise"}?`, options: [5, 10, 20].filter(v => v <= hi).map(v => opt(sgn * v)) };
+  const want = Math.abs(parseFloat(pm[1]));
+  if (want === 0 || want > hi) return { kind: "unsupported", text: `This demo models moves of up to ${hi}% for ${what}, so it can't run ${pctF(sgn * want)}. The closest available:`, options: [opt(sgn * hi)] };
+  return { act: { id, v: sgn * want, item } };
+}
+document.addEventListener("submit", e => {
+  const f = e.target.closest("[data-ask]"); if (!f) return; e.preventDefault();
+  const key = rootOf(f), raw = f.querySelector("input").value.trim(), t = raw.toLowerCase(); if (!t) return;
+  if (/what if|what happens|what would happen|\bif\b.*\b(drops?|falls?|rises?|moves?|crash|pay|move)\b|simulate|scenario/.test(t)) {
+    const r = parseWhatIf(key, t);
+    if (r.act) applyScenario(key, r.act);
+    else { ui[key].ans = { kind: r.kind, text: `<i>“${raw.replace(/[<>&]/g, "")}”</i><br>${r.text}`, options: r.options }; render(key); }
+    return;
+  }
+  const sym = MOCK.positions.find(p => new RegExp(`\\b${p.sym.toLowerCase()}\\b`).test(t) || t.includes(p.name.toLowerCase().split(" ")[0]));
+  const map = [[/check/, "chk"], [/saving/, "sav"], [/card|bill/, "cc"], [/schwab/, "sch"], [/ibkr/, "ibk"], [/overview|changed|net worth|since|everything/, "all"]];
+  if (/dining|eat/.test(t) && valid("cc")) { go(key, "cc"); ui[key].x = "cat-Dining"; ui[key].ans = { kind: "info", text: "Opened the Rewards Card with the dining explanation." }; render(key); return; }
+  const hit = sym ? "h-" + sym.sym : (map.find(([re]) => re.test(t)) || [])[1];
+  if (hit && valid(hit)) { go(key, hit, { keepAns: true }); ui[key].ans = { kind: "info", text: `Opened ${ctxInfo(hit).label}. The explanation is below.` }; render(key); }
+  else { ui[key].ans = { kind: "unsupported", text: `This prototype only has scripted answers. Try a stock (NVDA, VTI…), checking, savings, the card, Schwab, IBKR or dining, or a what-if like “what if NVDA drops 15%?”`, options: availableScenarios(key) }; render(key); }
+  f.querySelector("input").value = "";
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+
+let lastFocus = null;
+function openDemo() { lastFocus = document.activeElement; $("#demo").classList.add("open"); document.body.style.overflow = "hidden"; render("demo"); $("#demo-close").focus(); }
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; renderAll(); if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+
+renderAll();
+const hash = location.hash.slice(1);
+if (hash === "demo") openDemo();
+else if (hash.startsWith("h-") || ["chk", "sav", "cc", "sch", "ibk"].includes(hash)) go("land", hash);
+</script>
+</body>
+</html>
