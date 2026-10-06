@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v20 · Ledgerline Workspace — Ledgerline</title>
+<meta name="description" content="v20 — the first refinement: v18's overview and AI panel, with v16's account list, v19's bank/brokerage choice, v08's “Since you last checked” summary, and a new stock view with 1D/1W/1M/1Y charts. All data is mock.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface-2: #f2f4f8;
+    --hover: #edf0f6;
+    --ink: #121826;
+    --muted: #525c6e;
+    --faint: #8790a0;
+    --line: #e0e4eb;
+    --line-2: #cbd1db;
+    --accent: #5b3fd6;
+    --accent-soft: #eeeafd;
+    --wif: #b45c00; --wif-soft: #fff1df;
+    --bank: #13709e; --bank-soft: #e0eff7;
+    --brok: #6b45c2; --brok-soft: #efe9fa;
+    --gain: #13804a; --loss: #c53a2f;
+    --gain-rgb: 19, 128, 74; --loss-rgb: 197, 58, 47;
+    --mock-ink: #83520b; --mock-bg: #fff0c8;
+    --shadow: 0 1px 2px rgba(20,30,50,.05), 0 10px 30px rgba(20,30,50,.07);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1017;
+    --surface: #151a23;
+    --surface-2: #1b212c;
+    --hover: #202736;
+    --ink: #e9edf4;
+    --muted: #a6afbd;
+    --faint: #717b8c;
+    --line: #252c38;
+    --line-2: #333c4b;
+    --accent: #a995ff;
+    --accent-soft: #241d44;
+    --wif: #ffb25e; --wif-soft: #3a2810;
+    --bank: #5fb7e3; --bank-soft: #13293a;
+    --brok: #b597ff; --brok-soft: #2a2145;
+    --gain: #45cc88; --loss: #ff7e72;
+    --gain-rgb: 69, 204, 136; --loss-rgb: 255, 126, 114;
+    --mock-ink: #ffd88a; --mock-bg: #3a2c0d;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--mock-ink); background: var(--mock-bg); padding: 2px 6px; border-radius: 4px; vertical-align: 2px; white-space: nowrap; }
+  .tag { font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .tag.bank { background: var(--bank-soft); color: var(--bank); }
+  .tag.brok { background: var(--brok-soft); color: var(--brok); }
+
+  .mockbar { background: var(--mock-bg); color: var(--mock-ink); font-size: 13.5px; text-align: center; padding: 7px 16px; }
+  header.top { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; height: 58px; }
+  .back { font-size: 14px; text-decoration: none; color: var(--muted); padding: 5px 12px; border: 1px solid var(--line-2); border-radius: 999px; white-space: nowrap; background: var(--surface); }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 750; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .brand .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 800; }
+  .brand small { font-size: 11px; color: var(--faint); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 7px; font-weight: 600; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 3px; cursor: pointer; font-size: 13px; }
+  .theme-btn > span { padding: 3px 10px; border-radius: 999px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--ink); color: var(--bg); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; padding: 10px 18px; font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; text-decoration: none; white-space: nowrap; background: var(--accent); color: #fff; }
+  [data-theme="dark"] .btn { color: #0d1017; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+  .btn.sm { padding: 6px 13px; font-size: 14px; }
+
+  /* ---------- hero ---------- */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: end; padding: 26px 0 18px; }
+  .hero .k { font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .hero h1 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.08; letter-spacing: -.03em; margin: 6px 0 10px; }
+  .hero p { margin: 0; font-size: 17px; color: var(--muted); max-width: 60ch; }
+  .connect { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .connect .q { font-weight: 750; font-size: 15px; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .conn-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .copt { text-align: left; border: 2px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 9px 11px; cursor: pointer; min-width: 0; }
+  .copt b { display: block; font-size: 14.5px; }
+  .copt span { font-size: 12.5px; color: var(--muted); display: block; line-height: 1.35; }
+  .copt[aria-pressed="true"] { border-color: var(--c); background: var(--surface); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); }
+  .copt.bank { --c: var(--bank); } .copt.brok { --c: var(--brok); } .copt.both { --c: var(--accent); }
+  .connect .cta { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+  /* ---------- workspace: list | detail | assistant ---------- */
+  .ws { display: grid; grid-template-columns: 270px minmax(0, 1fr) 360px; gap: 14px; align-items: start; margin-bottom: 30px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); min-width: 0; }
+
+  /* account list */
+  .list { padding: 10px 8px; position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow-y: auto; }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface-2); border-radius: 10px; padding: 3px; margin: 0 4px 8px; }
+  .seg button { border: 0; background: none; border-radius: 8px; padding: 5px 4px; font-size: 12.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .grp { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 12px 8px 4px; }
+  .grp .sum { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 650; font-variant-numeric: tabular-nums; }
+  .row { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; border-radius: 11px; border: 1px solid transparent; }
+  .row:hover { background: var(--hover); }
+  .row.on { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .row .chk { display: grid; place-items: center; height: 100%; padding-left: 4px; cursor: pointer; }
+  .row .chk input { width: 15px; height: 15px; accent-color: var(--accent); margin: 0; cursor: pointer; }
+  .pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; text-align: left; background: none; border: 0; padding: 7px 8px 7px 4px; cursor: pointer; min-width: 0; border-radius: 0 11px 11px 0; }
+  .pick .nm { font-weight: 650; font-size: 14px; line-height: 1.3; min-width: 0; }
+  .pick .sub { font-size: 12px; color: var(--faint); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick .bal { font-weight: 700; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pick .chg { font-size: 12px; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .row.out .pick .nm, .row.out .pick .bal { color: var(--faint); }
+  .row.ov .pick .nm { font-size: 15px; }
+  .hrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; width: calc(100% - 22px); margin-left: 22px; text-align: left; border: 0; background: none; padding: 4px 8px 4px 10px; border-left: 2px solid var(--line); cursor: pointer; font-size: 13px; border-radius: 0 8px 8px 0; }
+  .hrow:hover { background: var(--hover); }
+  .hrow.on { background: var(--accent-soft); border-left-color: var(--accent); }
+  .hrow b { font-weight: 700; }
+  .hrow .v { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .notconn { margin: 4px 8px; font-size: 12.5px; color: var(--faint); border: 1px dashed var(--line-2); border-radius: 10px; padding: 7px 9px; }
+  .notconn button { border: 0; background: none; color: var(--accent); font-weight: 700; cursor: pointer; padding: 0; font-size: 12.5px; }
+  .list-note { font-size: 11.5px; color: var(--faint); margin: 10px 8px 2px; }
+  .chips { display: none; }
+
+  /* detail */
+  .detail { padding: 18px 20px 22px; display: grid; gap: 16px; }
+  .crumbs { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .crumbs button { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-weight: 650; font-size: 13px; }
+  .d-head { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+  .d-head h2 { margin: 2px 0 0; font-size: 26px; letter-spacing: -.02em; line-height: 1.15; }
+  .d-head h2 small { font-size: 15px; color: var(--muted); font-weight: 600; letter-spacing: 0; }
+  .d-head .fig { margin-left: auto; text-align: right; }
+  .d-head .fig .v { font-size: 34px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .d-head .fig .l { font-size: 13.5px; color: var(--muted); }
+  .after { display: block; font-size: 13px; font-weight: 750; color: var(--wif); font-variant-numeric: tabular-nums; }
+  .after::before { content: "what-if → "; font-weight: 600; }
+  .sec h3 { margin: 0 0 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sec h3 .r { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 600; font-size: 13px; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+  [data-x] { cursor: pointer; }
+  .xon { box-shadow: 0 0 0 2px var(--accent) !important; }
+
+  /* since you last checked (from v08) */
+  .since { background: linear-gradient(135deg, var(--accent-soft), var(--surface) 75%); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+  .since .top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .since .k { font-size: 12px; font-weight: 800; letter-spacing: .07em; color: var(--accent); text-transform: uppercase; }
+  .since .big { font-size: 34px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .since .split { font-size: 14px; color: var(--muted); }
+  .since ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+  .since li button { width: 100%; text-align: left; display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 8px 11px; cursor: pointer; font-size: 14.5px; }
+  .since li button:hover { border-color: var(--accent); }
+  .since li .a { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .since li .go { font-size: 12.5px; color: var(--accent); font-weight: 700; white-space: nowrap; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .tile { text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .tile:hover { border-color: var(--accent); }
+  .tile > span { display: block; }
+  .tile .l { font-size: 12.5px; color: var(--muted); font-weight: 650; }
+  .tile .v { font-size: clamp(17px, 1.5vw, 21px); font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tile .s { font-size: 12px; color: var(--muted); }
+
+  /* holdings list */
+  table.hold { width: 100%; border-collapse: separate; border-spacing: 0 2px; font-size: 14px; font-variant-numeric: tabular-nums; }
+  table.hold th { text-align: right; font-size: 11.5px; color: var(--faint); font-weight: 700; padding: 0 8px 4px; white-space: nowrap; }
+  table.hold td { text-align: right; padding: 7px 8px; white-space: nowrap; background: var(--surface); }
+  table.hold th:first-child, table.hold td:first-child { text-align: left; }
+  table.hold tr.go { cursor: pointer; }
+  table.hold tr.go:hover td { background: var(--accent-soft); }
+  table.hold tr.go td:first-child { border-radius: 9px 0 0 9px; }
+  table.hold tr.go td:last-child { border-radius: 0 9px 9px 0; color: var(--accent); }
+  table.hold td small { display: block; color: var(--faint); font-size: 11.5px; }
+
+  /* calendar */
+  .cal-host { container: cal / inline-size; }
+  .cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .cal-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .cal-nav button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; }
+  .cal-nav button:disabled { opacity: .3; cursor: default; }
+  .cal-nav .m { padding: 0 4px; white-space: nowrap; font-weight: 700; font-size: 14px; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .dow { font-size: 11px; font-weight: 700; color: var(--faint); text-align: center; }
+  .day { min-width: 0; overflow: hidden; min-height: 44px; border-radius: 8px; padding: 4px 6px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1px solid transparent; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+  button.day { cursor: pointer; }
+  button.day:hover { border-color: var(--ink); }
+  .day .dn, .day .amt { display: block; max-width: 100%; overflow: hidden; }
+  .day .dn { font-size: 11px; color: var(--muted); font-weight: 650; }
+  .day .amt { font-size: 12px; font-weight: 800; white-space: nowrap; letter-spacing: -.01em; }
+  .day.up .amt { color: var(--gain); } .day.down .amt { color: var(--loss); }
+  .day.up.l1 { background: rgba(var(--gain-rgb), .10); } .day.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .day.up.l3 { background: rgba(var(--gain-rgb), .36); } .day.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .day.down.l1 { background: rgba(var(--loss-rgb), .10); } .day.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .day.down.l3 { background: rgba(var(--loss-rgb), .36); } .day.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .day.l3 .amt, .day.l4 .amt { color: var(--ink); }
+  .day.off { background: transparent; border: 1px dashed var(--line-2); }
+  .day.off .amt { font-size: 10.5px; font-weight: 500; color: var(--faint); }
+  .day.blank { background: transparent; }
+  .day.future { background: transparent; border: 1px dotted var(--line-2); }
+  .day.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  @container cal (max-width: 520px) { .day { min-height: 40px; padding: 4px; } .day .amt { font-size: 11px; } .day .amt .cur { display: none; } }
+  @container cal (max-width: 360px) { .cal { gap: 2px; } .dow .rest { display: none; } .day { min-height: 36px; padding: 3px 2px 3px 3px; } .day .dn { font-size: 10px; } .day .amt { font-size: 10px; letter-spacing: -.03em; } .day.off .amt { display: none; } }
+  .cal-legend { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .cal-legend .sw { width: 15px; height: 10px; border-radius: 2px; }
+  .cal-legend .gap { width: 8px; }
+
+  /* stock view */
+  .ranges { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; }
+  .ranges button { border: 0; background: none; border-radius: 8px; padding: 5px 12px; font-weight: 750; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+  .ranges button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; touch-action: none; }
+  .chart .ax { fill: var(--faint); font-size: 11px; }
+  .chart .gl { stroke: var(--line); }
+  .chart .read { font-size: 13px; color: var(--muted); margin-bottom: 4px; min-height: 20px; }
+  .chart .read b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .vs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  .vsb { border-radius: 14px; padding: 12px 14px; border: 1px solid var(--line); min-width: 0; }
+  .vsb.px { background: var(--surface-2); }
+  .vsb.me { background: var(--brok-soft); border-color: color-mix(in srgb, var(--brok) 30%, transparent); }
+  .vsb .k { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .vsb.me .k { color: var(--brok); }
+  .vsb .who { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+  .vsb .v { font-size: 26px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .vsb .s { font-size: 13.5px; color: var(--muted); }
+  .vsb .s b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .vsb hr { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 18px; }
+  .facts .r { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+  .facts .r span { color: var(--muted); }
+  .facts .r b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* bank views */
+  .rows .r { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; align-items: baseline; }
+  .rows .r:last-child { border-bottom: 0; }
+  .rows .r small { color: var(--faint); display: block; font-size: 12px; }
+  .rows .r .a { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 650; }
+  .cf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .cf > div { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; border: 1px solid transparent; }
+  .cf > div:hover { border-color: var(--accent); }
+  .cf .l { font-size: 12.5px; color: var(--muted); font-weight: 650; }
+  .cf .v { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .cf .s { font-size: 12.5px; color: var(--muted); }
+  .cat { display: grid; grid-template-columns: 86px minmax(0, 1fr) 62px; gap: 10px; align-items: center; padding: 5px 6px; font-size: 14px; border-radius: 8px; }
+  .cat:hover { background: var(--hover); }
+  .cat .bar { height: 9px; border-radius: 5px; background: var(--surface-2); position: relative; overflow: hidden; }
+  .cat .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bank); border-radius: 5px; }
+  .cat .bar u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); opacity: .45; }
+  .cat.hot .bar i { background: var(--loss); }
+  .cat b { text-align: right; font-variant-numeric: tabular-nums; }
+  .cats-key { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  /* assistant panel */
+  .assist { position: sticky; top: 72px; max-height: calc(100vh - 90px); display: flex; flex-direction: column; overflow: hidden; }
+  .as-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 0; }
+  .as-head .t { font-weight: 800; font-size: 15px; display: flex; gap: 6px; align-items: center; }
+  .as-tog { display: none; margin-left: auto; background: none; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 13px; }
+  .tabs { display: flex; gap: 4px; padding: 8px 14px 0; border-bottom: 1px solid var(--line); }
+  .tab { border: 0; background: none; padding: 8px 10px; font-weight: 700; font-size: 14.5px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab[aria-selected="true"] { color: var(--ink); border-color: var(--accent); }
+  .tab .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--wif); margin-left: 5px; vertical-align: 2px; }
+  .as-body { padding: 14px; overflow-y: auto; flex: 1; }
+  .x-what { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--accent); margin-bottom: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .x-title { font-size: 18px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 6px; line-height: 1.25; }
+  .x-text { font-size: 15px; margin: 0 0 10px; }
+  .x-nums { background: var(--surface-2); border-radius: 12px; padding: 4px 12px; margin-bottom: 12px; }
+  .x-nums .r { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .x-nums .r:last-child { border-bottom: 0; }
+  .x-nums .r b { font-variant-numeric: tabular-nums; text-align: right; }
+  .x-back { border: 0; background: none; color: var(--accent); font-weight: 650; cursor: pointer; padding: 0; font-size: 13px; margin-bottom: 8px; }
+  .x-next { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chipq { font-size: 13px; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 4px 10px; cursor: pointer; font-weight: 600; text-align: left; }
+  .chipq:hover { border-color: var(--accent); color: var(--accent); }
+  .chipq[aria-expanded="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chipq.w { border-color: color-mix(in srgb, var(--wif) 50%, transparent); color: var(--wif); }
+  .ans { margin-top: 10px; font-size: 14.5px; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; }
+  .fine { font-size: 12.5px; color: var(--faint); margin-top: 12px; }
+  .lev { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+  .lev.on { border-color: var(--wif); background: var(--wif-soft); }
+  .lev label { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; cursor: pointer; }
+  .lev .nm { font-weight: 700; font-size: 14px; }
+  .lev .ds { font-size: 12.5px; color: var(--muted); }
+  .lev input[type="checkbox"] { width: 19px; height: 19px; accent-color: var(--wif); }
+  .lev input[type="range"] { width: 100%; accent-color: var(--wif); margin: 6px 0 0; }
+  .lev .val { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--wif); }
+  .lev.dis { opacity: .5; }
+  .lev.ctx { border-style: dashed; }
+  .res { background: var(--wif-soft); border-radius: 12px; padding: 12px; margin-top: 10px; font-size: 14px; }
+  .res .h { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--wif); margin-bottom: 4px; }
+  .res .r { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; font-variant-numeric: tabular-nums; }
+  .res .r b { white-space: nowrap; }
+  .res p { margin: 8px 0 0; }
+  .ask { display: flex; gap: 6px; border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 4px 4px 12px; margin: 12px 14px 0; align-items: center; }
+  .ask input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14.5px; padding: 4px; outline: none; }
+
+  /* below */
+  .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 30px; }
+  .three > div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+  .three b { display: block; font-size: 16.5px; margin-bottom: 4px; }
+  .three p { margin: 0; color: var(--muted); font-size: 15px; }
+  .final { text-align: center; padding: 10px 20px 50px; }
+  .final h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .final p { color: var(--muted); margin: 0 0 18px; }
+  footer { border-top: 1px solid var(--line); padding: 18px 0 34px; font-size: 13px; color: var(--faint); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  /* demo */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+  .demo-body { flex: 1; overflow-y: auto; padding: 14px 0 30px; }
+  .demo .list, .demo .assist { top: 0; max-height: calc(100vh - 100px); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1240px) {
+    .ws { grid-template-columns: minmax(0, 1fr) 340px; }
+    .list { display: none; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; margin: -4px 0 0; scrollbar-width: thin; }
+    .chip { flex: none; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; font-weight: 650; white-space: nowrap; }
+    .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .chip small { font-weight: 500; opacity: .75; margin-left: 4px; }
+    .chip.kind { border-style: dashed; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 1000px) {
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .two { grid-template-columns: minmax(0, 1fr); }
+  }
+  /* the assistant becomes a bottom drawer */
+  @media (max-width: 860px) {
+    .ws { grid-template-columns: minmax(0, 1fr); padding-bottom: 70px; }
+    .assist { position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto !important; z-index: 50; max-height: 60px !important; transition: max-height .2s; box-shadow: 0 -6px 30px rgba(0,0,0,.18); }
+    .assist.up { max-height: 70vh !important; }
+    .as-tog { display: inline-block; }
+    .as-head { padding-bottom: 6px; }
+    .three { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .hide-sm, .brand small { display: none; }
+    header.top .wrap { gap: 8px; }
+    header.top .btn { padding: 8px 12px; font-size: 14px; }
+    .conn-opts { grid-template-columns: minmax(0, 1fr); }
+    .copt span { display: inline; margin-left: 6px; }
+    .copt b { display: inline; }
+    .detail { padding: 14px 12px 18px; }
+    .d-head .fig { margin-left: 0; text-align: left; width: 100%; }
+    .vs, .facts, .cf { grid-template-columns: minmax(0, 1fr); }
+    .since li button { grid-template-columns: 64px minmax(0, 1fr); }
+    .since li .go { display: none; }
+    table.hold .opt { display: none; }
+    table.hold td, table.hold th { padding-left: 5px; padding-right: 5px; font-size: 13px; }
+    .cat { grid-template-columns: 76px minmax(0, 1fr) 56px; gap: 8px; }
+    .ranges button { padding: 5px 9px; }
+  }
+  @media (max-width: 420px) { header.top .btn { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note"><b>Design prototype · v20.</b> Every account, price, chart and AI explanation here is <b>mock data</b>. Stock charts are simulated. What-ifs are illustrations, not advice. No real bank or brokerage connection is implemented.</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <a class="brand" href="#top"><span class="logo">L</span> Ledgerline <small>v20</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <section class="hero">
+    <div>
+      <div class="k">Bank + brokerage, with an assistant beside you</div>
+      <h1>All your accounts in one place. Click anything to see what changed and why.</h1>
+      <p>Pick an account, a holding or a number. The assistant explains what you selected in plain language. Want to test a decision? Switch to What if.</p>
+    </div>
+    <div class="connect" data-connect></div>
+  </section>
+
+  <div class="ws" data-root="land"></div>
+
+  <section class="three" aria-label="How it works">
+    <div><b>Start with what changed</b><p>The overview opens with what's different since you last checked, across bank and brokerage accounts.</p></div>
+    <div><b>Open any account or stock</b><p>Bank accounts show cash flow. Holdings show a price chart, your position, and your gain or loss, kept clearly apart.</p></div>
+    <div><b>Explain first, what-if second</b><p>The assistant explains whatever you select. What-if scenarios are one tab away when you want them.</p></div>
+  </section>
+</main>
+
+<section class="final">
+  <h2>Open the full demo</h2>
+  <p>Full screen, with a question box in the assistant. Everything is mock data.</p>
+  <button class="btn" data-open-demo>View Demo →</button>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Ledgerline is a fictional product concept. v20 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. Stock prices are simulated. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline workspace demo">
+  <div class="demo-top">
+    <span class="brand"><span class="logo">L</span><span class="hide-sm">Ledgerline</span></span>
+    <span class="mock">DEMO · ALL DATA IS MOCK</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <button class="btn ghost sm" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-body"><div class="wrap"><div class="ws" data-root="demo"></div></div></div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v19.
+   Average costs and price charts are new in v20 and are simulated.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", short: "Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", short: "Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", short: "Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", short: "Schwab", inst: "Schwab (mock)", mask: "••5512", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", short: "IBKR", inst: "IBKR (mock)", mask: "U•••908", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  name: "Vanguard Total Stock Market ETF", acct: "sch", qty: 120, px: 287.40, vol: 0.8, cost: 241.10, since: "Mar 2023" },
+    { sym: "AAPL", name: "Apple", acct: "sch", qty: 45,  px: 228.10, vol: 1.4, cost: 182.40, since: "Jun 2023" },
+    { sym: "MSFT", name: "Microsoft", acct: "sch", qty: 30,  px: 431.20, vol: 1.2, cost: 362.00, since: "Jan 2024" },
+    { sym: "NVDA", name: "NVIDIA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8, cost: 98.50, since: "Aug 2024" },
+    { sym: "TSLA", name: "Tesla", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2, cost: 268.90, since: "Dec 2024" },
+    { sym: "QQQ",  name: "Invesco QQQ (Nasdaq-100)", acct: "ibk", qty: 25,  px: 489.50, vol: 1.1, cost: 431.75, since: "Apr 2024" }
+  ],
+  tech: ["AAPL", "MSFT", "NVDA", "QQQ"],
+  // checking activity over the past 30 days (same events as v08 / v16)
+  chkEvents: [
+    { date: "2026-10-03", t: "Paycheck", amt: 3425 }, { date: "2026-10-03", t: "Rent, October", amt: -2100 },
+    { date: "2026-10-02", t: "Transfer to savings", amt: -500 }, { date: "2026-09-30", t: "Card payment", amt: -1250 },
+    { date: "2026-09-19", t: "Paycheck", amt: 3425 }, { date: "2026-09-15", t: "Utilities", amt: -290 }
+  ],
+  september: { income: 6850, spending: 5120, kept: 1730, avgSpend: 5262, avgKept: 1630,
+    cats: [["Housing", 2100, 2100], ["Groceries", 640, 655], ["Dining", 612, 518], ["Shopping", 520, 560], ["Transport", 380, 402], ["Utilities", 290, 301], ["Other", 578, 726]] },
+  upcoming: [
+    { date: "2026-10-17", t: "Paycheck", acct: "chk", amt: 3425 },
+    { date: "2026-10-22", t: "Rewards Card due", acct: "cc", amt: -1236.40 },
+    { date: "2026-11-02", t: "Transfer to savings", acct: "sav", amt: -500 },
+    { date: "2026-11-03", t: "Rent, November", acct: "chk", amt: -2100 }
+  ],
+  holidays: { "2026-09-07": "Labor Day" },
+  months: [[2026, 7], [2026, 8], [2026, 9]],
+  lastDataDay: "2026-10-02",
+  weekStart: "2026-09-28",
+  lastChecked: "Mon, Sep 28"
+};
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 0) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 0) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (n, d = 1) => (n >= 0 ? "+" : "−") + Math.abs(n).toFixed(d) + "%";
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const gl = n => (n >= 0 ? "gain" : "loss");
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const isoD = t => iso(t.getFullYear(), t.getMonth(), t.getDate());
+const toDate = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const nice = s => { const t = toDate(s); return `${DOW[t.getDay()]}, ${MONTHS[t.getMonth()].slice(0, 3)} ${t.getDate()}`; };
+const short = s => { const t = toDate(s); return `${MONTHS[t.getMonth()].slice(0, 3)} ${t.getDate()}`; };
+
+MOCK.positions.forEach(p => p.val = p.qty * p.px);
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const acct = id => ALL.find(a => a.id === id);
+const pos = sym => MOCK.positions.find(p => p.sym === sym);
+const holdOf = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0);
+const value = id => isBank(id) ? acct(id).bal : holdOf(id) + acct(id).cash;
+
+/* deterministic mock daily P&L (same generator as v02–v19) */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, bs) { const moves = rawDay(date).filter(m => bs.has(m.acct)).sort((a, b) => b.amt - a.amt); return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0) }; }
+function statusD(t) { const date = isoD(t), dw = t.getDay(); if (date > MOCK.lastDataDay) return "future"; if (dw === 0 || dw === 6) return "weekend"; if (MOCK.holidays[date]) return "holiday"; return "trade"; }
+const status = (y, m, d) => statusD(new Date(y, m, d));
+function tradeDays(from, to) { const out = [], t = toDate(from); while (isoD(t) <= to) { if (statusD(t) === "trade") out.push(isoD(t)); t.setDate(t.getDate() + 1); } return out; }
+function lastTradeDays(n) { const out = [], t = toDate(MOCK.lastDataDay); while (out.length < n) { if (statusD(t) === "trade") out.unshift(isoD(t)); t.setDate(t.getDate() - 1); } return out; }
+function rangeStats(dates, bs) {
+  const days = dates.map(d => dayFor(d, bs)), bySym = {};
+  days.forEach(dd => dd.moves.forEach(mv => bySym[mv.sym] = (bySym[mv.sym] || 0) + mv.amt));
+  const sorted = [...days].sort((a, b) => b.total - a.total);
+  return { days, bySym, total: days.reduce((s, x) => s + x.total, 0), up: days.filter(x => x.total >= 0).length, down: days.filter(x => x.total < 0).length, best: sorted[0], worst: sorted[sorted.length - 1] };
+}
+const monthStats = (y, m, bs) => rangeStats(tradeDays(iso(y, m, 1), iso(y, m, new Date(y, m + 1, 0).getDate())), bs);
+const weekStats = bs => rangeStats(tradeDays(MOCK.weekStart, MOCK.lastDataDay), bs);
+
+/* =========================================================
+   SIMULATED PRICE HISTORY
+   Daily closes come from the same generator as the calendar, so a holding's
+   gain over any period equals the sum of its calendar days.
+   ========================================================= */
+const pxCache = {};
+function closes(sym) {   // 253 points: the close before the first of 252 trading days, then each close
+  if (pxCache[sym]) return pxCache[sym];
+  const p = pos(sym), days = lastTradeDays(252), out = new Array(days.length + 1);
+  out[days.length] = { d: days[days.length - 1], px: p.px };
+  for (let i = days.length - 1; i >= 0; i--) {
+    const mv = rawDay(days[i]).find(m => m.sym === sym);
+    out[i] = { d: i ? days[i - 1] : "start", px: out[i + 1].px - p.px * mv.pct / 100 };
+  }
+  return pxCache[sym] = out;
+}
+function bridge(seed, a, b, n, amp) {  // smooth random path from a to b in n steps
+  const r = seeded(seed), w = [0];
+  for (let i = 1; i <= n; i++) w.push(w[i - 1] + (r() - .5));
+  return w.map((v, i) => a + (b - a) * i / n + (v - w[n] * i / n) * amp);
+}
+const RANGES = { "1D": "1D", "1W": "1W", "1M": "1M", "1Y": "1Y" };
+function series(sym, range) {
+  const p = pos(sym), c = closes(sym), N = c.length - 1;
+  if (range === "1Y") return { pts: c.map(x => ({ px: x.px, lab: x.d === "start" ? "Oct 2025" : short(x.d) })), start: c[0].px, from: "1 year ago", label: "past year" };
+  if (range === "1M") { const s = c.slice(N - 21); return { pts: s.map(x => ({ px: x.px, lab: short(x.d) })), start: s[0].px, from: `${short(s[0].d)} close`, label: `${short(s[1].d)} – Oct 2` }; }
+  const amp = p.px * p.vol * 0.0016;
+  if (range === "1W") {
+    const s = c.slice(N - 5), pts = [{ px: s[0].px, lab: short(s[0].d) }];
+    for (let i = 1; i < s.length; i++) bridge(sym + s[i].d, s[i - 1].px, s[i].px, 12, amp).slice(1).forEach((v, k) => pts.push({ px: v, lab: `${DOW[toDate(s[i].d).getDay()]} ${k < 11 ? `${9 + Math.floor((k + 1) * 6.5 / 12)}:${k % 2 ? "30" : "00"}` : "close"}` }));
+    return { pts, start: s[0].px, from: `${short(s[0].d)} close`, label: "Sep 28 – Oct 2" };
+  }
+  const prev = c[N - 1].px, path = bridge(sym + "intraday", prev, p.px, 78, amp * .7);
+  return { pts: path.map((v, i) => { const m = 570 + i * 5; return { px: v, lab: i ? `${Math.floor(m / 60) > 12 ? Math.floor(m / 60) - 12 : Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} ${m >= 720 ? "pm" : "am"}` : "Thu close" }; }), start: prev, from: "Thu close", label: "Fri, Oct 2" };
+}
+
+/* ---------- state ---------- */
+const sel = new Set(ALL.map(a => a.id));          // ticked = counted in totals
+let conn = "both";                                // v19: bank, brokerage or both
+const W = { pay: false, dine: false, move: 0, mkt: 0, stk: {} };
+const BASE = { pay: false, dine: false, move: 0, mkt: 0, stk: {} };
+const ui = { land: { item: "all", range: "1M", tab: "x", x: null, q: null, up: false, hover: null }, demo: { item: "all", range: "1M", tab: "x", x: null, q: null, up: false, hover: null } };
+const cals = {};
+const connected = id => conn === "both" || (conn === "bank") === isBank(id);
+const inc = id => sel.has(id) && connected(id);
+const incBrok = () => new Set(MOCK.brok.filter(a => inc(a.id)).map(a => a.id));
+
+/* ---------- numbers, before and after a what-if ---------- */
+const can = () => ({ pay: inc("chk") && inc("cc"), dine: inc("cc"), move: inc("sav") && incBrok().size > 0, mkt: incBrok().size > 0 });
+function numbers(w) {
+  const c = can(), bs = incBrok(), pay = w.pay && c.pay, move = c.move ? w.move : 0, mkt = c.mkt ? w.mkt : 0;
+  const pv = {}; MOCK.positions.forEach(p => pv[p.sym] = p.val * (1 + mkt / 100 + (w.stk[p.sym] || 0) / 100));
+  const hold = MOCK.positions.filter(p => bs.has(p.acct)).reduce((s, p) => s + pv[p.sym], 0);
+  const cash = MOCK.brok.filter(a => bs.has(a.id)).reduce((s, a) => s + a.cash, 0);
+  const chk = inc("chk") ? 8412.55 - (pay ? 1236.40 : 0) : 0, sav = inc("sav") ? 24180 - move : 0, cc = inc("cc") ? (pay ? 0 : -1236.40) : 0;
+  const acctV = {}; MOCK.brok.forEach(a => acctV[a.id] = MOCK.positions.filter(p => p.acct === a.id).reduce((s, p) => s + pv[p.sym], 0) + a.cash + (move && a.id === moveTo() ? move : 0));
+  return { bs, pv, acctV, hold, chk, sav, cc, inv: hold + cash + move, cash: chk + sav + cc, kept: MOCK.september.kept + (w.dine && c.dine ? 94 : 0), nw: chk + sav + cc + hold + cash + move };
+}
+const moveTo = () => inc("sch") ? "sch" : "ibk";
+const active = () => W.pay || W.dine || W.move > 0 || W.mkt !== 0 || Object.values(W.stk).some(v => v);
+const aft = (b, a, d = 0) => active() && Math.abs(a - b) > .5 ? `<span class="after">${money(a, d)}</span>` : "";
+
+/* =========================================================
+   LEFT: account list (v01 / v16) with the v19 connect choice
+   ========================================================= */
+function listHTML(key) {
+  const u = ui[key], B = numbers(BASE), bs = incBrok();
+  const bankWk = MOCK.bank.filter(a => inc(a.id)).reduce((s, a) => s + a.wk, 0), invWk = bs.size ? weekStats(bs).total : 0;
+  const wk = id => isBank(id) ? acct(id).wk : weekStats(new Set([id])).total;
+  const row = a => { const on = u.item === a.id, w = wk(a.id);
+    let h = `<div class="row${on ? " on" : ""}${sel.has(a.id) ? "" : " out"}"><label class="chk" title="Count ${a.name} in totals"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""} aria-label="Count ${a.name} in totals"></label>
+      <button type="button" class="pick" data-item="${a.id}" aria-current="${on}"><span class="nm">${a.name}</span><span class="bal">${money(value(a.id), 2)}</span><span class="sub">${a.inst} ${a.mask}</span><span class="chg ${gl(w)}">${signed(w)} 7d</span></button></div>`;
+    if (!isBank(a.id)) h += MOCK.positions.filter(p => p.acct === a.id).map(p => `<button type="button" class="hrow${u.item === "h-" + p.sym ? " on" : ""}" data-item="h-${p.sym}"><b>${p.sym}</b><span class="v">${money(p.val)}</span></button>`).join("");
+    return h; };
+  const nc = (k, label) => `<div class="notconn">${label} not connected. <button type="button" data-conn="${conn === "bank" && k === "brok" || conn === "brok" && k === "bank" ? "both" : k}">Connect mock ${k === "bank" ? "bank" : "brokerage"} →</button></div>`;
+  return `<nav class="card list" aria-label="Accounts">
+    <div class="seg" role="group" aria-label="What's connected">${[["bank", "Bank"], ["brok", "Brokerage"], ["both", "Both"]].map(([k, l]) => `<button type="button" data-conn="${k}" aria-pressed="${conn === k}">${l}</button>`).join("")}</div>
+    <div class="row ov${u.item === "all" ? " on" : ""}"><span></span><button type="button" class="pick" data-item="all" aria-current="${u.item === "all"}"><span class="nm">Overview</span><span class="bal">${money(B.nw)}</span><span class="sub">${ALL.filter(a => inc(a.id)).length} accounts counted</span><span class="chg ${gl(bankWk + invWk)}">${signed(bankWk + invWk)} 7d</span></button></div>
+    <div class="grp"><span class="tag bank">Bank</span> Mock Bank${conn !== "brok" ? `<span class="sum">${money(MOCK.bank.filter(a => sel.has(a.id)).reduce((s, a) => s + a.bal, 0))}</span>` : ""}</div>
+    ${conn !== "brok" ? MOCK.bank.map(row).join("") : nc("bank", "Bank accounts")}
+    <div class="grp"><span class="tag brok">Brokerage</span>${conn !== "bank" ? `<span class="sum">${money(MOCK.brok.filter(a => sel.has(a.id)).reduce((s, a) => s + value(a.id), 0))}</span>` : ""}</div>
+    ${conn !== "bank" ? MOCK.brok.map(row).join("") : nc("brok", "Brokerages")}
+    <div class="list-note">Ticked accounts count toward totals. Click a name to open it, or a ticker to open the stock.</div>
+  </nav>`;
+}
+function chipsHTML(key) {   // compact list for narrower screens
+  const u = ui[key], items = [["all", "Overview"], ...ALL.filter(a => connected(a.id)).map(a => [a.id, a.short]), ...MOCK.positions.filter(p => connected(p.acct)).map(p => ["h-" + p.sym, p.sym])];
+  return `<div class="chips" role="group" aria-label="Accounts and holdings">${items.map(([id, l]) => `<button type="button" class="chip" data-item="${id}" aria-pressed="${u.item === id}">${l}</button>`).join("")}<button type="button" class="chip kind" data-conn="${conn === "both" ? "bank" : conn === "bank" ? "brok" : "both"}">Showing: ${conn === "both" ? "both" : conn === "bank" ? "bank only" : "brokerage only"} ⇄</button></div>`;
+}
+
+/* =========================================================
+   MIDDLE: the selected item
+   ========================================================= */
+const xa = (key, id, cls = "") => `data-x="${id}" class="${cls}${ui[key].x === id ? " xon" : ""}"`;
+function crumbs(key, parts) { return `<div class="crumbs">${parts.map(([id, l], i) => i < parts.length - 1 ? `<button type="button" data-item="${id}">${l}</button> ›` : `<span>${l}</span>`).join(" ")} <span class="mock">MOCK</span></div>`; }
+
+function overviewHTML(key) {
+  const B = numbers(BASE), A = numbers(W), bs = B.bs, bank = MOCK.bank.filter(a => inc(a.id));
+  if (!ALL.some(a => inc(a.id))) return crumbs(key, [["all", "Overview"]]) + `<p style="color:var(--muted)">Tick at least one account to see the overview.</p>`;
+  const bankWk = bank.reduce((s, a) => s + a.wk, 0), ws = bs.size ? weekStats(bs) : null, tot = bankWk + (ws ? ws.total : 0);
+  const items = [];
+  if (inc("chk")) items.push(["chk", -912.30, "Checking", "Rent and the paycheck both landed Oct 3; $1,250 paid off the card and $500 went to savings."]);
+  if (inc("sav")) items.push(["sav", 500, "Savings", "The $500 monthly transfer is back after skipping September."]);
+  if (ws) { const e = Object.entries(ws.bySym).sort((a, b) => a[1] - b[1]); items.push(["h-" + e[0][0], e[0][1], e[0][0], `Your biggest mover this week. Investments overall ${signed(ws.total)} over ${ws.days.length} market days.`]); }
+  if (inc("cc")) items.push(["cc", -1236.40, "Card due", "Statement due Thu, Oct 22. The Oct 17 paycheck lands first."]);
+  const ms = bs.size ? monthStats(2026, 8, bs) : null;
+  let h = crumbs(key, [["all", "Overview"]]);
+  h += `<div class="since"><div class="top"><span class="k">Since you last checked · ${MOCK.lastChecked}</span></div>
+    <div class="top"><span class="big ${gl(tot)}">${signed(tot)}</span><span class="split">${bank.length ? `Bank ${sg(bankWk)}` : ""}${bank.length && ws ? " · " : ""}${ws ? `Investments ${sg(ws.total)} (market days Sep 28 – Oct 2)` : ""}</span></div>
+    <ul>${items.slice(0, 4).map(([id, a, l, t]) => `<li><button type="button" data-item="${id}"><span class="a ${id === "cc" ? "" : gl(a)}">${id === "cc" ? money(1236.40) : signed(a)}</span><span><b>${l}.</b> ${t}</span><span class="go">Open →</span></button></li>`).join("")}</ul></div>`;
+  h += `<div class="tiles">
+    <button type="button" ${xa(key, "nw", "tile")}><span class="l">Net worth</span><span class="v">${money(B.nw)}</span>${aft(B.nw, A.nw)}<span class="s">${ALL.filter(a => inc(a.id)).length} accounts</span></button>
+    <button type="button" ${xa(key, "cash", "tile")}><span class="l">Bank (cash − card)</span><span class="v">${bank.length ? money(B.cash) : "—"}</span>${bank.length ? aft(B.cash, A.cash) : ""}<span class="s">${bank.length ? `${signed(bankWk)} 7d` : "not connected"}</span></button>
+    <button type="button" ${xa(key, "inv", "tile")}><span class="l">Invested</span><span class="v">${bs.size ? money(B.inv) : "—"}</span>${bs.size ? aft(B.inv, A.inv) : ""}<span class="s">${ms ? `${signed(ms.total)} in Sep` : "not connected"}</span></button>
+    <button type="button" ${xa(key, "kept", "tile")}><span class="l">Kept in Sep</span><span class="v">${bank.length ? money(B.kept) : "—"}</span>${bank.length && A.kept !== B.kept ? `<span class="after">${money(A.kept)}</span>` : ""}<span class="s">${bank.length ? `usual ${money(MOCK.september.avgKept)}` : "not connected"}</span></button></div>`;
+  if (bs.size) {
+    const fri = dayFor(MOCK.lastDataDay, bs);
+    h += `<div class="two"><div class="sec"><h3>Your holdings <span class="r">click one for its chart</span></h3>${holdTable(key, MOCK.positions.filter(p => bs.has(p.acct)).sort((a, b) => b.val - a.val), fri, ms)}</div>
+      <div class="sec"><h3>Daily gains and losses</h3>${calHTML(key, bs)}</div></div>`;
+  } else h += cashFlowHTML(key);
+  return h;
+}
+function holdTable(key, list, fri, ms) {
+  const A = numbers(W);
+  return `<table class="hold"><thead><tr><th>Holding</th><th>Value</th><th>Fri</th><th class="opt">Sep</th><th></th></tr></thead><tbody>
+    ${list.map(p => { const f = fri.moves.find(m => m.sym === p.sym).amt, s = ms.bySym[p.sym]; return `<tr class="go" data-item="h-${p.sym}" tabindex="0" role="button" aria-label="Open ${p.sym}"><td><b>${p.sym}</b><small>${acct(p.acct).short} · ${p.qty} sh</small></td><td>${money(p.val)}${aft(p.val, A.pv[p.sym])}</td><td class="${gl(f)}">${signed(f)}</td><td class="opt ${gl(s)}">${signed(s)}</td><td>›</td></tr>`; }).join("")}</tbody></table>`;
+}
+
+function cashFlowHTML(key) {
+  const S = MOCK.september, max = Math.max(...S.cats.map(c => Math.max(c[1], c[2])));
+  return `<div class="two"><div class="sec"><h3>Cash flow · September</h3>
+      <div class="cf"><div ${xa(key, "income")}><div class="l">Income</div><div class="v gain">+${money(S.income)}</div><div class="s">2 paychecks</div></div><div ${xa(key, "spend")}><div class="l">Spending</div><div class="v">−${money(S.spending)}</div><div class="s">usual ${money(S.avgSpend)}</div></div><div ${xa(key, "kept")}><div class="l">Kept</div><div class="v">${money(S.kept)}</div><div class="s">usual ${money(S.avgKept)}</div></div></div></div>
+    <div class="sec"><h3>Spending by category</h3>${S.cats.map(([n, v, u]) => `<div ${xa(key, "cat-" + n, "cat" + (v - u > 50 ? " hot" : ""))}><span>${n}</span><span class="bar"><i style="width:${v / max * 100}%"></i><u style="left:${u / max * 100}%"></u></span><b>${money(v)}</b></div>`).join("")}<div class="cats-key">Bar = September · line = your usual · click a category</div></div></div>`;
+}
+
+/* checking balance over the past 30 days, rebuilt backward from today's balance */
+function chkHistory() {
+  const end = toDate("2026-10-05"), pts = [], r = seeded("chk-debits"), byDay = {};
+  MOCK.chkEvents.forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
+  const deb = {}; let tot = 0; for (let i = 0; i < 7; i++) { const t = new Date(end); t.setDate(end.getDate() - i); deb[isoD(t)] = .3 + r(); tot += deb[isoD(t)]; }
+  Object.keys(deb).forEach(k => deb[k] = -487.30 * deb[k] / tot);          // Sep 29 – Oct 5 debit card purchases, as in v16
+  for (let i = 7; i < 30; i++) { const t = new Date(end); t.setDate(end.getDate() - i); deb[isoD(t)] = -(8 + r() * 55); }
+  let bal = 8412.55;
+  for (let i = 0; i < 30; i++) { const t = new Date(end); t.setDate(end.getDate() - i); const d = isoD(t); pts.unshift({ d, bal, ev: byDay[d] || [] }); bal -= (byDay[d] || []).reduce((s, e) => s + e.amt, 0) + (deb[d] || 0); }
+  return pts;
+}
+function lineSVG(key, pts, { color, base, fmt, labels, id }) {
+  const w = innerWidth < 600 ? 360 : 640, h = innerWidth < 600 ? 200 : 220, vals = pts.map(p => p.v), lo = Math.min(...vals, base ?? Infinity), hi = Math.max(...vals, base ?? -Infinity), pad = (hi - lo) * .12 || 1;
+  const x = i => 46 + i * (w - 56) / (pts.length - 1), y = v => 14 + (hi + pad - v) / (hi - lo + 2 * pad) * (h - 44);
+  const d = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+  let g = `<svg viewBox="0 0 ${w} ${h}" data-chart="${key}|${id}" role="img" aria-label="${labels.aria}">`;
+  [hi, (hi + lo) / 2, lo].forEach(v => g += `<line class="gl" x1="46" x2="${w - 10}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="0" y="${y(v) + 4}">${fmt(v)}</text>`);
+  if (base != null) g += `<line x1="46" x2="${w - 10}" y1="${y(base)}" y2="${y(base)}" style="stroke:var(--muted);stroke-dasharray:4 4;opacity:.6"/>`;
+  g += `<path d="${d} L${x(pts.length - 1)},${h - 30} L${x(0)},${h - 30}Z" style="fill:${color};opacity:.10"/><path d="${d}" style="fill:none;stroke:${color};stroke-width:2.2;stroke-linejoin:round"/>`;
+  (labels.marks || []).forEach(([i, txt, c]) => g += `<circle cx="${x(i)}" cy="${y(pts[i].v)}" r="5" style="fill:${c};stroke:var(--surface);stroke-width:2"><title>${txt}</title></circle>`);
+  labels.x.forEach(([i, t]) => g += `<text class="ax" x="${x(i)}" y="${h - 10}" text-anchor="${i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"}">${t}</text>`);
+  const hv = ui[key].hover && ui[key].hover.id === id ? ui[key].hover.i : null;
+  if (hv != null && pts[hv]) g += `<line x1="${x(hv)}" x2="${x(hv)}" y1="10" y2="${h - 30}" style="stroke:var(--muted);opacity:.5"/><circle cx="${x(hv)}" cy="${y(pts[hv].v)}" r="4.5" style="fill:${color}"/>`;
+  g += `<rect x="46" y="0" width="${w - 56}" height="${h - 30}" fill="transparent" data-hover="${key}|${id}|${pts.length}"/></svg>`;
+  return `<div class="chart">${hv != null && pts[hv] ? `<div class="read">${pts[hv].lab}: <b>${fmt(pts[hv].v, true)}</b></div>` : `<div class="read">${labels.hint}</div>`}${g}</div>`;
+}
+
+function bankHTML(key, id) {
+  const a = acct(id), A = numbers(W), B = numbers(BASE);
+  const base = B[id], after = A[id];
+  let h = crumbs(key, [["all", "Overview"], [id, a.name]]);
+  h += `<div class="d-head"><div><span class="tag bank">Bank</span> <span style="font-size:13px;color:var(--muted)">${a.inst} ${a.mask}</span><h2>${a.name}</h2></div><div class="fig"><div class="v">${money(id === "cc" ? 1236.40 : a.bal, 2)}</div>${inc(id) ? aft(id === "cc" ? -base : base, id === "cc" ? -after : after, 2) : ""}<div class="l">${id === "cc" ? "statement due Thu, Oct 22" : `${signed(a.wk, 2)} over 7 days`}</div></div></div>`;
+  if (!sel.has(id)) h += `<div class="notconn" style="margin:0">Unticked, so it isn't counted in your totals.</div>`;
+  if (id === "chk") {
+    const hist = chkHistory(), pts = hist.map(p => ({ v: p.bal, lab: nice(p.d) }));
+    const marks = []; hist.forEach((p, i) => p.ev.forEach(e => marks.push([i, `${nice(p.d)}: ${e.t} ${signed(e.amt, 2)}`, e.amt > 0 ? "var(--gain)" : "var(--loss)"])));
+    h += `<div class="sec"><h3>Balance, past 30 days <span class="mock">MOCK</span><span class="r">dots = paychecks and bills</span></h3>${lineSVG(key, pts, { color: "var(--bank)", fmt: (v, full) => full ? money(v, 2) : (v / 1000).toFixed(1) + "k", id: "chk", labels: { aria: "Checking balance over the past 30 days", hint: "Hover or tap the chart for the balance", marks, x: [[0, short(hist[0].d)], [14, short(hist[14].d)], [29, "Oct 5"]] } })}</div>`;
+    h += cashFlowHTML(key);
+    h += `<div class="two"><div class="sec"><h3>Past 7 days</h3><div class="rows">${MOCK.chkEvents.filter(e => e.date >= "2026-09-29").map(e => `<div class="r"><span>${e.t}<small>${short(e.date)}</small></span><span class="a ${e.amt > 0 ? "gain" : ""}">${signed(e.amt, 2)}</span></div>`).join("")}<div class="r"><span>Debit card purchases<small>Sep 29 – Oct 5</small></span><span class="a">−$487.30</span></div></div></div>
+      <div class="sec"><h3>Coming up</h3><div class="rows">${MOCK.upcoming.map(e => `<div class="r"><span>${e.t}<small>${nice(e.date)}</small></span><span class="a ${e.amt > 0 ? "gain" : ""}">${signed(e.amt, 2)}</span></div>`).join("")}</div></div></div>`;
+  }
+  if (id === "sav") {
+    const bars = [["Aug", 500], ["Sep", 0], ["Oct", 500], ["Nov", 500, true]];
+    h += `<div class="sec"><h3>Monthly transfers in <span class="mock">MOCK</span></h3><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end;height:150px">${bars.map(([m, v, plan]) => `<div style="text-align:center;font-size:13px"><div style="height:${v ? 100 : 4}px;border-radius:8px 8px 3px 3px;background:${plan ? "transparent" : v ? "var(--bank)" : "var(--loss)"};${plan ? "border:2px dashed var(--line-2);" : ""}opacity:${v ? 1 : .6}"></div><b style="display:block;margin-top:4px">${v ? "+$500" : "$0"}</b>${m}${plan ? " · planned" : ""}</div>`).join("")}</div></div>
+      <div class="sec"><h3>Activity</h3><div class="rows"><div class="r"><span>Transfer from checking<small>Fri, Oct 2</small></span><span class="a gain">+$500.00</span></div><div class="r"><span>No transfer<small>September</small></span><span class="a">$0.00</span></div><div class="r"><span>Transfer from checking<small>Sun, Aug 2</small></span><span class="a gain">+$500.00</span></div></div></div>`;
+  }
+  if (id === "cc") {
+    h += `<div class="sec"><h3>Statement</h3><div class="rows"><div class="r"><span>Balance due<small>Thu, Oct 22</small></span><span class="a">$1,236.40</span></div><div class="r"><span>New charges, past 7 days<small>5 purchases</small></span><span class="a">$284.15</span></div><div class="r"><span>Previous statement<small>paid in full Sep 30</small></span><span class="a">$1,250.00</span></div></div></div>`;
+    h += cashFlowHTML(key);
+  }
+  return h;
+}
+
+function brokHTML(key, id) {
+  const a = acct(id), bs = new Set([id]), ms = monthStats(2026, 8, bs), ws = weekStats(bs), fri = dayFor(MOCK.lastDataDay, bs), A = numbers(W);
+  let h = crumbs(key, [["all", "Overview"], [id, a.name]]);
+  h += `<div class="d-head"><div><span class="tag brok">Brokerage</span> <span style="font-size:13px;color:var(--muted)">${a.inst} ${a.mask}</span><h2>${a.name}</h2></div><div class="fig"><div class="v">${money(value(id), 2)}</div>${inc(id) ? aft(value(id), A.acctV[id], 2) : ""}<div class="l">${signed(fri.total)} Fri · ${signed(ws.total)} this week · ${signed(ms.total)} Sep</div></div></div>`;
+  if (!sel.has(id)) h += `<div class="notconn" style="margin:0">Unticked, so it isn't counted in your totals.</div>`;
+  h += `<div class="two"><div class="sec"><h3>Holdings <span class="r">${money(a.cash)} cash</span></h3>${holdTable(key, MOCK.positions.filter(p => p.acct === id), fri, ms)}</div><div class="sec"><h3>Daily gains and losses</h3>${calHTML(key + "-" + id, bs, key)}</div></div>`;
+  return h;
+}
+
+function stockHTML(key, sym) {
+  const p = pos(sym), a = acct(p.acct), u = ui[key], s = series(sym, u.range), A = numbers(W);
+  const chg = p.px - s.start, chgPct = chg / s.start * 100, myChg = chg * p.qty, total = (p.px - p.cost) * p.qty, totalPct = (p.px / p.cost - 1) * 100;
+  const color = chg >= 0 ? "var(--gain)" : "var(--loss)";
+  const xs = s.pts.length - 1, xl = [[0, s.pts[0].lab], [Math.round(xs / 2), s.pts[Math.round(xs / 2)].lab], [xs, u.range === "1D" ? "4:00 pm" : "Oct 2"]];
+  let h = crumbs(key, [["all", "Overview"], [p.acct, a.name], ["h-" + sym, sym]]);
+  h += `<div class="d-head"><div><span class="tag brok">${a.short}</span> <span style="font-size:13px;color:var(--muted)">${p.name}</span><h2>${sym} <small>${money(p.px, 2)} a share</small></h2></div>
+    <div class="fig"><div class="v">${money(p.val)}</div>${aft(p.val, A.pv[sym])}<div class="l">your ${p.qty} shares</div></div></div>`;
+  h += `<div class="sec"><h3>Price chart <span class="mock">SIMULATED</span><span class="r"><span class="ranges" role="group" aria-label="Chart range">${Object.keys(RANGES).map(r => `<button type="button" data-range="${key}|${r}" aria-pressed="${u.range === r}">${r}</button>`).join("")}</span></span></h3>
+    ${lineSVG(key, s.pts.map(x => ({ v: x.px, lab: x.lab })), { color, base: s.start, fmt: (v, full) => full ? money(v, 2) : "$" + v.toFixed(0), id: "px", labels: { aria: `${sym} simulated price, ${s.label}`, hint: `${s.label} · dashed line = price at the start`, x: xl } })}</div>`;
+  h += `<div class="vs">
+    <div ${xa(key, "pxchg", "vsb px")}><div class="k">Stock price change · ${u.range}</div><p class="who">Per share. The same for everyone who owns ${sym}.</p><div class="v ${gl(chg)}">${signed(chg, 2)} <span style="font-size:17px">(${pct(chgPct)})</span></div><div class="s">${money(s.start, 2)} → <b>${money(p.px, 2)}</b> since ${s.from}</div></div>
+    <div ${xa(key, "mygain", "vsb me")}><div class="k">Your gain or loss · ${u.range}</div><p class="who">On your ${p.qty} shares. Depends on how much you own.</p><div class="v ${gl(myChg)}">${signed(myChg)}</div><div class="s">${p.qty} shares × ${signed(chg, 2)}</div><hr><div class="s">Since you bought: <b class="${gl(total)}">${signed(total)} (${pct(totalPct)})</b><br>avg cost ${money(p.cost, 2)} · ${p.since}</div></div></div>`;
+  const m = monthStats(2026, 8, new Set([p.acct])), fri = dayFor(MOCK.lastDataDay, new Set([p.acct])).moves.find(x => x.sym === sym), hold = holdOf(p.acct);
+  h += `<div class="sec"><h3>Your position <span class="mock">MOCK</span></h3><div class="facts">${[["Shares", p.qty], ["Avg cost", money(p.cost, 2)], ["Cost basis", money(p.cost * p.qty)], ["Market value", money(p.val)], ["Share of " + a.short, Math.round(p.val / hold * 100) + "%"], ["Account", a.short], ["Fri, Oct 2", `<span class="${gl(fri.amt)}">${signed(fri.amt)}</span>`], ["September", `<span class="${gl(m.bySym[sym])}">${signed(m.bySym[sym])}</span>`], ["Held since", p.since]].map(([l, v]) => `<div class="r"><span>${l}</span><b>${v}</b></div>`).join("")}</div></div>`;
+  return h;
+}
+
+function calHTML(key, bs, rootKey) {
+  const c = cals[key] || (cals[key] = { mi: 1, day: null }), [y, m] = MOCK.months[c.mi], ms = monthStats(y, m, bs), root = rootKey || key;
+  const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d[0]}<span class="rest">${d.slice(1)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="day blank"></div>`;
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) {
+    const t = status(y, m, d), date = iso(y, m, d);
+    if (t === "trade") { const v = dayFor(date, bs).total, a = Math.abs(v); cells += `<button type="button" class="day ${v >= 0 ? "up" : "down"} l${lvl(v)}${ui[root].x === "day-" + date ? " sel" : ""}" data-x="day-${date}" aria-label="${nice(date)}: ${v >= 0 ? "gain" : "loss"} of ${money(a)}. Explain."><span class="dn">${d}</span><span class="amt">${v >= 0 ? "+" : "−"}<span class="cur">$</span>${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`; }
+    else if (t === "future") cells += `<div class="day future"><span class="dn">${d}</span></div>`;
+    else cells += `<div class="day off"${t === "holiday" ? ` title="Market closed: ${MOCK.holidays[date]}"` : ""}><span class="dn">${d}</span><span class="amt">${t === "holiday" ? "Closed" : ""}</span></div>`;
+  }
+  const sw = (k, a) => `<span class="sw" style="background:rgba(var(--${k}-rgb),${a})"></span>`;
+  return `<div class="cal-host"><div class="cal-head"><span style="font-size:13.5px;color:var(--muted)">${MONTHS[m]}: ${sg(ms.total)}</span><div class="cal-nav"><button type="button" data-cal="${key}|-1" aria-label="Previous month" ${c.mi === 0 ? "disabled" : ""}>‹</button><span class="m">${MONTHS[m].slice(0, 3)} ${y}</span><button type="button" data-cal="${key}|1" aria-label="Next month" ${c.mi === MOCK.months.length - 1 ? "disabled" : ""}>›</button></div></div>
+    <div class="cal" role="group" aria-label="Daily gains and losses, ${MONTHS[m]} ${y}">${cells}</div>
+    <div class="cal-legend" aria-hidden="true">Loss ${sw("loss", .52)}${sw("loss", .22)}<span class="gap"></span>${sw("gain", .22)}${sw("gain", .52)} Gain<span class="gap"></span>click a day to explain it</div></div>`;
+}
+
+function detailHTML(key) {
+  const it = ui[key].item;
+  const body = it === "all" ? overviewHTML(key) : it.startsWith("h-") ? stockHTML(key, it.slice(2)) : isBank(it) ? bankHTML(key, it) : brokHTML(key, it);
+  return `<section class="card detail" aria-live="polite">${chipsHTML(key)}${body}</section>`;
+}
+
+/* =========================================================
+   RIGHT: assistant (Explain first, What if second)
+   ========================================================= */
+function explain(key) {
+  const u = ui[key], it = u.item, x = u.x, B = numbers(BASE), bs = B.bs, S = MOCK.september;
+  const nums = rows => `<div class="x-nums">${rows.map(([l, v]) => `<div class="r"><span>${l}</span><b>${v}</b></div>`).join("")}</div>`;
+  const X = (what, title, text, rows, qs) => ({ what, title, text, rows: rows ? nums(rows) : "", qs: qs || [] });
+  // something specific inside the selected item
+  if (x === "nw") return X("NET WORTH", money(B.nw), `Everything in your counted accounts minus what you owe on the card. ${bs.size && B.cash ? `About ${Math.round(B.inv / B.nw * 100)}% is invested.` : ""}`, [["Bank (cash − card)", money(B.cash)], ["Investments", money(B.inv)]]);
+  if (x === "cash") return X("BANK ACCOUNTS", money(B.cash), `Checking plus savings, minus the card balance. ${inc("chk") && inc("sav") ? `Checking and savings together cover about ${((8412.55 + 24180) / S.avgSpend).toFixed(1)} months of your usual spending.` : ""}`);
+  if (x === "inv") { const ms = monthStats(2026, 8, bs); return X("INVESTMENTS", `${money(B.inv)}, ${signed(ms.total)} in September`, `${ms.up} up days and ${ms.down} down days in September. ${bs.has("ibk") ? "IBKR swings more because it's mostly tech and holds NVDA and TSLA." : ""}`, MOCK.brok.filter(a => bs.has(a.id)).map(a => [a.short, signed(monthStats(2026, 8, new Set([a.id])).total) + " Sep"])); }
+  if (x === "kept") return X("CASH FLOW · SEPTEMBER", `You kept ${money(S.kept)}`, `Income ${money(S.income)} minus spending ${money(S.spending)}. That's ${money(S.kept - S.avgKept)} more than you usually keep.`, [["Usual kept", money(S.avgKept)]]);
+  if (x === "income") return X("INCOME · SEPTEMBER", money(S.income), `Two paychecks of $3,425, on Sep 5 and Sep 19. The next one is Oct 17.`);
+  if (x === "spend") return X("SPENDING · SEPTEMBER", money(S.spending), `A little under your usual ${money(S.avgSpend)}. Only dining was clearly higher than usual.`);
+  if (x && x.startsWith("cat-")) { const c = S.cats.find(z => "cat-" + z[0] === x), d = c[1] - c[2]; return X("SPENDING · " + c[0].toUpperCase(), `${money(c[1])} in September`, c[0] === "Dining" ? `$94 above your usual $518. The biggest single dining charge was $142.60 on Sep 19.` : Math.abs(d) < 20 ? "About the same as usual." : d > 0 ? `${money(d)} more than usual.` : `${money(-d)} less than usual.`, [["Usual", money(c[2])], ["Difference", signed(d)]], c[0] === "Dining" ? [["w:dine", "What if dining was usual?"]] : []); }
+  if (x && x.startsWith("day-")) { const date = x.slice(4), dbs = it === "sch" || it === "ibk" ? new Set([it]) : bs, d = dayFor(date, dbs); return X("MARKET DAY", `${nice(date)}: ${signed(d.total)}`, `${d.total >= 0 ? `${d.moves[0].sym} led (${signed(d.moves[0].amt)}).` : `${d.moves[d.moves.length - 1].sym} weighed most (${signed(d.moves[d.moves.length - 1].amt)}).`}`, d.moves.map(m => [m.sym, `<span class="${gl(m.amt)}">${signed(m.amt)}</span>`])); }
+  if ((x === "pxchg" || x === "mygain") && it.startsWith("h-")) { const p = pos(it.slice(2)), s = series(p.sym, u.range), chg = p.px - s.start;
+    return X("PRICE CHANGE VS. YOUR GAIN", x === "pxchg" ? `${p.sym} moved ${signed(chg, 2)} a share` : `You ${chg >= 0 ? "gained" : "lost"} ${money(Math.abs(chg * p.qty))}`, `The <b>price change</b> is what one share did over ${u.range}: ${pct(chg / s.start * 100)}. <b>Your gain or loss</b> is that change times your ${p.qty} shares. <b>Since you bought</b> compares today's price with your average cost of ${money(p.cost, 2)}, so it can be ${(p.px - p.cost) * chg < 0 ? "the opposite sign, as it is here" : "much bigger than any one period"}.`, [["Price change, " + u.range, signed(chg, 2) + " / share"], ["× your shares", p.qty], ["= your " + u.range + " gain", signed(chg * p.qty)], ["Since you bought", signed((p.px - p.cost) * p.qty)]]); }
+
+  // the selected item itself
+  if (it === "all") {
+    const bankWk = MOCK.bank.filter(a => inc(a.id)).reduce((s, a) => s + a.wk, 0), ws = bs.size ? weekStats(bs) : null;
+    const pts = [];
+    if (inc("chk")) pts.push(`checking is down $912, mostly money moved to your own accounts ($1,250 to the card, $500 to savings)`);
+    if (ws) pts.push(`investments ${ws.total >= 0 ? "gained" : "lost"} ${money(Math.abs(ws.total))} over ${ws.days.length} market days, a normal dip after a ${signed(monthStats(2026, 8, bs).total)} September`);
+    if (inc("cc")) pts.push(`the $1,236.40 card bill is due Oct 22, after your Oct 17 paycheck`);
+    return X("OVERVIEW · SINCE SEP 28", `${signed(bankWk + (ws ? ws.total : 0))} since you last checked`, pts.length ? `Here's what changed: ${pts.join("; ")}. Nothing needs action right now.` : "Tick some accounts to see a summary.", null,
+      [["q:usual", "Is this week normal?", `Yes. Rent, the paycheck and the card payment happen every month. The $500 savings transfer is also monthly; it skipped September and came back Oct 2.`], ["q:mix", "How much is invested?", B.nw ? `${Math.round(B.inv / B.nw * 100)}% of your net worth is invested and ${100 - Math.round(B.inv / B.nw * 100)}% is in the bank.` : ""], ...(can().mkt ? [["w:mkt", "What if the market drops 10%?"]] : [])]);
+  }
+  if (it.startsWith("h-")) { const p = pos(it.slice(2)), s = series(p.sym, u.range), chg = p.px - s.start, m = monthStats(2026, 8, new Set([p.acct])), tech = MOCK.tech.includes(p.sym);
+    return X(`${p.sym} · ${u.range} VIEW`, `${p.sym} ${chg >= 0 ? "rose" : "fell"} ${Math.abs(chg / s.start * 100).toFixed(1)}% over ${u.range === "1D" ? "the day" : u.range === "1W" ? "the week" : u.range === "1M" ? "the month" : "the year"}`,
+      `On your ${p.qty} shares that's <b>${signed(chg * p.qty)}</b>. Overall you're <b>${signed((p.px - p.cost) * p.qty)}</b> since you bought at an average of ${money(p.cost, 2)}. ${p.vol >= 2.5 ? `${p.sym} is one of your most volatile holdings, so bigger swings are normal.` : p.vol <= .9 ? `As a broad fund, ${p.sym} usually moves less than single stocks.` : ""} ${tech ? `It counts toward your tech share.` : ""} Prices are simulated.`,
+      [["Shares", p.qty], ["September (from the calendar)", `<span class="${gl(m.bySym[p.sym])}">${signed(m.bySym[p.sym])}</span>`]],
+      [["x:pxchg", "Price change vs. my gain?"], ["w:stk", `What if ${p.sym} drops 20%?`], ["q:sell", "Should I sell?", `I can't tell you whether to buy or sell; that's personal financial advice. I can show what changed and run a what-if so you can see the effect.`]]); }
+  const a = acct(it);
+  if (it === "chk") return X("EVERYDAY CHECKING", "Down $912 over 7 days", `Rent ($2,100) and your paycheck ($3,425) both landed Oct 3. The rest went to your own accounts: $1,250 to pay off the card and $500 to savings. The chart shows the usual pattern: up on paydays, down on rent.`, [["Lowest point, past 30 days", money(Math.min(...chkHistory().map(p => p.bal)), 2)], ["Next paycheck", "$3,425 · Oct 17"]], [["q:bill", "Can I cover the card bill?", `Yes. $1,236.40 is due Oct 22, after your Oct 17 paycheck. Checking would be about $10,601 after paying it.`], ["w:pay", "What if I pay the card now?"]]);
+  if (it === "sav") return X("HIGH-YIELD SAVINGS", "Back on track", `The $500 monthly transfer ran Oct 2 after skipping September. The mock data doesn't say why it skipped, so the assistant doesn't guess.`, null, [["w:move", "What if I invest $5,000 of it?"]]);
+  if (it === "cc") return X("REWARDS CARD", "$1,236.40 due Oct 22", `September's spending was $5,120, a little under usual, but dining was $94 higher. ${inc("chk") ? "Checking covers the bill, and your Oct 17 paycheck lands first." : ""}`, null, [["x:cat-Dining", "Why was dining high?"], ["w:pay", "What if I pay it now?"]]);
+  const ms = monthStats(2026, 8, new Set([it])), sep = Object.entries(ms.bySym).sort((p, q) => q[1] - p[1]);
+  return X(a.short.toUpperCase(), `${signed(ms.total)} in September`, `${sep[0][0]} added the most (${signed(sep[0][1])}). ${it === "ibk" ? "IBKR is about 84% tech and holds NVDA and TSLA, so its days swing more than Schwab's." : "About 40% is tech; VTI, a broad fund, keeps daily swings smaller."} Click a holding for its chart.`, null, [["x:inv", "How do my brokerages compare?"], ["w:mkt", "What if the market drops 10%?"]]);
+}
+function assistHTML(key) {
+  const u = ui[key], on = active();
+  let body;
+  if (u.tab === "x") {
+    const x = explain(key), q = x.qs.find(z => z[0] === u.q);
+    body = `${u.x ? `<button type="button" class="x-back" data-xclear="${key}">← Back to ${u.item === "all" ? "the overview" : u.item.startsWith("h-") ? u.item.slice(2) : acct(u.item).short}</button>` : ""}
+      <div class="x-what">✦ ${x.what} <span class="mock">AI · MOCK</span></div><h3 class="x-title">${x.title}</h3><p class="x-text">${x.text}</p>${x.rows}
+      ${x.qs.length ? `<div class="x-next">${x.qs.map(([t, l]) => `<button type="button" class="chipq${t.startsWith("w:") ? " w" : ""}" data-next="${key}|${t}" aria-expanded="${u.q === t}">${l}</button>`).join("")}</div>` : ""}
+      ${q && q[2] ? `<div class="ans">${q[2]}</div>` : ""}
+      <p class="fine">The assistant explains whatever is selected. Click a number, category, day or chart box to dig in.</p>`;
+  } else {
+    const c = can(), B = numbers(BASE), A = numbers(W), stk = u.item.startsWith("h-") ? u.item.slice(2) : null;
+    const lev = (ok, isOn, inner, need, ctx) => `<div class="lev${isOn ? " on" : ""}${ok ? "" : " dis"}${ctx ? " ctx" : ""}">${inner}${ok ? "" : `<div class="ds">Needs ${need}.</div>`}</div>`;
+    const sw = (k, nm, ds) => `<label><span><span class="nm">${nm}</span><br><span class="ds">${ds}</span></span><input type="checkbox" data-w="${key}|${k}" ${W[k] ? "checked" : ""} ${c[k] ? "" : "disabled"}></label>`;
+    const rng = (k, nm, ds, min, max, step, v, fmt, ok) => `<div class="nm">${nm}</div><div class="ds">${ds}: <span class="val">${fmt(v)}</span></div><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-w="${key}|${k}" aria-label="${nm}" ${ok ? "" : "disabled"}>`;
+    const pctF = v => `${v > 0 ? "+" : ""}${v}%`;
+    const diff = [["Net worth", B.nw, A.nw], ["Checking", B.chk, A.chk], ["Savings", B.sav, A.sav], ["Card owed", B.cc, A.cc], ["Invested", B.inv, A.inv], ["Kept per month", B.kept, A.kept]].filter(r => Math.abs(r[2] - r[1]) > .5);
+    body = `<p class="x-text" style="font-size:14px;color:var(--muted)">Try a change and see it next to the real numbers. Illustrations only; nothing real changes, and this isn't advice.</p>
+      ${stk ? lev(inc(pos(stk).acct), (W.stk[stk] || 0) !== 0, rng("stk", `If ${stk} moves`, `Only ${stk}, ${pos(stk).qty} shares`, -40, 40, 1, W.stk[stk] || 0, pctF, inc(pos(stk).acct)), `${acct(pos(stk).acct).short} ticked`, true) : ""}
+      ${lev(c.mkt, W.mkt !== 0 && c.mkt, rng("mkt", "If the whole market moves", "All holdings", -20, 20, 1, W.mkt, pctF, c.mkt), "a brokerage")}
+      ${lev(c.pay, W.pay && c.pay, sw("pay", "Pay the card in full now", "$1,236.40 from checking instead of on Oct 22"), "Checking and the card")}
+      ${lev(c.dine, W.dine && c.dine, sw("dine", "Dining back to usual", "$518 a month instead of $612"), "the card")}
+      ${lev(c.move, W.move > 0 && c.move, rng("move", `Move savings into ${acct(moveTo()).short}`, "Amount", 0, 10000, 500, W.move, v => money(v), c.move), "Savings and a brokerage")}
+      ${diff.length ? `<div class="res"><div class="h">WHAT-IF RESULT · ILLUSTRATION</div>${diff.map(([l, b, a]) => `<div class="r"><span>${l}</span><b>${money(b)} → ${money(a)}</b></div>`).join("")}<p>${narrate(B, A)}</p></div><button type="button" class="btn ghost sm" style="margin-top:10px" data-reset>Reset</button>` : `<p class="fine">Turn on a change to see the result here and as orange numbers in the main view.</p>`}`;
+  }
+  return `<aside class="card assist${u.up ? " up" : ""}" aria-label="Assistant">
+    <div class="as-head"><span class="t">✦ Assistant <span class="mock">MOCK</span></span><button type="button" class="as-tog" data-tog="${key}" aria-expanded="${u.up}">${u.up ? "Hide ▾" : "Open ▴"}</button></div>
+    <div class="tabs" role="tablist"><button type="button" class="tab" role="tab" data-tab="${key}|x" aria-selected="${u.tab === "x"}">Explain</button><button type="button" class="tab" role="tab" data-tab="${key}|w" aria-selected="${u.tab === "w"}">What if${on ? `<span class="dot" aria-label="on"></span>` : ""}</button></div>
+    ${key === "demo" && u.tab === "x" ? `<form class="ask" data-ask><input type="text" placeholder="Ask, e.g. “how is NVDA doing?”" aria-label="Ask the assistant" autocomplete="off"><button class="btn sm" type="submit">Ask</button></form>` : ""}
+    <div class="as-body">${body}</div></aside>`;
+}
+function narrate(B, A) {
+  const c = can(), out = [];
+  Object.entries(W.stk).filter(([s, v]) => v && inc(pos(s).acct)).forEach(([s, v]) => out.push(`${s} ${v < 0 ? "falling" : "rising"} ${Math.abs(v)}% would change your position by ${signed(pos(s).val * v / 100)}.`));
+  if (W.mkt && c.mkt) out.push(`A ${Math.abs(W.mkt)}% market ${W.mkt < 0 ? "drop" : "rise"} would change your holdings by about ${signed(B.hold * W.mkt / 100)}. For scale, September's biggest day was ${signed(monthStats(2026, 8, B.bs).best.total)}.`);
+  if (W.pay && c.pay) out.push(`Paying the card now leaves checking at ${money(A.chk)}; net worth doesn't change.`);
+  if (W.dine && c.dine) out.push(`Usual dining would keep about $94 more a month.`);
+  if (W.move && c.move) out.push(`Moving ${money(W.move)} keeps net worth the same today, but that money would then rise and fall with the market.`);
+  return out.join(" ");
+}
+
+/* ---------- render ---------- */
+function connectHTML() {
+  const o = (k, b, s) => `<button type="button" class="copt ${k}" data-conn="${k}" aria-pressed="${conn === k}"><b>${b}</b><span>${s}</span></button>`;
+  return `<div class="q">What would you connect? <span class="mock">MOCK</span></div><div class="conn-opts">${o("bank", "Bank accounts", "cash flow, spending, bills")}${o("brok", "Brokerages", "holdings, charts, gains")}${o("both", "Both", "everything together")}</div>
+    <div class="cta"><button class="btn sm" data-open-demo>View Demo</button><span>Changes the preview below. Nothing is really connected.</span></div>`;
+}
+function render(key) {
+  const r = $(`[data-root="${key}"]`), y = r.querySelector(".as-body")?.scrollTop || 0;
+  r.innerHTML = listHTML(key) + detailHTML(key) + assistHTML(key);
+  const b = r.querySelector(".as-body"); if (b) b.scrollTop = y;
+}
+function renderAll() { $("[data-connect]").innerHTML = connectHTML(); render("land"); if ($("#demo").classList.contains("open")) render("demo"); }
+const rootOf = el => el.closest("[data-root]")?.dataset.root;
+function valid(item) { if (item === "all") return true; if (item.startsWith("h-")) return connected(pos(item.slice(2)).acct); return connected(item); }
+function go(key, item) { ui[key].item = item; ui[key].x = null; ui[key].q = null; ui[key].hover = null; ui[key].tab = "x"; render(key); }
+
+/* ---------- events ---------- */
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-acct]");
+  if (c) { const id = c.dataset.acct, key = rootOf(c); c.checked ? sel.add(id) : sel.delete(id); renderAll(); $(`[data-root="${key}"] [data-acct="${id}"]`)?.focus(); return; }
+  const w = e.target.closest("[data-w]");
+  if (w) { const [key, k] = w.dataset.w.split("|"); setW(key, k, w.type === "checkbox" ? w.checked : +w.value); renderAll(); $(`[data-w="${key}|${k}"]`)?.focus(); }
+});
+function setW(key, k, v) { if (k === "stk") W.stk[ui[key].item.slice(2)] = v; else W[k] = v; }
+document.addEventListener("input", e => {
+  const w = e.target.closest("[data-w]");
+  if (w && w.type === "range") {   // while dragging: refresh only the main view and the label
+    const [key, k] = w.dataset.w.split("|"); setW(key, k, +w.value);
+    ["land", "demo"].forEach(r => { const d = $(`[data-root="${r}"] .detail`); if (d) d.outerHTML = detailHTML(r); });
+    w.closest(".lev").querySelector(".val").textContent = k === "move" ? money(+w.value) : `${+w.value > 0 ? "+" : ""}${w.value}%`;
+  }
+});
+document.addEventListener("click", e => {
+  const it = e.target.closest("[data-item]");
+  if (it) { const key = rootOf(it); if (!key) return; go(key, it.dataset.item); $(`[data-root="${key}"] .list [data-item="${it.dataset.item}"], [data-root="${key}"] .chips [data-item="${it.dataset.item}"]`)?.focus({ preventScroll: true }); if (innerWidth <= 1240) $(`[data-root="${key}"] .detail`).scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  const cn = e.target.closest("[data-conn]");
+  if (cn) { conn = cn.dataset.conn; ["land", "demo"].forEach(k => { if (!valid(ui[k].item)) go(k, "all"); }); renderAll(); return; }
+  const x = e.target.closest("[data-x]");
+  if (x) { const key = rootOf(x); ui[key].x = x.dataset.x; ui[key].q = null; ui[key].tab = "x"; ui[key].up = true; render(key); return; }
+  const xc = e.target.closest("[data-xclear]");
+  if (xc) { const key = xc.dataset.xclear; ui[key].x = null; render(key); return; }
+  const rg = e.target.closest("[data-range]");
+  if (rg) { const [key, r] = rg.dataset.range.split("|"); ui[key].range = r; ui[key].hover = null; render(key); $(`[data-range="${key}|${r}"]`)?.focus(); return; }
+  const n = e.target.closest("[data-next]");
+  if (n) { const [key, t] = n.dataset.next.split("|"), kind = t.slice(0, 1), v = t.slice(2), u = ui[key];
+    if (kind === "q") u.q = u.q === t ? null : t;
+    else if (kind === "x") { u.x = v; u.q = null; }
+    else { u.tab = "w"; const c = can(); if (v === "pay" && c.pay) W.pay = true; if (v === "dine" && c.dine) W.dine = true; if (v === "mkt" && c.mkt) W.mkt = -10; if (v === "move" && c.move) W.move = 5000; if (v === "stk") W.stk[u.item.slice(2)] = -20; renderAll(); return; }
+    render(key); $(`[data-next="${n.dataset.next}"]`)?.focus(); return; }
+  const t = e.target.closest("[data-tab]");
+  if (t) { const [key, v] = t.dataset.tab.split("|"); ui[key].tab = v; ui[key].up = true; render(key); $(`[data-tab="${key}|${v}"]`)?.focus(); return; }
+  const tg = e.target.closest("[data-tog]");
+  if (tg) { const key = tg.dataset.tog; ui[key].up = !ui[key].up; render(key); $(`[data-tog="${key}"]`)?.focus(); return; }
+  if (e.target.closest("[data-reset]")) { W.pay = W.dine = false; W.move = W.mkt = 0; W.stk = {}; renderAll(); return; }
+  const cl = e.target.closest("[data-cal]");
+  if (cl) { const [k, d] = cl.dataset.cal.split("|"); cals[k].mi = Math.max(0, Math.min(MOCK.months.length - 1, cals[k].mi + +d)); render(rootOf(cl)); $(`[data-cal="${k}|${d}"]`)?.focus(); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr[data-item]")) { e.preventDefault(); e.target.click(); }
+  if (e.key === "Escape" && $("#demo").classList.contains("open")) closeDemo();
+});
+// chart hover / touch readout
+document.addEventListener("pointermove", e => {
+  const r = e.target.closest("[data-hover]"); if (!r) return;
+  const [key, id, n] = r.dataset.hover.split("|"), b = r.getBoundingClientRect(), i = Math.max(0, Math.min(+n - 1, Math.round((e.clientX - b.left) / b.width * (+n - 1))));
+  if (ui[key].hover && ui[key].hover.id === id && ui[key].hover.i === i) return;
+  ui[key].hover = { id, i }; const sec = r.closest(".chart"), html = detailHTML(key), tmp = document.createElement("div"); tmp.innerHTML = html;
+  const fresh = $$(".chart", tmp).find(c => c.querySelector(`[data-hover^="${key}|${id}|"]`)); if (fresh) sec.replaceWith(fresh);
+});
+document.addEventListener("pointerout", e => { const r = e.target.closest("[data-hover]"); if (!r || r.contains(e.relatedTarget)) return; const [key] = r.dataset.hover.split("|"); if (ui[key].hover) { const id = ui[key].hover.id; ui[key].hover = null; const sec = r.closest(".chart"), tmp = document.createElement("div"); tmp.innerHTML = detailHTML(key); const fresh = $$(".chart", tmp).find(c => c.querySelector(`[data-hover^="${key}|${id}|"]`)); if (fresh && sec) sec.replaceWith(fresh); } });
+document.addEventListener("submit", e => {
+  const f = e.target.closest("[data-ask]"); if (!f) return; e.preventDefault();
+  const t = f.querySelector("input").value.toLowerCase();
+  const sym = MOCK.positions.find(p => t.includes(p.sym.toLowerCase()) || t.includes(p.name.toLowerCase().split(" ")[0]));
+  const map = [[/check/, "chk"], [/saving/, "sav"], [/card|bill/, "cc"], [/schwab/, "sch"], [/ibkr/, "ibk"], [/overview|changed|net worth|since/, "all"]];
+  const hit = sym ? "h-" + sym.sym : (map.find(([re]) => re.test(t)) || [])[1];
+  if (/what if|drop|crash/.test(t)) { ui.demo.tab = "w"; if (sym && valid("h-" + sym.sym)) { ui.demo.item = "h-" + sym.sym; W.stk[sym.sym] = -20; } else if (can().mkt) W.mkt = -10; renderAll(); return; }
+  if (/dining|eat/.test(t)) { if (valid("cc")) { go("demo", "cc"); ui.demo.x = "cat-Dining"; render("demo"); } return; }
+  if (hit && valid(hit)) go("demo", hit);
+  else $(`[data-root="demo"] .as-body`).insertAdjacentHTML("afterbegin", `<p class="fine" style="margin:0 0 10px">This prototype only has scripted answers. Try a stock (NVDA, VTI…), checking, savings, the card, Schwab, IBKR, dining, or “what if NVDA drops”. <span class="mock">SCRIPTED</span></p>`);
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+
+let lastFocus = null;
+function openDemo() { lastFocus = document.activeElement; $("#demo").classList.add("open"); document.body.style.overflow = "hidden"; render("demo"); $("#demo-close").focus(); }
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; renderAll(); if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+
+renderAll();
+const hash = location.hash.slice(1);
+if (hash === "demo") openDemo();
+else if (hash.startsWith("h-") || ["chk", "sav", "cc", "sch", "ibk"].includes(hash)) go("land", hash);
+</script>
+</body>
+</html>
