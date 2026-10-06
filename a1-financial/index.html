@@ -85,7 +85,7 @@
     <h1>AI Personal Financial Assistant: 25 landing-page versions</h1>
     <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
     <div class="meta">
-      <span>Versions: <b id="count">3</b> / 25</span>
+      <span>Versions: <b id="count">4</b> / 25</span>
       <span>Stage: <b>Exploration</b></span>
       <span>Final selection: <b>not chosen yet</b></span>
     </div>
@@ -109,7 +109,7 @@
       <div class="dirs">
         <div class="dir"><div class="n">01</div><b>The Morning Briefing</b><p>Editorial, newspaper-style. AI-written headlines about your money.</p></div>
         <div class="dir picked"><div class="n">02 <span class="pick">· tried in v02</span></div><b>Pick Your Path</b><p>Interactive Bank / Brokerage / Both toggle reshapes the page.</p></div>
-        <div class="dir"><div class="n">03</div><b>Ask Anything</b><p>Chat-first hero; capabilities shown as conversations.</p></div>
+        <div class="dir picked"><div class="n">03 <span class="pick">· tried in v04</span></div><b>Ask Anything</b><p>Chat-first hero; capabilities shown as conversations.</p></div>
         <div class="dir picked"><div class="n">04 <span class="pick">· tried in v03</span></div><b>One Screen, Not Six Tabs</b><p>Problem/solution contrast: scattered apps merge into one view.</p></div>
         <div class="dir picked"><div class="n">05 <span class="pick">· chosen for v01</span></div><b>The Terminal</b><p>Dark, data-dense live preview with AI analyst notes, for active investors.</p></div>
       </div>
@@ -150,8 +150,16 @@
         <li>
           <div class="when">Stage 4 · Feedback on v03</div>
           <h4>v03 didn't feel different enough; v04 should change the organization, not just the look</h4>
-          <p><b>Your review:</b> v03 still feels too similar to the earlier versions. It stays in the gallery as part of the exploration.</p>
+          <p><b>Your review:</b> v03 still feels too similar to the earlier versions, specifically its overall structure and the order of its sections. It stays in the gallery as part of the exploration.</p>
           <p><b>Your request for v04:</b> a bigger change in how the page is organized and how it introduces the product, keeping the core product idea but rethinking the layout and how features are presented, using direction 3, “Ask Anything.” Two approaches are proposed for you to choose from before any code is written.</p>
+        </li>
+        <li>
+          <div class="when">Stage 4 · Decision → v04</div>
+          <h4>Approach A chosen: the page is a conversation</h4>
+          <p><b>Two approaches proposed:</b> (A) the whole page is a guided chat transcript where features appear only as answers; (B) an ask box with a library of question cards grouped by Cash / Investments / Across both.</p>
+          <blockquote>“I like the idea of introducing the product through a conversation instead of another dashboard preview.”</blockquote>
+          <p><b>Your requests for v04:</b> keep it simple enough that visitors quickly understand what the product does; use suggested replies to guide them; have the account picker and calendar appear naturally in the conversation; keep answers scripted and the mock data clearly labeled.</p>
+          <p><b>How v04 responds:</b> one narrow column with no dashboard preview, feature grid or section list. A one-line intro and three “what it covers” chips explain the product up front. The AI then asks which accounts to look at (Bank / Brokerage / Both). The v01-style account picker appears inside its reply, and later answers carry the gains calendar (tap a day to ask about it), checking transactions, spending bars, cash flow and holdings. At most three suggested questions show at a time, chosen from the selected accounts. Every reply is labeled MOCK and a “What can't you do?” reply states the limits. View Demo continues the chat full-screen with the picker in a side panel and a scripted text box.</p>
         </li>
       </ol>
     </div>
@@ -184,7 +192,14 @@ const VERSIONS = [
     title: "One Screen, Not Six Tabs",
     stage: "explore",
     date: "2026-10-05",
-    note: "<b>Direction 4, chosen by you after comparing v01 and v02.</b> A bold problem/solution page: six scattered mock app windows vs. one screen. Carries forward what you liked: <b>v01's account picker</b> (bank and brokerage groups, balances, checkboxes, quick select) now drives the whole screen, with v01-style position detail and v02-style plain sections. Keeps the <b>light/dark switch</b> and <b>gains calendar</b>, which now follows the selected brokerages. <b>Your review:</b> it still felt too similar to the earlier versions; kept as part of the exploration."
+    note: "<b>Direction 4, chosen by you after comparing v01 and v02.</b> A bold problem/solution page: six scattered mock app windows vs. one screen. Carries forward what you liked: <b>v01's account picker</b> (bank and brokerage groups, balances, checkboxes, quick select) now drives the whole screen, with v01-style position detail and v02-style plain sections. Keeps the <b>light/dark switch</b> and <b>gains calendar</b>, which now follows the selected brokerages. <b>Your review:</b> its overall structure and order of sections felt too similar to the earlier versions; kept as part of the exploration."
+  },
+  {
+    v: "v04",
+    title: "Ask Anything",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>Direction 3, approach A, chosen by you.</b> The landing page is a guided conversation instead of a dashboard preview. Suggested replies walk visitors through picking accounts; the <b>v01-style account picker</b> and the <b>gains calendar</b> appear inside the AI's replies. Every answer is scripted and labeled mock. Keeps the light/dark switch."
   }
 ];
 

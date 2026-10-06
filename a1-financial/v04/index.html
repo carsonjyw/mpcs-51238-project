@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v04 · Ask Anything — Ledgerline</title>
+<meta name="description" content="v04 — Ask Anything: the landing page is a guided conversation. Suggested replies walk visitors through choosing accounts, then the AI answers with charts, a gains calendar and plain-English explanations. All data and answers are mock.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (location.hash === "#preview") document.documentElement.classList.add("still");
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f8f6f2;
+    --surface: #ffffff;
+    --surface-2: #f1eee8;
+    --ink: #1f1d1a;
+    --muted: #5f5b54;
+    --faint: #8f8a81;
+    --line: #e6e1d8;
+    --line-2: #d6d0c4;
+    --me: #24221e;
+    --on-me: #fbfaf7;
+    --accent: #2d62d8;
+    --accent-soft: #e9effc;
+    --bank: #1878c4;
+    --bank-soft: #e4f0fa;
+    --brok: #8a4fd6;
+    --brok-soft: #f1e9fc;
+    --gain: #15864d;
+    --loss: #cc3a31;
+    --gain-rgb: 21, 134, 77;
+    --loss-rgb: 204, 58, 49;
+    --mock-ink: #8a5a00;
+    --mock-bg: #fff0c9;
+  }
+  [data-theme="dark"] {
+    --bg: #141311;
+    --surface: #1d1c19;
+    --surface-2: #26241f;
+    --ink: #f1eee8;
+    --muted: #b1aba0;
+    --faint: #827c72;
+    --line: #2f2d28;
+    --line-2: #3d3a33;
+    --me: #f1eee8;
+    --on-me: #1a1916;
+    --accent: #7ea2ff;
+    --accent-soft: #1d2640;
+    --bank: #62b2f0;
+    --bank-soft: #16283a;
+    --brok: #bf98ff;
+    --brok-soft: #2b2042;
+    --gain: #45cf8b;
+    --loss: #ff7d71;
+    --gain-rgb: 69, 207, 139;
+    --loss-rgb: 255, 125, 113;
+    --mock-ink: #ffd88a;
+    --mock-bg: #3a2c0d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .n { font-variant-numeric: tabular-nums; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--mock-ink); background: var(--mock-bg); padding: 1px 7px; border-radius: 5px; vertical-align: 1px; }
+
+  /* ---------- chrome ---------- */
+  .mockbar { background: var(--mock-bg); color: var(--mock-ink); font-size: 13.5px; text-align: center; padding: 7px 16px; }
+  header.top { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top .in { max-width: 980px; margin: 0 auto; padding: 0 16px; height: 58px; display: flex; align-items: center; gap: 12px; }
+  .back { font-size: 14px; text-decoration: none; color: var(--muted); padding: 5px 12px; border: 1px solid var(--line-2); border-radius: 999px; white-space: nowrap; }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 750; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .av { width: 30px; height: 30px; border-radius: 50%; background: var(--me); color: var(--on-me); display: grid; place-items: center; font-size: 14px; font-weight: 800; flex: none; }
+  .brand small { font-size: 11px; color: var(--faint); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 7px; font-weight: 600; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 3px; cursor: pointer; font-size: 13px; }
+  .theme-btn > span { padding: 3px 10px; border-radius: 999px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--me); color: var(--on-me); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 9px 18px; font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; text-decoration: none; white-space: nowrap; background: var(--me); color: var(--on-me); }
+  .btn:hover { opacity: .9; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line-2); }
+
+  /* ---------- intro ---------- */
+  .col { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+  .intro { padding: 44px 0 10px; text-align: center; }
+  .intro h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.1; letter-spacing: -.03em; margin: 0 0 12px; }
+  .intro p { color: var(--muted); margin: 0 auto 16px; max-width: 54ch; }
+  .can { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; font-size: 13.5px; }
+  .can span { padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+  .can b { font-weight: 700; }
+
+  /* ---------- conversation ---------- */
+  .convo { padding: 26px 0 8px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { display: flex; gap: 10px; align-items: flex-end; animation: in .3s ease; }
+  @keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .msg.me { justify-content: flex-end; }
+  .bubble { max-width: 86%; padding: 12px 16px; border-radius: 20px; }
+  .ai .bubble { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+  .me .bubble { background: var(--me); color: var(--on-me); border-bottom-right-radius: 6px; }
+  .ai .bubble.wide { max-width: 100%; flex: 1; min-width: 0; }
+  .bubble p { margin: 0 0 8px; } .bubble p:last-child { margin-bottom: 0; }
+  .who { font-size: 12px; font-weight: 700; color: var(--faint); margin-bottom: 2px; display: flex; gap: 6px; align-items: center; }
+  .typing .bubble { display: flex; gap: 5px; padding: 16px 18px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); animation: blink 1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+  .replies { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 6px 0 4px 40px; }
+  .reply { cursor: pointer; background: var(--surface); border: 1.5px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 8px 15px; font-size: 15px; font-weight: 600; text-align: left; }
+  .reply:hover { background: var(--accent-soft); }
+  .reply.quiet { border-color: var(--line-2); color: var(--muted); font-weight: 500; }
+  .reply-label { width: 100%; text-align: right; font-size: 12.5px; color: var(--faint); }
+
+  /* ---------- widgets inside bubbles ---------- */
+  .w { margin-top: 10px; background: var(--surface-2); border-radius: 14px; padding: 12px; font-size: 15px; }
+  .w-title { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+  .tag { font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 5px; text-transform: none; letter-spacing: .02em; }
+  .tag.bank { background: var(--bank-soft); color: var(--bank); }
+  .tag.brok { background: var(--brok-soft); color: var(--brok); }
+
+  /* account picker (v01 idea: groups, balances, checkboxes, quick select) */
+  .pk-group { margin-bottom: 8px; }
+  .pk-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin: 6px 4px; }
+  .pk-title .sum { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); }
+  .pk-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; background: var(--surface); border: 1px solid var(--line); margin-bottom: 5px; font-size: 15px; }
+  .pk-row input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; flex: none; }
+  .pk-row .nm { flex: 1; min-width: 0; line-height: 1.3; }
+  .pk-row .nm small { display: block; font-size: 12.5px; color: var(--faint); }
+  .pk-row .amt { text-align: right; font-weight: 650; font-size: 14.5px; }
+  .pk-row .amt small { display: block; font-weight: 500; font-size: 12px; }
+  .pk-row:not(:has(input:checked)) { opacity: .6; }
+  .pk-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 13.5px; }
+  .qbtn { cursor: pointer; font-size: 13px; font-weight: 650; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); }
+  .qbtn[aria-pressed="true"] { background: var(--me); color: var(--on-me); border-color: var(--me); }
+  .pk-foot .tot { margin-left: auto; color: var(--muted); }
+  .pk-foot .tot b { color: var(--ink); font-size: 16px; }
+  .frozen .pk-row, .frozen .qbtn { pointer-events: none; }
+  .pk-foot .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .frozen .pk-foot .btns { display: none; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; min-width: 0; }
+  .stat .l { font-size: 12.5px; color: var(--muted); }
+  .stat .v { font-size: 20px; font-weight: 750; letter-spacing: -.01em; white-space: nowrap; }
+
+  /* calendar */
+  .cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .cal-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .cal-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; }
+  .cal-nav button:disabled { opacity: .3; cursor: default; }
+  .cal-nav .m { min-width: 120px; text-align: center; font-weight: 700; font-size: 15px; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .dow { font-size: 11.5px; font-weight: 700; color: var(--faint); text-align: center; }
+  .day { min-height: 54px; border-radius: 9px; padding: 5px 6px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1.5px solid transparent; background: var(--surface); font-variant-numeric: tabular-nums; }
+  button.day { cursor: pointer; }
+  button.day:hover { border-color: var(--ink); }
+  .day .dn { font-size: 11.5px; color: var(--muted); font-weight: 650; }
+  .day .amt { font-size: 12.5px; font-weight: 800; white-space: nowrap; }
+  .day.up .amt { color: var(--gain); } .day.down .amt { color: var(--loss); }
+  .day.up.l1 { background: rgba(var(--gain-rgb), .10); } .day.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .day.up.l3 { background: rgba(var(--gain-rgb), .36); } .day.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .day.down.l1 { background: rgba(var(--loss-rgb), .10); } .day.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .day.down.l3 { background: rgba(var(--loss-rgb), .36); } .day.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .day.l3 .amt, .day.l4 .amt { color: var(--ink); }
+  .day.off { background: transparent; border: 1px solid var(--line); }
+  .day.off .amt { font-size: 10.5px; font-weight: 500; color: var(--faint); }
+  .day.blank { background: transparent; }
+  .day.future { background: transparent; border: 1.5px dashed var(--line-2); }
+  .cal-legend { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .cal-legend .sw { width: 16px; height: 10px; border-radius: 2px; }
+  .cal-legend .gap { width: 8px; }
+  .cal-hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  .rows .r { display: flex; justify-content: space-between; gap: 12px; padding: 6px 2px; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .rows .r:last-child { border-bottom: 0; }
+  .rows .r small { color: var(--faint); }
+  .bars .row { display: grid; grid-template-columns: 90px 1fr 64px; gap: 10px; align-items: center; font-size: 14.5px; margin-bottom: 6px; }
+  .bars .track { height: 10px; background: var(--surface); border-radius: 999px; overflow: hidden; }
+  .bars .fill { height: 100%; border-radius: 999px; }
+  .bars .v { text-align: right; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; padding: 4px 6px; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
+  td { padding: 7px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .r-al { text-align: right; }
+  .scroll-x { overflow-x: auto; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart .ax { fill: var(--faint); font-size: 11px; }
+  .chart .gl { stroke: var(--line-2); }
+
+  /* ---------- after the conversation ---------- */
+  .after { padding: 30px 0 50px; text-align: center; }
+  .after .note { font-size: 14px; color: var(--muted); max-width: 58ch; margin: 0 auto 18px; }
+  .restart { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 14px; }
+  footer { border-top: 1px solid var(--line); padding: 20px 16px 36px; font-size: 13px; color: var(--faint); }
+  footer .in { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  /* ---------- demo ---------- */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; background: var(--surface); }
+  .demo-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 330px minmax(0, 1fr); }
+  .demo-side { border-right: 1px solid var(--line); overflow-y: auto; padding: 16px; }
+  .demo-side h3 { margin: 0 0 4px; font-size: 16px; }
+  .demo-side .sub { font-size: 13.5px; color: var(--muted); margin: 0 0 10px; }
+  .demo-side .w { margin-top: 0; }
+  .demo-chat { display: flex; flex-direction: column; min-height: 0; }
+  .demo-chat .scroll { flex: 1; overflow-y: auto; }
+  .demo-chat .convo { max-width: 760px; margin: 0 auto; padding: 18px 16px; }
+  .composer { border-top: 1px solid var(--line); background: var(--surface); padding: 10px 16px 14px; }
+  .composer .in { max-width: 760px; margin: 0 auto; }
+  .composer .replies { justify-content: flex-start; padding: 0 0 8px; }
+  .composer form { display: flex; gap: 8px; }
+  .composer input { flex: 1; min-width: 0; border: 1px solid var(--line-2); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 10px 16px; font: inherit; font-size: 15px; }
+
+  @media (max-width: 860px) {
+    .demo-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+    .demo-side { border-right: 0; border-bottom: 1px solid var(--line); max-height: 34vh; }
+  }
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .hide-sm { display: none; }
+    header.top .in { gap: 8px; }
+    .bubble { max-width: 92%; padding: 11px 13px; }
+    .msg.ai > .av { display: none; }
+    .replies { padding-left: 0; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stats .stat:first-child { grid-column: 1 / -1; }
+    .w { padding: 9px; }
+    .cal { gap: 3px; }
+    .day { min-height: 44px; padding: 3px 4px; border-radius: 6px; }
+    .day .amt { font-size: 10px; letter-spacing: -.02em; }
+    .day .amt .cur { display: none; }
+  }
+  .still .msg { animation: none; }
+  @media (prefers-reduced-motion: reduce) { .msg { animation: none; } .typing i { animation: none; opacity: .6; } }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note"><b>Design prototype · v04.</b> Every account, number and AI reply on this page is <b>mock data</b> with <b>scripted answers</b>. No real bank or brokerage connection is implemented.</div>
+
+<header class="top">
+  <div class="in">
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <a class="brand" href="#top"><span class="av">L</span> Ledgerline <small>v04</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="intro col">
+    <h1>Ask your money anything.</h1>
+    <p>Ledgerline reads your bank and brokerage accounts and explains what changed, in plain English. Instead of a tour, have a short conversation with it below.</p>
+    <div class="can" aria-label="What Ledgerline covers">
+      <span><b style="color:var(--bank)">Bank</b> · balances, income, spending, cash flow</span>
+      <span><b style="color:var(--brok)">Brokerage</b> · holdings, daily gains &amp; losses, portfolio changes</span>
+      <span><b>AI</b> · explains, summarizes, answers</span>
+    </div>
+  </section>
+
+  <section class="col" aria-label="Sample conversation with Ledgerline">
+    <div class="convo" id="convo" role="log" aria-live="polite"></div>
+    <div class="replies" id="replies"></div>
+  </section>
+
+  <section class="after col">
+    <p class="note">Every answer here is scripted, and every account is mock data. The full demo lets you type your own questions next to a combined view of all the mock accounts.</p>
+    <button class="btn" data-open-demo>View Demo →</button>
+    <div style="margin-top:10px"><button class="restart" id="restart" type="button">Start the conversation over</button></div>
+  </section>
+</main>
+
+<footer>
+  <div class="in">
+    <span>Ledgerline is a fictional product concept. v04 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<!-- ============ DEMO ============ -->
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline demo">
+  <div class="demo-top">
+    <span class="brand"><span class="av">L</span><span class="hide-sm">Ledgerline demo</span></span>
+    <span class="mock">ALL DATA IS MOCK · SCRIPTED AI</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <button class="btn ghost" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-body">
+    <aside class="demo-side">
+      <h3>Accounts in this chat</h3>
+      <p class="sub">Every answer uses only the accounts you tick.</p>
+      <div class="w" id="demo-picker"></div>
+    </aside>
+    <div class="demo-chat">
+      <div class="scroll" id="demo-scroll"><div class="convo" id="demo-convo" role="log" aria-live="polite"></div></div>
+      <div class="composer"><div class="in">
+        <div class="replies" id="demo-replies"></div>
+        <form id="demo-form"><input id="demo-text" type="text" placeholder="Ask about your mock accounts…" aria-label="Ask a question" autocomplete="off"><button class="btn" type="submit">Ask</button></form>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v03.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", inst: "Schwab (mock)", mask: "••5512", short: "Schwab", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", inst: "IBKR (mock)", mask: "U•••908", short: "IBKR", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  acct: "sch", qty: 120, px: 287.40, vol: 0.8 },
+    { sym: "AAPL", acct: "sch", qty: 45,  px: 228.10, vol: 1.4 },
+    { sym: "MSFT", acct: "sch", qty: 30,  px: 431.20, vol: 1.2 },
+    { sym: "NVDA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8 },
+    { sym: "TSLA", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2 },
+    { sym: "QQQ",  acct: "ibk", qty: 25,  px: 489.50, vol: 1.1 }
+  ],
+  cashflow: [
+    { m: "Apr", inc: 6850, sp: 5480 }, { m: "May", inc: 6850, sp: 4920 }, { m: "Jun", inc: 7100, sp: 5610 },
+    { m: "Jul", inc: 6850, sp: 5050 }, { m: "Aug", inc: 6850, sp: 5390 }, { m: "Sep", inc: 6850, sp: 5120 }
+  ],
+  spending: [
+    { c: "Housing", v: 2100 }, { c: "Groceries", v: 640 }, { c: "Dining", v: 612, flag: true },
+    { c: "Shopping", v: 520 }, { c: "Transport", v: 380 }, { c: "Utilities", v: 290 }, { c: "Other", v: 578 }
+  ],
+  checkingWeek: [
+    { d: "Oct 3", desc: "Payroll deposit (mock employer)", amt: 3425 },
+    { d: "Oct 3", desc: "Rent, October", amt: -2100 },
+    { d: "Oct 2", desc: "Transfer to savings", amt: -500 },
+    { d: "Sep 30", desc: "Card payment", amt: -1250 },
+    { d: "Sep 28 – Oct 4", desc: "Everyday purchases (14)", amt: -487.30 }
+  ],
+  holidays: { "2026-09-07": "Labor Day" },
+  months: [[2026, 7], [2026, 8], [2026, 9]],
+  lastDataDay: "2026-10-02"
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 0) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 0) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const pct = n => (n >= 0 ? "▲ +" : "▼ −") + Math.abs(n).toFixed(2) + "%";
+const gl = n => (n >= 0 ? "gain" : "loss");
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const nice = s => { const [y, m, d] = s.split("-").map(Number); return `${DOW[new Date(y, m - 1, d).getDay()]}, ${MONTHS[m - 1].slice(0, 3)} ${d}`; };
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+MOCK.positions.forEach(p => p.val = p.qty * p.px);
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const brokValue = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0) + MOCK.brok.find(a => a.id === id).cash;
+const acctValue = id => isBank(id) ? MOCK.bank.find(a => a.id === id).bal : brokValue(id);
+
+/* ---------- deterministic mock daily P&L (same generator as v02/v03) ---------- */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, brokSel) {
+  const moves = rawDay(date).filter(m => brokSel.has(m.acct)).sort((a, b) => b.amt - a.amt);
+  const by = id => moves.filter(m => m.acct === id).reduce((s, m) => s + m.amt, 0);
+  return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0), sch: by("sch"), ibk: by("ibk") };
+}
+function status(y, m, d) {
+  const date = iso(y, m, d), dow = new Date(y, m, d).getDay();
+  if (date > MOCK.lastDataDay) return { kind: "future", date };
+  if (dow === 0 || dow === 6) return { kind: "weekend", date };
+  if (MOCK.holidays[date]) return { kind: "holiday", date };
+  return { kind: "trade", date };
+}
+function monthStats(y, m, brokSel) {
+  const days = [];
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) { const s = status(y, m, d); if (s.kind === "trade") days.push(dayFor(s.date, brokSel)); }
+  const sorted = [...days].sort((a, b) => b.total - a.total);
+  return { days, total: days.reduce((s, x) => s + x.total, 0), up: days.filter(x => x.total >= 0).length, down: days.filter(x => x.total < 0).length, best: sorted[0], worst: sorted[sorted.length - 1] };
+}
+
+/* ---------- shared account selection ---------- */
+const sel = new Set(ALL.map(a => a.id));
+const S = () => {
+  const bank = MOCK.bank.filter(a => sel.has(a.id)), brok = MOCK.brok.filter(a => sel.has(a.id));
+  const brokSel = new Set(brok.map(a => a.id));
+  const bankTotal = bank.reduce((s, a) => s + a.bal, 0), inv = brok.reduce((s, a) => s + brokValue(a.id), 0);
+  return { bank, brok, brokSel, bankTotal, inv, net: bankTotal + inv, last: dayFor(MOCK.lastDataDay, brokSel), sep: monthStats(2026, 8, brokSel) };
+};
+const brokNames = s => s.brok.map(a => a.short).join(" and ");
+
+/* =========================================================
+   WIDGETS shown inside AI messages
+   ========================================================= */
+function pickerHTML() {
+  const s = S();
+  const allOn = sel.size === ALL.length, bankOnly = MOCK.bank.every(a => sel.has(a.id)) && !s.brok.length, brokOnly = MOCK.brok.every(a => sel.has(a.id)) && !s.bank.length;
+  const row = a => {
+    const sub = isBank(a.id) ? `<small class="${gl(a.wk)}">${signed(a.wk)} this week</small>` : (() => { const v = dayFor(MOCK.lastDataDay, new Set([a.id])).total; return `<small class="${gl(v)}">${signed(v)} on Oct 2</small>`; })();
+    return `<label class="pk-row"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""}><span class="nm">${a.name}<small>${a.inst} ${a.mask}</small></span><span class="amt n">${money(acctValue(a.id), 2)}${sub}</span></label>`;
+  };
+  return `
+    <div class="pk-group"><div class="pk-title"><span class="tag bank">Bank</span> Mock Bank<span class="sum n">${money(MOCK.bank.reduce((x, a) => x + a.bal, 0), 2)}</span></div>${MOCK.bank.map(row).join("")}</div>
+    <div class="pk-group"><div class="pk-title"><span class="tag brok">Brokerage</span><span class="sum n">${money(MOCK.brok.reduce((x, a) => x + brokValue(a.id), 0), 2)}</span></div>${MOCK.brok.map(row).join("")}</div>
+    <div class="pk-foot"><span class="btns">
+      <button type="button" class="qbtn" data-quick="bank" aria-pressed="${bankOnly}">Bank only</button>
+      <button type="button" class="qbtn" data-quick="brok" aria-pressed="${brokOnly}">Brokerage only</button>
+      <button type="button" class="qbtn" data-quick="all" aria-pressed="${allOn}">All</button></span>
+      <span class="tot">${sel.size} of ${ALL.length} · <b class="n">${money(s.net)}</b></span></div>`;
+}
+
+const cals = [];
+function calendarHTML(c) {
+  const s = S(), [y, m] = MOCK.months[c.mi], ms = monthStats(y, m, s.brokSel);
+  const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d.slice(0, 1)}<span class="hide-sm">${d.slice(1)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="day blank"></div>`;
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) {
+    const t = status(y, m, d);
+    if (t.kind === "trade") {
+      const v = dayFor(t.date, s.brokSel).total, a = Math.abs(v);
+      cells += `<button type="button" class="day ${v >= 0 ? "up" : "down"} l${lvl(v)}" data-day="${t.date}" aria-label="${nice(t.date)}: ${v >= 0 ? "gain" : "loss"} of ${money(a)}. Ask about this day."><span class="dn">${d}</span><span class="amt">${v >= 0 ? "+" : "−"}<span class="cur">$</span>${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`;
+    } else if (t.kind === "future") cells += `<div class="day future"><span class="dn">${d}</span></div>`;
+    else cells += `<div class="day off"><span class="dn">${d}</span><span class="amt">${t.kind === "holiday" ? "Closed" : ""}</span></div>`;
+  }
+  const sw = (k, a) => `<span class="sw" style="background:rgba(var(--${k}-rgb),${a})"></span>`;
+  return `<div class="cal-head"><span class="w-title" style="margin:0">Daily gains &amp; losses <span class="tag brok">${s.brok.map(a => a.short).join(" + ")}</span></span>
+      <div class="cal-nav"><button type="button" data-cal="${c.id}|-1" aria-label="Previous month" ${c.mi === 0 ? "disabled" : ""}>‹</button><span class="m">${MONTHS[m]} ${y}</span><button type="button" data-cal="${c.id}|1" aria-label="Next month" ${c.mi === MOCK.months.length - 1 ? "disabled" : ""}>›</button></div></div>
+    <div class="cal" role="group" aria-label="Daily gains and losses, ${MONTHS[m]} ${y}">${cells}</div>
+    <div class="cal-legend" aria-hidden="true">Loss ${sw("loss", .52)}${sw("loss", .36)}${sw("loss", .22)}${sw("loss", .10)}<span class="gap"></span>${sw("gain", .10)}${sw("gain", .22)}${sw("gain", .36)}${sw("gain", .52)} Gain<span class="gap"></span>outlined = market closed</div>
+    <div class="cal-hint">${m === 9 ? "Month to date" : MONTHS[m] + " total"}: <b>${sg(ms.total)}</b> · ${ms.up} up, ${ms.down} down. <b>Tap any day</b> to ask me about it.</div>`;
+}
+function newCalendar() { const c = { id: cals.length, mi: 1 }; cals.push(c); return `<div class="w" data-cal-box="${c.id}">${calendarHTML(c)}</div>`; }
+
+function moversHTML(dd) {
+  return `<div class="w"><div class="w-title">${nice(dd.date)} · by position <span class="tag brok">mock prices</span></div><div class="rows mono">${dd.moves.map(x => `<div class="r"><span><b>${x.sym}</b> <small>${x.acct === "sch" ? "Schwab" : "IBKR"}</small></span><span class="${gl(x.amt)}">${pct(x.pct)} &nbsp;${signed(x.amt, 2)}</span></div>`).join("")}</div></div>`;
+}
+function holdingsHTML(s) {
+  const rows = MOCK.positions.filter(p => s.brokSel.has(p.acct)).map(p => ({ p, mv: s.last.moves.find(m => m.sym === p.sym) })).sort((a, b) => b.p.val - a.p.val);
+  return `<div class="w"><div class="w-title">Holdings <span class="tag brok">${s.brok.map(a => a.short).join(" + ")}</span></div><div class="scroll-x"><table class="mono"><thead><tr><th>Symbol</th><th>Acct</th><th class="r-al">Qty</th><th class="r-al">Value</th><th class="r-al">Oct 2</th></tr></thead><tbody>${rows.map(({ p, mv }) => `<tr><td><b>${p.sym}</b></td><td>${p.acct === "sch" ? "Schwab" : "IBKR"}</td><td class="r-al">${p.qty}</td><td class="r-al">${money(p.val)}</td><td class="r-al ${gl(mv.amt)}">${signed(mv.amt)}</td></tr>`).join("")}</tbody></table></div></div>`;
+}
+function spendHTML() {
+  const max = Math.max(...MOCK.spending.map(x => x.v));
+  return `<div class="w bars"><div class="w-title">September spending <span class="tag bank">bank</span></div>${MOCK.spending.map(x => `<div class="row"><span>${x.c}</span><div class="track"><div class="fill" style="width:${x.v / max * 100}%;background:${x.flag ? "var(--loss)" : "var(--bank)"}"></div></div><span class="v">${money(x.v)}</span></div>`).join("")}</div>`;
+}
+function checkingHTML() {
+  return `<div class="w"><div class="w-title">Everyday Checking · last 7 days <span class="tag bank">mock</span></div><div class="rows">${MOCK.checkingWeek.map(t => `<div class="r"><span>${t.desc} <small>${t.d}</small></span><span class="n ${gl(t.amt)}">${signed(t.amt, 2)}</span></div>`).join("")}<div class="r"><b>Net change</b><b class="n loss">−$912.30</b></div></div></div>`;
+}
+function cashflowHTML() {
+  const w = 560, h = 170, max = 8000, gap = (w - 36) / MOCK.cashflow.length, bw = 18, y = v => h - 24 - (v / max) * (h - 36);
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Mock monthly income and spending, April to September">`;
+  [0, 4000, 8000].forEach(v => s += `<line class="gl" x1="36" x2="${w}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="0" y="${y(v) + 4}">$${v / 1000}k</text>`);
+  MOCK.cashflow.forEach((d, i) => { const cx = 36 + gap * i + gap / 2; s += `<rect x="${cx - bw - 2}" y="${y(d.inc)}" width="${bw}" height="${y(0) - y(d.inc)}" rx="3" style="fill:var(--bank)"/><rect x="${cx + 2}" y="${y(d.sp)}" width="${bw}" height="${y(0) - y(d.sp)}" rx="3" style="fill:var(--faint);opacity:.5"/><text class="ax" x="${cx}" y="${h - 6}" text-anchor="middle">${d.m}</text><text x="${cx}" y="${y(d.inc) - 6}" text-anchor="middle" style="fill:var(--gain);font-size:11px;font-weight:800">+${((d.inc - d.sp) / 1000).toFixed(1)}k</text>`; });
+  return `<div class="w chart"><div class="w-title">Income vs. spending <span class="tag bank">bank</span></div>${s}</svg><div style="font-size:12.5px;color:var(--muted)"><span style="color:var(--bank)">■</span> income &nbsp;<span style="color:var(--faint)">■</span> spending &nbsp;<span class="gain">+ kept</span></div></div>`;
+}
+function compareHTML(s) {
+  const kept = 1730, inv = s.sep.total, max = Math.max(kept, Math.abs(inv));
+  return `<div class="w bars"><div class="w-title">September: what changed more?</div>
+    <div class="row"><span>Cash kept</span><div class="track"><div class="fill" style="width:${kept / max * 100}%;background:var(--bank)"></div></div><span class="v gain">+$1,730</span></div>
+    <div class="row"><span>Investments</span><div class="track"><div class="fill" style="width:${Math.abs(inv) / max * 100}%;background:var(--brok)"></div></div><span class="v ${gl(inv)}">${signed(inv)}</span></div></div>`;
+}
+function statsHTML(s) {
+  const k = [["Net worth", money(s.net)]];
+  if (s.bank.length) k.push(["Cash", money(s.bankTotal)]);
+  if (s.brok.length) k.push(["Invested", money(s.inv)]);
+  return `<div class="w"><div class="stats">${k.map(([l, v]) => `<div class="stat"><div class="l">${l}</div><div class="v n">${v}</div></div>`).join("")}</div></div>`;
+}
+
+/* =========================================================
+   SCRIPT: what the AI says. Every answer is pre-written
+   and computed from the mock data above.
+   ========================================================= */
+const Q = {
+  overview: {
+    label: "Looks good",
+    a: () => {
+      const s = S();
+      if (!sel.size) return { text: `You haven't ticked any accounts yet. Pick at least one above, then tap “Looks good.”`, keep: true };
+      return { text: `<p>Got it: <b>${sel.size} account${sel.size === 1 ? "" : "s"}</b>. Here's the big picture.</p>` + statsHTML(s) +
+        `<p style="margin-top:10px">${s.brok.length ? `On Friday (Oct 2) your investments moved ${sg(s.last.total)}. ` : ""}${sel.has("chk") ? "Checking dipped this week, and I can tell you why. " : ""}What would you like to know?</p>` };
+    }
+  },
+  sep: { label: "How did my investments do in September?", need: "brok",
+    a: () => { const s = S(); return { text: `<p>September finished ${sg(s.sep.total)} across ${brokNames(s)}: <b>${s.sep.up} up days</b> and <b>${s.sep.down} down</b>. Here's every trading day, with greener and redder for bigger moves.</p>` + newCalendar() }; } },
+  worst: { label: "What happened on my worst day?", need: "brok", after: "sep",
+    a: () => { const s = S(); return dayAnswer(s.sep.worst); } },
+  holdings: { label: "What do I own?", need: "brok",
+    a: () => { const s = S(); return { text: `<p>You hold <b>${s.last.moves.length} positions</b> worth ${money(s.inv - s.brok.reduce((x, a) => x + a.cash, 0))}, plus ${money(s.brok.reduce((x, a) => x + a.cash, 0))} in uninvested cash.${s.brokSel.size === 2 ? " About half is tech (AAPL, MSFT, NVDA, QQQ), spread across both brokerages, so your tech exposure is higher than either account shows on its own." : ""}</p>` + holdingsHTML(s) }; } },
+  checking: { label: "Why is checking down this week?", need: "chk",
+    a: () => ({ text: `<p>Checking is <b class="loss">down $912</b> this week, even though your <b>$3,425 paycheck</b> arrived. Three planned payments went out right after: rent, your card bill and a transfer to savings. Nothing looks unusual; it's timing.</p>` + checkingHTML() }) },
+  spending: { label: "Where did my money go in September?", need: "bank",
+    a: () => ({ text: `<p>You spent <b>$5,120</b> in September. Housing was the biggest piece, and <b>dining ($612) ran 18% above your 6-month average</b>. Everything else was close to normal.</p>` + spendHTML() }) },
+  saving: { label: "Am I saving more than usual?", need: "bank",
+    a: () => ({ text: `<p>A little. You kept <b class="gain">$1,730</b> in September, vs. a 6-month average of <b>$1,630</b>. May was your best month (+$1,930).</p>` + cashflowHTML() }) },
+  compare: { label: "Did my savings or my investments change more?", need: "both",
+    a: () => { const s = S(); return { text: `<p>In September, ${Math.abs(s.sep.total) > 1730 ? "<b>the market moved your money more than your saving did</b>" : "<b>your own saving moved the needle more than the market</b>"}: you kept $1,730 in cash, and your investments changed ${sg(s.sep.total)}.</p>` + compareHTML(s) }; } },
+  limits: { label: "What can't you do?", quiet: true,
+    a: () => ({ text: `<p>Fair question. In this prototype:</p><p>• every account and number is <b>mock data</b><br>• I can't connect to real banks or brokerages<br>• my answers are <b>scripted</b>, not generated<br>• I explain your numbers, but I don't give personal financial advice</p>` }) },
+  change: { label: "Change accounts", quiet: true, repeat: true,
+    a: () => ({ text: `<p>Sure. Tick or untick anything below. My answers will use only what's selected.</p>` + pickerBox(), picker: true }) },
+  demo: { label: "Open the full demo →", quiet: true, repeat: true, action: () => openDemo() }
+};
+function dayAnswer(dd) {
+  const top = dd.moves[0], low = dd.moves[dd.moves.length - 1];
+  const t = dd.total >= 0
+    ? `On ${nice(dd.date)} your investments gained ${sg(dd.total)}. <b>${top.sym}</b> did the most (${sg(top.amt)})${low.amt < 0 ? `, while ${low.sym} slipped (${sg(low.amt)})` : ""}.`
+    : `On ${nice(dd.date)} you were down <b class="loss nw">${money(-dd.total)}</b>, mostly from <b>${low.sym}</b> (${sg(low.amt)})${top.amt > 0 ? `. ${top.sym} softened it (${sg(top.amt)})` : ""}.`;
+  return { text: `<p>${t}</p>` + moversHTML(dd) };
+}
+function pickerBox() { return `<div class="w" data-picker>${pickerHTML()}</div>`; }
+
+/* =========================================================
+   CONVERSATION ENGINE (used by the landing page and the demo)
+   ========================================================= */
+function Convo(log, repliesEl, opts = {}) {
+  const asked = new Set();
+  const delay = opts.instant || reduced ? 0 : 650;
+  function scroll(el) { if (opts.scrollBox) opts.scrollBox.scrollTop = opts.scrollBox.scrollHeight; else if (!opts.noScroll) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }); }
+  function add(who, html, wide) {
+    const m = document.createElement("div");
+    m.className = "msg " + who;
+    m.innerHTML = who === "ai" ? `<span class="av" aria-hidden="true">L</span><div class="bubble${wide ? " wide" : ""}"><div class="who">Ledgerline <span class="mock">MOCK</span></div>${html}</div>` : `<div class="bubble">${html}</div>`;
+    log.appendChild(m); scroll(m); return m;
+  }
+  function ai(html, wide, then) {
+    repliesEl.innerHTML = "";
+    if (!delay) { add("ai", html, wide); then && then(); return; }
+    const t = document.createElement("div"); t.className = "msg ai typing"; t.innerHTML = `<span class="av" aria-hidden="true">L</span><div class="bubble" aria-label="Ledgerline is typing"><i></i><i></i><i></i></div>`;
+    log.appendChild(t); scroll(t);
+    setTimeout(() => { t.remove(); add("ai", html, wide); then && then(); }, delay);
+  }
+  function freezePickers() { $$("[data-picker]", log).forEach(p => { p.classList.add("frozen"); p.removeAttribute("data-picker"); $$("input", p).forEach(i => i.disabled = true); }); }
+  function available() {
+    const s = S();
+    // Order the suggestions so each path gets a mix of bank, brokerage and cross-account questions.
+    const ORDER = ["sep", "checking", "compare", "worst", "spending", "holdings", "saving", "limits", "change", "demo"];
+    return Object.entries(Q).sort((x, y) => ORDER.indexOf(x[0]) - ORDER.indexOf(y[0])).filter(([id, q]) => {
+      if (id === "overview") return false;
+      if (asked.has(id) && !q.repeat) return false;
+      if (q.after && !asked.has(q.after)) return false;
+      if (q.need === "brok" && !s.brok.length) return false;
+      if (q.need === "bank" && !s.bank.length) return false;
+      if (q.need === "chk" && !sel.has("chk")) return false;
+      if (q.need === "both" && !(s.bank.length && s.brok.length)) return false;
+      return true;
+    });
+  }
+  function offer(list, label) {
+    repliesEl.innerHTML = (label ? `<div class="reply-label">${label}</div>` : "") + list.map(([id, q]) => `<button type="button" class="reply${q.quiet ? " quiet" : ""}" data-r="${id}">${q.label}</button>`).join("");
+  }
+  // Keep it simple: at most three questions at a time, plus the small utility replies.
+  function offerQuestions() { const l = available(); offer([...l.filter(([, q]) => !q.quiet).slice(0, 3), ...l.filter(([, q]) => q.quiet)], "Suggested replies"); }
+  function ask(id) {
+    const q = Q[id]; if (!q) return;
+    if (q.action) { q.action(); return; }
+    add("me", id === "overview" ? "Looks good" : q.label);
+    const r = q.a();
+    if ((r.picker || id === "overview") && !r.keep) freezePickers();
+    asked.add(id);
+    ai(r.text, /class="w/.test(r.text), () => {
+      if (r.keep) { offer([["overview", Q.overview]]); return; }
+      if (r.picker) { offer([["overview", Q.overview]], "Done choosing?"); return; }
+      offerQuestions();
+    });
+  }
+  function askDay(date) {
+    add("me", `What happened on ${nice(date)}?`);
+    ai(dayAnswer(dayFor(date, S().brokSel)).text, true, offerQuestions);
+  }
+  function choose(kind) {
+    sel.clear(); ALL.forEach(a => { if (kind === "both" || (kind === "bank") === isBank(a.id)) sel.add(a.id); });
+    add("me", { bank: "My bank accounts", brok: "My brokerage accounts", both: "Both, please" }[kind]);
+    ai(`<p>Here are the <span class="mock">MOCK</span> accounts for that. Each one shows its balance. Untick anything you'd like me to leave out, or use the quick buttons.</p>` + pickerBox(), true, () => offer([["overview", Q.overview]], "Done choosing?"));
+    renderPickers();
+  }
+  function start() {
+    log.innerHTML = ""; asked.clear();
+    add("ai", `<p>Hi, I'm <b>Ledgerline</b>. I bring your bank and brokerage accounts together and explain what changed, in plain English.</p><p>Which accounts should I look at?</p>`);
+    repliesEl.innerHTML = `<div class="reply-label">Suggested replies</div>` + [["bank", "Bank accounts"], ["brok", "Brokerage accounts"], ["both", "Both"]].map(([k, l]) => `<button type="button" class="reply" data-choose="${k}">${l}</button>`).join("");
+  }
+  function free(text) {
+    add("me", text.replace(/</g, "&lt;"));
+    const t = text.toLowerCase();
+    const map = [["worst", "worst"], ["september", "sep"], ["month", "sep"], ["calendar", "sep"], ["portfolio", "sep"], ["invest", "sep"], ["own", "holdings"], ["holding", "holdings"], ["position", "holdings"], ["checking", "checking"], ["spend", "spending"], ["where", "spending"], ["sav", "saving"], ["more", "compare"], ["can't", "limits"], ["cannot", "limits"], ["advice", "limits"], ["real", "limits"], ["account", "change"], ["worth", "overview"], ["total", "overview"]];
+    const hit = map.find(([k]) => t.includes(k));
+    if (!hit) { ai(`<p>That one isn't in my script yet. This prototype only has pre-written answers. Try a suggested reply below.</p>`, false, offerQuestions); return; }
+    const q = Q[hit[1]], s = S();
+    const blocked = (q.need === "brok" && !s.brok.length) || ((q.need === "bank" || q.need === "chk") && !s.bank.length) || (q.need === "both" && !(s.bank.length && s.brok.length));
+    if (blocked) { ai(`<p>To answer that I'd need ${q.need === "brok" ? "a brokerage account" : q.need === "both" ? "both a bank and a brokerage account" : "a bank account"} selected. You can tick one in the account list.</p>`, false, offerQuestions); return; }
+    const r = q.a(); asked.add(hit[1]);
+    ai(r.text, /class="w/.test(r.text), offerQuestions);
+  }
+  return { start, ask, askDay, choose, free, offerQuestions, log, repliesEl };
+}
+
+/* ---------- picker sync (all live pickers share one selection) ---------- */
+function renderPickers() { $$("[data-picker]").forEach(p => p.innerHTML = pickerHTML()); $("#demo-picker").innerHTML = pickerHTML(); }
+
+/* ---------- instances ---------- */
+const land = Convo($("#convo"), $("#replies"));
+let demoChat = null;
+const convoFor = el => el.closest(".demo") ? demoChat : land;
+
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-acct]"); if (!c) return;
+  c.checked ? sel.add(c.dataset.acct) : sel.delete(c.dataset.acct);
+  const id = c.dataset.acct, inDemo = !!c.closest(".demo-side");
+  renderPickers();
+  const again = inDemo ? $(`#demo-picker [data-acct="${id}"]`) : $(`#convo [data-picker] [data-acct="${id}"]`); if (again) again.focus();
+  if (inDemo && demoChat) demoChat.offerQuestions();
+});
+document.addEventListener("click", e => {
+  const q = e.target.closest("[data-quick]");
+  if (q) { sel.clear(); ALL.forEach(a => { if (q.dataset.quick === "all" || (q.dataset.quick === "bank") === isBank(a.id)) sel.add(a.id); }); renderPickers(); if (q.closest(".demo-side") && demoChat) demoChat.offerQuestions(); return; }
+  const ch = e.target.closest("[data-choose]"); if (ch) { convoFor(ch).choose(ch.dataset.choose); return; }
+  const r = e.target.closest("[data-r]"); if (r) { convoFor(r).ask(r.dataset.r); return; }
+  const d = e.target.closest("[data-day]"); if (d) { convoFor(d).askDay(d.dataset.day); return; }
+  const cn = e.target.closest("[data-cal]");
+  if (cn) { const [id, dir] = cn.dataset.cal.split("|"), c = cals[+id]; c.mi = Math.max(0, Math.min(MOCK.months.length - 1, c.mi + +dir)); $(`[data-cal-box="${id}"]`).innerHTML = calendarHTML(c); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+$("#restart").addEventListener("click", () => { land.start(); $("#convo").scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); });
+
+/* ---------- demo ---------- */
+let lastFocus = null;
+function openDemo() {
+  lastFocus = document.activeElement;
+  $("#demo").classList.add("open"); document.body.style.overflow = "hidden";
+  renderPickers();
+  if (!demoChat) {
+    demoChat = Convo($("#demo-convo"), $("#demo-replies"), { scrollBox: $("#demo-scroll") });
+    demoChat.log.innerHTML = "";
+    const m = document.createElement("div"); m.className = "msg ai";
+    m.innerHTML = `<span class="av" aria-hidden="true">L</span><div class="bubble"><div class="who">Ledgerline <span class="mock">MOCK</span></div><p>This is the full demo. The accounts on the left are <b>mock data</b>; tick the ones you want me to use. Then type a question or tap a suggestion. My answers are scripted.</p></div>`;
+    demoChat.log.appendChild(m);
+    demoChat.offerQuestions();
+  } else demoChat.offerQuestions();
+  $("#demo-close").focus();
+}
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; if (lastFocus) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+$("#demo-form").addEventListener("submit", e => { e.preventDefault(); const t = $("#demo-text").value.trim(); if (!t) return; $("#demo-text").value = ""; demoChat.free(t); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#demo").classList.contains("open")) closeDemo(); });
+
+land.start();
+// #preview plays the first few steps instantly (used for the gallery thumbnail)
+if (location.hash === "#preview") { const p = Convo($("#convo"), $("#replies"), { instant: true, noScroll: true }); p.start(); p.choose("both"); p.ask("overview"); p.ask("sep"); }
+if (location.hash === "#demo") openDemo();
+</script>
+</body>
+</html>
