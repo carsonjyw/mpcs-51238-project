@@ -275,6 +275,46 @@
           </ul>
           <p>A counter, progress bar and side dots show position; each card ends with a “Next” button. Every card after the account picker uses only the selected accounts. View Demo shows the same cards one at a time, moving sideways with Back/Next buttons and arrow keys, plus a scripted question box on the last card.</p>
         </li>
+        <li>
+          <div class="when">Stage 12 · Feedback on v10 · review of v01–v10</div>
+          <h4>One card at a time is too restrictive; related information should be seen together</h4>
+          <p><b>Your review of v10:</b> you're not drawn to it. The one-card-at-a-time format feels too restrictive for this product, since you'd prefer to see related financial information together. v10 stays in the gallery.</p>
+          <p><b>Your request for v11 onward:</b> after ten versions, five new directions that are substantially different in layout and information organization, not the same dashboard structure in a new style. Be more creative and take bigger design risks, with unexpected ways to introduce the product and organize the information, while still making sense to users. You'll choose one to explore.</p>
+        </li>
+        <li>
+          <div class="when">Stage 12 · Decision → v11</div>
+          <h4>Five bolder directions proposed; “The Money Desk” chosen</h4>
+          <p><b>Five directions proposed</b>, each a different basic form for the page: The Money Desk (organized in space), The Checkup (vital signs against your normal range), The Diff (last month vs. this month, line by line), The What-If Lab (levers and live outcomes) and Money Weather (conditions and forecast). You chose The Money Desk for v11.</p>
+          <p><b>How v11 responds:</b> no grid, columns or panels. Accounts are physical objects on a pannable, zoomable desk, placed so related things sit together: the pay stub next to the checking ledger, checking next to the savings jar, the card statement under checking, the two brokerage folders side by side under the desk calendar. Seven AI sticky notes are pinned between the objects they explain, with string to each. Examples: “paycheck in, rent and card bill out,” “September's savings transfer was skipped,” and “tech is 53% across both folders,” which strings to MSFT, AAPL, QQQ and NVDA. Clicking a note lights up everything it ties together; clicking an object lights up its notes. The v01-style picker sits above as a tray. Unticking an account removes its objects and notes, and the net-worth tape recalculates. The demo adds “Ask the desk,” which zooms to the matching note. On small screens the desk becomes a stacked drawer, with each note placed after the object it's about.</p>
+        </li>
+        <li>
+          <div class="when">Stage 13 · Feedback on v11 → v12</div>
+          <h4>Keep the desk direction, with a clearer starting point; try The Checkup next</h4>
+          <p><b>Your review of v11:</b> you find it really creative and like the desk metaphor, but you're not sure it's practical yet: the information feels scattered and some of the text is small.</p>
+          <p><b>What you'd change if the desk is developed further:</b> keep the direction, but give users a clearer starting point; make the account overview and the most important changes stand out; let people open individual items for a larger, easier-to-read view.</p>
+          <p><b>Your request:</b> move on to direction 2, “The Checkup: organized by vital signs,” for v12.</p>
+        </li>
+        <li>
+          <div class="when">Stage 13 · Decision → v12</div>
+          <h4>“The Checkup” built, applying the v11 feedback</h4>
+          <p><b>How v12 responds:</b> the page is organized by six vital signs instead of accounts, time or flows. Each sign combines bank and brokerage data and is drawn against your own usual range (shaded band from April–August, past months as dots, now as a large marker):</p>
+          <ul>
+            <li><b>Cash cushion:</b> 6.2 months</li>
+            <li><b>Saving rate:</b> 25%</li>
+            <li><b>Spending vs. usual:</b> −3%, with dining +18% called out</li>
+            <li><b>Bills ahead:</b> 2.5×</li>
+            <li><b>Portfolio mix:</b> 52.8% tech, above the usual 48.5–52.5%</li>
+            <li><b>Daily swings:</b> 0.35% a day</li>
+          </ul>
+          <p><b>Your v11 feedback carried in:</b></p>
+          <ul>
+            <li><b>A clear starting point:</b> a header summary and four headline numbers.</li>
+            <li><b>The most important change first:</b> out-of-range signs are sorted to the front and highlighted.</li>
+            <li><b>Readable text.</b></li>
+            <li><b>A larger view:</b> each sign opens into a detail panel with its accounts, a monthly chart or category breakdown, and a fuller AI note.</li>
+          </ul>
+          <p>The gains calendar sits beside an “investment heartbeat” trace of September's daily moves. The tone stays descriptive (“notes, not advice”). The demo adds a scripted ask box that opens the matching sign.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -362,7 +402,21 @@ const VERSIONS = [
     title: "One Card at a Time",
     stage: "explore",
     date: "2026-10-06",
-    note: "<b>New approach 5, chosen by you.</b> The page is organized as a short sequence: eight full-screen cards, one idea each (intro, pick accounts, what happened since you last checked, where the money went, investments, one thing worth a look, what's coming up, ask). Following your v08 and v09 feedback, recent changes come before upcoming events, and the money flows are shown directly without clicks. Uses the v01-style account picker (card 2) and the <b>gains calendar</b> (card 5); progress dots and a counter show where you are. Light/dark kept; all mock."
+    note: "<b>New approach 5, chosen by you.</b> The page is organized as a short sequence: eight full-screen cards, one idea each (intro, pick accounts, what happened since you last checked, where the money went, investments, one thing worth a look, what's coming up, ask). Following your v08 and v09 feedback, recent changes come before upcoming events, and the money flows are shown directly without clicks. Uses the v01-style account picker (card 2) and the <b>gains calendar</b> (card 5); progress dots and a counter show where you are. Light/dark kept; all mock. <b>Your review:</b> not drawn to it. The one-card-at-a-time format feels too restrictive for this product; you'd prefer to see related financial information together."
+  },
+  {
+    v: "v11",
+    title: "The Money Desk",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Bolder direction 1, chosen by you.</b> The page is organized in space: accounts are objects on one desk you can pan and zoom. A checking ledger sits next to the pay stub, a savings jar, the card statement, an adding-machine tape for net worth, a desk calendar (the <b>gains calendar</b>) and two brokerage folders with holdings fanned out. AI sticky notes are pinned between related objects with string running to each; clicking a note lights up what it ties together. The v01 account picker is the tray that puts objects on or takes them off the desk. On phones the desk becomes a stacked drawer. Light/dark kept; all mock. <b>Your review:</b> really creative, and you like the desk metaphor, but not yet practical: the information feels scattered and some text is small. You'd keep the direction with a clearer starting point, the account overview and most important changes standing out, and items that open into a larger, easier-to-read view."
+  },
+  {
+    v: "v12",
+    title: "The Checkup",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Bolder direction 2, chosen by you.</b> The page is organized by vital signs. A chart-style header gives a clear starting point (“5 of 6 vital signs are in your usual range. One is worth a look.”) with net worth, cash, invested and kept. Six vital signs follow, each combining bank and brokerage data and plotted against your own six-month usual range: cash cushion, saving rate, spending vs. usual, bills ahead, portfolio mix and daily swings. Out-of-range signs come first, and any sign opens into a larger view. The <b>gains calendar</b> sits beside an “investment heartbeat” trace. v01 account picker; light/dark; all mock."
   }
 ];
 
