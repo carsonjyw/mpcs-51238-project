@@ -72,6 +72,9 @@
   ol.log .when { font: 12px var(--mono); color: var(--faint); }
   ol.log h4 { margin: 2px 0 4px; font-size: 16px; }
   ol.log p { margin: 0 0 6px; color: var(--muted); font-size: 15px; max-width: 75ch; }
+  ol.log ul { margin: 0 0 8px; padding-left: 20px; color: var(--muted); font-size: 15px; max-width: 75ch; }
+  ol.log ul li { margin-bottom: 4px; }
+  .badge.refine { color: var(--final); border-color: currentColor; }
   blockquote { margin: 6px 0 8px; padding: 6px 14px; border-left: 3px solid var(--accent); color: var(--ink); font-size: 15px; background: var(--card); border-radius: 0 8px 8px 0; }
 
   footer { padding: 28px 0 44px; font-size: 13px; color: var(--faint); }
@@ -85,8 +88,8 @@
     <h1>AI Personal Financial Assistant: 25 landing-page versions</h1>
     <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
     <div class="meta">
-      <span>Versions: <b id="count">6</b> / 25</span>
-      <span>Stage: <b>Exploration</b></span>
+      <span>Versions: <b id="count">6</b> / 25<span id="refs"></span></span>
+      <span>Stage: <b>Refining the Priority Inbox</b></span>
       <span>Final selection: <b>not chosen yet</b></span>
     </div>
     <div class="progress" aria-hidden="true"><div id="bar" style="width:4%"></div></div>
@@ -186,6 +189,20 @@
           <p><b>Five new approaches proposed</b>, each organizing the page differently: Priority Inbox (by importance), Zoom In (by level of detail), The Timeline (by time), Money Map (by how money moves) and One Card at a Time (by sequence). You chose the Priority Inbox for v06.</p>
           <p><b>How v06 responds:</b> a short page built around one inbox. A one-line AI summary names what's worth a look. Items sit in three groups (Worth a look, Good to know, and All clear, collapsed by default), and each is a single line until opened, when it shows the AI explanation and its evidence: spending vs. your average, the checking ledger, tech exposure, the gains calendar or each position's move. The v01-style account picker sits beside the inbox as a filter, and unticking an account removes its items. Items can be marked as read. Below the inbox, two short sections explain how items are sorted and what the product reads. View Demo opens a list-and-detail inbox with a scripted “ask” box.</p>
         </li>
+        <li>
+          <div class="when">Stage 7 · Feedback on v06 → v06-refined</div>
+          <h4>Keep organizing by importance, but show more of what the product can do</h4>
+          <p><b>Your review of v06:</b> it feels a bit too basic. You like organizing the information by importance, but the page needs to show more of what the product can actually do.</p>
+          <p><b>Your requests for this refinement:</b> refine within the Priority Inbox direction; show one important item expanded by default with a useful AI explanation and clear supporting data; give the page more visual hierarchy; make the summaries more specific to the user's accounts; feel simple to use but substantial, without packing everything together like v05.</p>
+          <p><b>How v06-refined responds:</b></p>
+          <ul>
+            <li><b>Header:</b> “Good morning. 3 things across your 5 accounts are worth a look,” four summary numbers (the “worth a look” count highlighted), and a line showing what was checked (accounts, transactions, positions, trading days; mock).</li>
+            <li><b>Top-priority item, open by default:</b> tech at 53% across Schwab + IBKR, more than either account shows. It has a three-part AI explanation (What I noticed / Why it matters / Worth asking yourself), a tech-share chart by account, a holdings table with September results, and follow-up questions with scripted answers.</li>
+            <li><b>Four levels of size:</b> the open item, then medium cards with small charts for the rest of “Worth a look,” compact rows with small charts for “Good to know,” and one line of chips for “All clear.” Opening any item moves it into the large view.</li>
+            <li><b>Specific summaries:</b> each item names the account (for example “Rewards Card ••3398”), the amounts and the dates.</li>
+          </ul>
+          <p>The top priority changes with the selected accounts (with bank only, the dining item leads). The gains calendar is the evidence for the September item, and the demo adds a scripted ask box. v06 is kept unchanged for comparison. At your request this refinement is named <b>v06-refined</b> and sits next to v06; v07 is reserved for the next substantially different direction.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -238,7 +255,14 @@ const VERSIONS = [
     title: "Priority Inbox",
     stage: "explore",
     date: "2026-10-05",
-    note: "<b>New approach 1, chosen by you after v05.</b> The page is organized by importance instead of by feature. A short inbox sorts what changed into <b>Worth a look</b>, <b>Good to know</b> and <b>All clear</b> (collapsed). Each item opens to the AI's explanation and its evidence; the <b>gains calendar</b> is the evidence for the September item. The v01-style account picker filters the inbox. Light/dark kept; all mock."
+    note: "<b>New approach 1, chosen by you after v05.</b> The page is organized by importance instead of by feature. A short inbox sorts what changed into <b>Worth a look</b>, <b>Good to know</b> and <b>All clear</b> (collapsed). Each item opens to the AI's explanation and its evidence; the <b>gains calendar</b> is the evidence for the September item. The v01-style account picker filters the inbox. Light/dark kept; all mock. <b>Your review:</b> organizing by importance works, but the page felt too basic and didn't show enough of what the product can do."
+  },
+  {
+    v: "v06-refined",
+    title: "Priority Inbox, refined",
+    stage: "refine",
+    date: "2026-10-05",
+    note: "<b>Refines v06 per your feedback.</b> The top-priority item opens by default, with a three-part AI explanation (what I noticed, why it matters, worth asking yourself), supporting charts and a holdings table, and follow-up questions. Other items step down in size: medium cards for Worth a look, compact rows for Good to know, one line for All clear. Summaries name the specific accounts, amounts and dates. Picker, calendar and light/dark kept; all mock."
   }
 ];
 
@@ -264,8 +288,12 @@ cards.innerHTML = VERSIONS.map(x => {
   </article>`;
 }).join("");
 
-document.getElementById("count").textContent = VERSIONS.length;
-document.getElementById("bar").style.width = (VERSIONS.length / 25 * 100) + "%";
+// Refinements like "v06-refined" sit beside their version and don't count toward the 25 numbered versions
+const numbered = VERSIONS.filter(x => /^v\d+$/.test(x.v)).length;
+document.getElementById("count").textContent = numbered;
+const refs = VERSIONS.length - numbered;
+document.getElementById("refs").textContent = refs ? ` (+${refs} refinement${refs === 1 ? "" : "s"})` : "";
+document.getElementById("bar").style.width = (numbered / 25 * 100) + "%";
 </script>
 </body>
 </html>
