@@ -85,7 +85,7 @@
     <h1>AI Personal Financial Assistant: 25 landing-page versions</h1>
     <p class="lede">Landing-page explorations for a personal finance product. Users connect bank accounts, brokerage accounts, or both, and AI explains how their money changed. Every version uses clearly labeled <b>mock data</b>. No real account connections are implemented.</p>
     <div class="meta">
-      <span>Versions: <b id="count">4</b> / 25</span>
+      <span>Versions: <b id="count">5</b> / 25</span>
       <span>Stage: <b>Exploration</b></span>
       <span>Final selection: <b>not chosen yet</b></span>
     </div>
@@ -107,7 +107,7 @@
       <h2>Stage 1: directions proposed</h2>
       <p class="sub">Before building anything, five substantially different directions were proposed. Each one differs in audience, layout and how it communicates, not only in visual style. You picked which ones to try; the highlighted cards link to the versions that use them.</p>
       <div class="dirs">
-        <div class="dir"><div class="n">01</div><b>The Morning Briefing</b><p>Editorial, newspaper-style. AI-written headlines about your money.</p></div>
+        <div class="dir picked"><div class="n">01 <span class="pick">· tried in v05</span></div><b>The Morning Briefing</b><p>Editorial, newspaper-style. AI-written headlines about your money.</p></div>
         <div class="dir picked"><div class="n">02 <span class="pick">· tried in v02</span></div><b>Pick Your Path</b><p>Interactive Bank / Brokerage / Both toggle reshapes the page.</p></div>
         <div class="dir picked"><div class="n">03 <span class="pick">· tried in v04</span></div><b>Ask Anything</b><p>Chat-first hero; capabilities shown as conversations.</p></div>
         <div class="dir picked"><div class="n">04 <span class="pick">· tried in v03</span></div><b>One Screen, Not Six Tabs</b><p>Problem/solution contrast: scattered apps merge into one view.</p></div>
@@ -161,6 +161,13 @@
           <p><b>Your requests for v04:</b> keep it simple enough that visitors quickly understand what the product does; use suggested replies to guide them; have the account picker and calendar appear naturally in the conversation; keep answers scripted and the mock data clearly labeled.</p>
           <p><b>How v04 responds:</b> one narrow column with no dashboard preview, feature grid or section list. A one-line intro and three “what it covers” chips explain the product up front. The AI then asks which accounts to look at (Bank / Brokerage / Both). The v01-style account picker appears inside its reply, and later answers carry the gains calendar (tap a day to ask about it), checking transactions, spending bars, cash flow and holdings. At most three suggested questions show at a time, chosen from the selected accounts. Every reply is labeled MOCK and a “What can't you do?” reply states the limits. View Demo continues the chat full-screen with the picker in a side panel and a scripted text box.</p>
         </li>
+        <li>
+          <div class="when">Stage 5 · Feedback on v04 → v05</div>
+          <h4>v04's question-led introduction works; direction 1, “The Morning Briefing,” tried next</h4>
+          <p><b>Your review of v04:</b> you like how it introduces the product through questions, which feels more personal and quite different from the earlier dashboard layouts.</p>
+          <p><b>Your request for v05:</b> explore the newspaper-style idea, with headlines about the user's money, short stories explaining account changes and sample AI summaries, so it feels like reading a personal financial morning briefing. Keep the bank and brokerage options, the light/dark switch and the gains calendar, worked naturally into the editorial layout, with clearly labeled mock data. Keep v01–v04 unchanged.</p>
+          <p><b>How v05 responds:</b> a masthead (“The Ledgerline Daily,” dated Monday, October 5, 2026) with a numbers index row. A front-page lead story's headline changes with the accounts covered. Beside it are an “About this paper” box that explains the product, “The briefing in 30 seconds” (AI summary) and “Sources for this edition,” the v01-style account picker. Below come three short stories with AI notes, Section B (Markets) with the gains calendar where choosing a day prints that day's story and a newspaper-style stock table, Section C (Household) with the checking ledger, spending and saving, and Letters to the Editor answered by the AI. Bank / Brokerage / Both appears as “This edition covers.” View Demo opens a reader with back issues by date and a scripted “write to the editor” box.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -199,7 +206,14 @@ const VERSIONS = [
     title: "Ask Anything",
     stage: "explore",
     date: "2026-10-05",
-    note: "<b>Direction 3, approach A, chosen by you.</b> The landing page is a guided conversation instead of a dashboard preview. Suggested replies walk visitors through picking accounts; the <b>v01-style account picker</b> and the <b>gains calendar</b> appear inside the AI's replies. Every answer is scripted and labeled mock. Keeps the light/dark switch."
+    note: "<b>Direction 3, approach A, chosen by you.</b> The landing page is a guided conversation instead of a dashboard preview. Suggested replies walk visitors through picking accounts; the <b>v01-style account picker</b> and the <b>gains calendar</b> appear inside the AI's replies. Every answer is scripted and labeled mock. Keeps the light/dark switch. <b>Your review:</b> introducing the product through questions feels more personal and quite different from the earlier dashboard layouts."
+  },
+  {
+    v: "v05",
+    title: "The Morning Briefing",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>Direction 1, chosen by you.</b> The page reads like a personal financial newspaper: a masthead, a lead headline about your money, short stories explaining account changes, “The briefing in 30 seconds” AI summary, and letters to the editor answered by the AI. Bank / Brokerage / Both is the edition picker; the v01-style account picker becomes “Sources for this edition”; the gains calendar runs in the Markets section, where each day has its own story. Light/dark kept; all mock."
   }
 ];
 

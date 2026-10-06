@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v05 · The Morning Briefing — Ledgerline</title>
+<meta name="description" content="v05 — The Morning Briefing: the landing page reads like a personal financial newspaper, with headlines about your money, short stories explaining account changes, AI summaries, a markets calendar and letters to the editor. All data is mock.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --paper: #f6f1e7;
+    --paper-2: #efe8da;
+    --card: #fbf8f2;
+    --ink: #1b1813;
+    --ink-2: #3d372e;
+    --muted: #6b6457;
+    --rule: #1b1813;
+    --hair: #d8cfbd;
+    --accent: #9b2c1d;
+    --gain: #1d6b3f;
+    --loss: #a8261b;
+    --gain-rgb: 29, 107, 63;
+    --loss-rgb: 168, 38, 27;
+    --bank: #1e5a8a;
+    --brok: #6a3c94;
+    --mock-ink: #7a4d00;
+    --mock-bg: #f7e2a8;
+  }
+  [data-theme="dark"] {
+    --paper: #15130f;
+    --paper-2: #1d1a15;
+    --card: #1b1813;
+    --ink: #ede6d8;
+    --ink-2: #d5ccbb;
+    --muted: #a39a89;
+    --rule: #ede6d8;
+    --hair: #3a352c;
+    --accent: #e98a6f;
+    --gain: #5cc98c;
+    --loss: #f08273;
+    --gain-rgb: 92, 201, 140;
+    --loss-rgb: 240, 130, 115;
+    --bank: #7db7e6;
+    --brok: #c3a0ec;
+    --mock-ink: #ffd88a;
+    --mock-bg: #3a2c0d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 Georgia, "Iowan Old Style", "Times New Roman", ui-serif, serif; -webkit-font-smoothing: antialiased; }
+  .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .n { font-variant-numeric: tabular-nums; }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { font: 800 10.5px/1 -apple-system, "Segoe UI", sans-serif; letter-spacing: .06em; color: var(--mock-ink); background: var(--mock-bg); padding: 3px 6px; border-radius: 3px; vertical-align: 2px; white-space: nowrap; }
+  .paper { max-width: 1180px; margin: 0 auto; padding: 0 22px; }
+
+  /* ---------- utility bar ---------- */
+  .util { font: 13.5px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; border-bottom: 1px solid var(--hair); }
+  .util .paper { display: flex; align-items: center; gap: 12px; height: 52px; }
+  .util .back { text-decoration: none; color: var(--muted); }
+  .util .back:hover { color: var(--ink); text-decoration: underline; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--ink); background: transparent; padding: 2px; cursor: pointer; font-size: 12.5px; }
+  .theme-btn > span { padding: 3px 9px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--ink); color: var(--paper); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; font: 650 14.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 9px 16px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); cursor: pointer; text-decoration: none; white-space: nowrap; }
+  .btn:hover { opacity: .88; }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .mockline { background: var(--mock-bg); color: var(--mock-ink); text-align: center; font: 13px/1.4 -apple-system, "Segoe UI", sans-serif; padding: 7px 16px; }
+
+  /* ---------- masthead ---------- */
+  .mast { text-align: center; padding: 26px 0 0; }
+  .mast .ear { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; font: 12.5px/1.35 -apple-system, "Segoe UI", sans-serif; color: var(--muted); }
+  .mast .ear div { max-width: 210px; }
+  .mast .ear div:last-child { text-align: right; }
+  .mast h1 { font-family: "Old English Text MT", "UnifrakturMaguntia", "Engravers MT", Georgia, serif; font-weight: 400; font-size: clamp(40px, 8vw, 92px); line-height: 1; letter-spacing: -.01em; margin: 6px 0 10px; }
+  .dateline { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 3px double var(--rule); border-bottom: 1px solid var(--rule); padding: 7px 2px; font: 600 13px/1.3 -apple-system, "Segoe UI", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+  .sections { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; text-transform: none; letter-spacing: 0; }
+  .sections .lbl { color: var(--muted); font-weight: 500; margin-right: 4px; }
+  .sec-btn { border: 1px solid var(--ink); background: transparent; padding: 3px 10px; font: 650 13px -apple-system, "Segoe UI", sans-serif; cursor: pointer; }
+  .sec-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .index { display: flex; gap: 0; border-bottom: 1px solid var(--rule); font: 13.5px/1.35 -apple-system, "Segoe UI", sans-serif; overflow-x: auto; }
+  .index div { flex: 1; padding: 8px 12px; border-right: 1px solid var(--hair); white-space: nowrap; }
+  .index div:last-child { border-right: 0; }
+  .index small { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .index b { font-size: 16px; }
+
+  /* ---------- front page ---------- */
+  .front { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); gap: 0; border-bottom: 1px solid var(--rule); }
+  .front > .lead { padding: 22px 24px 24px 0; border-right: 1px solid var(--hair); }
+  .front > aside { padding: 22px 0 24px 24px; }
+  .kicker { font: 800 12px/1 -apple-system, "Segoe UI", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .lead h2 { font-size: clamp(30px, 4.2vw, 50px); line-height: 1.04; letter-spacing: -.02em; margin: 0 0 12px; font-weight: 700; }
+  .deck { font-size: 20px; line-height: 1.4; color: var(--ink-2); margin: 0 0 12px; font-style: italic; }
+  .byline { font: 13px/1.4 -apple-system, "Segoe UI", sans-serif; color: var(--muted); border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 6px 0; margin-bottom: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .cols { columns: 2 260px; column-gap: 26px; column-rule: 1px solid var(--hair); }
+  .cols p { margin: 0 0 12px; text-align: justify; hyphens: auto; }
+  .dropcap::first-letter { float: left; font-size: 3.4em; line-height: .85; padding: 4px 8px 0 0; font-weight: 700; }
+  figure { margin: 4px 0 14px; break-inside: avoid; }
+  figcaption { font: italic 13.5px/1.4 Georgia, serif; color: var(--muted); margin-top: 6px; }
+
+  .about { border: 1px solid var(--ink); padding: 14px 16px; margin-bottom: 18px; background: var(--card); }
+  .about h3 { font: 800 12px -apple-system, "Segoe UI", sans-serif; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 6px; }
+  .about p { margin: 0 0 10px; font-size: 16px; line-height: 1.5; }
+  .about .btn { width: 100%; justify-content: center; }
+  .aside-h { font: 800 12px -apple-system, "Segoe UI", sans-serif; letter-spacing: .1em; text-transform: uppercase; border-top: 3px solid var(--rule); padding-top: 8px; margin: 0 0 10px; display: flex; gap: 8px; align-items: center; }
+  .thirty { margin: 0 0 20px; padding: 0; list-style: none; }
+  .thirty li { padding: 8px 0 8px 22px; border-bottom: 1px solid var(--hair); position: relative; font-size: 16px; line-height: 1.45; }
+  .thirty li::before { content: "■"; position: absolute; left: 0; top: 8px; font-size: 11px; color: var(--accent); }
+
+  /* sources box = account picker (v01 idea) */
+  .sources { font: 14.5px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .src-group { margin-bottom: 8px; }
+  .src-title { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 4px 0; border-bottom: 1px solid var(--hair); }
+  .src-title .b { color: var(--bank); } .src-title .k { color: var(--brok); }
+  .src-row { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 1px dotted var(--hair); cursor: pointer; }
+  .src-row input { width: 17px; height: 17px; accent-color: var(--ink); margin: 0; flex: none; }
+  .src-row .nm { flex: 1; min-width: 0; }
+  .src-row .nm small { display: block; color: var(--muted); font-size: 12px; }
+  .src-row .amt { text-align: right; font-weight: 650; }
+  .src-row .amt small { display: block; font-weight: 500; font-size: 11.5px; }
+  .src-row:not(:has(input:checked)) { opacity: .55; }
+  .src-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 8px; }
+  .src-foot .tot { margin-left: auto; color: var(--muted); }
+  .src-foot .tot b { color: var(--ink); font-size: 15.5px; }
+
+  /* ---------- secondary stories ---------- */
+  .row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--rule); }
+  .story { padding: 20px 22px 22px; border-right: 1px solid var(--hair); }
+  .story:first-child { padding-left: 0; }
+  .story:last-child { border-right: 0; padding-right: 0; }
+  .story h3 { font-size: 24px; line-height: 1.12; margin: 0 0 8px; letter-spacing: -.01em; }
+  .story p { margin: 0 0 10px; font-size: 16.5px; line-height: 1.55; }
+  .story .ai { font: 13.5px/1.45 -apple-system, "Segoe UI", sans-serif; background: var(--paper-2); border-left: 3px solid var(--accent); padding: 8px 10px; }
+  .story .ai b:first-child { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); display: block; }
+  .story.hide, .hide { display: none !important; }
+
+  /* ---------- section bands ---------- */
+  .band { padding: 26px 0 28px; border-bottom: 1px solid var(--rule); }
+  .band-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 3px double var(--rule); padding-bottom: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .band-head h2 { font-size: 30px; margin: 0; letter-spacing: -.01em; }
+  .band-head .pg { font: 700 12.5px -apple-system, "Segoe UI", sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .band-head .pg:last-child { margin-left: auto; }
+  .markets { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 26px; }
+  .markets > div:first-child { border-right: 1px solid var(--hair); padding-right: 26px; }
+
+  /* calendar */
+  .cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .cal-head h3 { font: 700 20px Georgia, serif; margin: 0; }
+  .cal-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .cal-nav button { width: 30px; height: 30px; border: 1px solid var(--ink); background: transparent; cursor: pointer; }
+  .cal-nav button:disabled { opacity: .3; cursor: default; }
+  .cal-nav .m { min-width: 118px; text-align: center; font-weight: 700; font-size: 14.5px; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .dow { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); text-align: center; text-transform: uppercase; }
+  .day { min-height: 56px; padding: 5px 6px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1px solid var(--hair); background: var(--card); font-variant-numeric: tabular-nums; }
+  button.day { cursor: pointer; }
+  button.day:hover { border-color: var(--ink); }
+  .day .dn { font-size: 11.5px; color: var(--muted); font-weight: 650; }
+  .day .amt { font-size: 12.5px; font-weight: 800; white-space: nowrap; }
+  .day.up .amt { color: var(--gain); } .day.down .amt { color: var(--loss); }
+  .day.up.l1 { background: rgba(var(--gain-rgb), .10); } .day.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .day.up.l3 { background: rgba(var(--gain-rgb), .36); } .day.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .day.down.l1 { background: rgba(var(--loss-rgb), .10); } .day.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .day.down.l3 { background: rgba(var(--loss-rgb), .36); } .day.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .day.l3 .amt, .day.l4 .amt { color: var(--ink); }
+  .day.off { background: transparent; border-style: dashed; }
+  .day.off .amt { font-size: 10.5px; font-weight: 500; color: var(--muted); }
+  .day.blank { background: transparent; border: 0; }
+  .day.future { background: transparent; border-style: dotted; }
+  .day.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .cal-legend { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; font: 12px -apple-system, "Segoe UI", sans-serif; color: var(--muted); margin-top: 8px; }
+  .cal-legend .sw { width: 16px; height: 10px; }
+  .cal-legend .gap { width: 8px; }
+  .day-story h3 { font-size: 26px; line-height: 1.12; margin: 0 0 8px; }
+  .day-story .meta { font: 13px -apple-system, "Segoe UI", sans-serif; color: var(--muted); margin-bottom: 10px; }
+  .day-story p { margin: 0 0 12px; }
+
+  /* stock table, newspaper agate style */
+  .agate { width: 100%; border-collapse: collapse; font: 13.5px/1.3 ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; margin-top: 8px; }
+  .agate caption { text-align: left; font: 800 12px -apple-system, "Segoe UI", sans-serif; letter-spacing: .1em; text-transform: uppercase; padding-bottom: 6px; border-bottom: 2px solid var(--rule); }
+  .agate th { text-align: right; font: 700 11px -apple-system, "Segoe UI", sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 5px 4px; border-bottom: 1px solid var(--rule); }
+  .agate th:first-child, .agate td:first-child { text-align: left; }
+  .agate td { text-align: right; padding: 5px 4px; border-bottom: 1px dotted var(--hair); white-space: nowrap; }
+  .agate tfoot td { border-top: 1px solid var(--rule); border-bottom: 0; font-weight: 800; }
+  .scroll-x { overflow-x: auto; }
+
+  /* household */
+  .household { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 0; }
+  .household > div { padding: 0 22px; border-right: 1px solid var(--hair); }
+  .household > div:first-child { padding-left: 0; }
+  .household > div:last-child { border-right: 0; padding-right: 0; }
+  .household h3 { font-size: 22px; line-height: 1.15; margin: 0 0 8px; }
+  .household p { font-size: 16.5px; margin: 0 0 10px; }
+  .bars { font: 14px -apple-system, "Segoe UI", sans-serif; }
+  .bars .row { display: grid; grid-template-columns: 82px 1fr 56px; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .bars .track { height: 9px; background: var(--paper-2); }
+  .bars .fill { height: 100%; }
+  .bars .v { text-align: right; font-variant-numeric: tabular-nums; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart .ax { fill: var(--muted); font: 11px -apple-system, sans-serif; }
+  .chart .gl { stroke: var(--hair); }
+  .ledger { width: 100%; border-collapse: collapse; font: 14px -apple-system, "Segoe UI", sans-serif; }
+  .ledger td { padding: 5px 0; border-bottom: 1px dotted var(--hair); }
+  .ledger td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 10px; }
+  .ledger tr:last-child td { border-top: 1px solid var(--rule); border-bottom: 0; font-weight: 800; }
+  .ledger small { color: var(--muted); }
+
+  /* letters */
+  .letters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+  .letter { padding: 0 22px; border-right: 1px solid var(--hair); }
+  .letter:first-child { padding-left: 0; }
+  .letter:last-child { border-right: 0; padding-right: 0; }
+  .letter .q { font-style: italic; font-size: 17px; margin: 0 0 6px; }
+  .letter .from { font: 12.5px -apple-system, "Segoe UI", sans-serif; color: var(--muted); margin-bottom: 10px; }
+  .letter .a { font-size: 16.5px; margin: 0; }
+  .letter .a::first-line { font-weight: 700; }
+
+  .howmade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; font-size: 16.5px; }
+  .howmade div { padding: 0 22px; border-right: 1px solid var(--hair); }
+  .howmade div:first-child { padding-left: 0; }
+  .howmade div:last-child { border-right: 0; }
+  .howmade b { display: block; font-size: 20px; margin-bottom: 4px; }
+  .howmade .num { font: 800 12px -apple-system, "Segoe UI", sans-serif; letter-spacing: .1em; color: var(--accent); }
+  .closing { text-align: center; padding: 34px 0 40px; border-bottom: 3px double var(--rule); }
+  .closing h2 { font-size: clamp(28px, 4vw, 42px); margin: 0 0 8px; }
+  .closing p { color: var(--muted); margin: 0 0 18px; font-style: italic; }
+  footer { font: 12.5px/1.5 -apple-system, "Segoe UI", sans-serif; color: var(--muted); padding: 16px 0 36px; }
+  footer .paper { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; }
+
+  /* ---------- demo ---------- */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--paper); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 3px double var(--rule); flex-wrap: wrap; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .demo-top .t { font: 400 26px "Old English Text MT", Georgia, serif; }
+  .demo-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; }
+  .demo-body > * { overflow-y: auto; padding: 18px; }
+  .demo-side { border-right: 1px solid var(--hair); }
+  .demo-issue { min-width: 0; }
+  .demo-issue .lead h2 { font-size: 36px; }
+  .demo-ask { border-left: 1px solid var(--hair); display: flex; flex-direction: column; padding: 0 !important; overflow: hidden !important; }
+  .demo-ask .h { padding: 14px 16px 8px; }
+  .demo-ask .msgs { flex: 1; overflow-y: auto; padding: 0 16px 10px; }
+  .demo-ask .lt { border-bottom: 1px solid var(--hair); padding: 10px 0; font-size: 15.5px; }
+  .demo-ask .lt .q { font-style: italic; }
+  .demo-ask .lt .a { margin-top: 4px; }
+  .demo-ask .chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 16px; border-top: 1px solid var(--hair); }
+  .chip { font: 13px -apple-system, "Segoe UI", sans-serif; border: 1px solid var(--ink); background: transparent; padding: 4px 9px; cursor: pointer; text-align: left; }
+  .chip:hover { background: var(--paper-2); }
+  .demo-ask form { display: flex; gap: 6px; padding: 0 16px 14px; }
+  .demo-ask input { flex: 1; min-width: 0; border: 1px solid var(--ink); background: var(--card); color: var(--ink); padding: 8px 10px; font: 14.5px -apple-system, "Segoe UI", sans-serif; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1100px) {
+    .demo-body { grid-template-columns: 280px minmax(0, 1fr); overflow-y: auto; }
+    .demo-body > * { overflow: visible; }
+    .demo-ask { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--hair); min-height: 420px; }
+  }
+  @media (max-width: 900px) {
+    .front { grid-template-columns: 1fr; }
+    .front > .lead { padding-right: 0; border-right: 0; border-bottom: 1px solid var(--hair); }
+    .front > aside { padding-left: 0; }
+    .row3, .household, .letters, .howmade { grid-template-columns: 1fr; }
+    .story, .household > div, .letter, .howmade div { padding: 18px 0; border-right: 0; border-bottom: 1px solid var(--hair); }
+    .story:last-child, .household > div:last-child, .letter:last-child, .howmade div:last-child { border-bottom: 0; }
+    .markets { grid-template-columns: 1fr; }
+    .markets > div:first-child { border-right: 0; padding-right: 0; }
+    .mast .ear div:not(.keep) { display: none; }
+    .mast .ear { justify-content: center; }
+    .demo-body { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .paper { padding: 0 16px; }
+    .hide-sm { display: none; }
+    .util .paper { gap: 8px; }
+    .dateline { font-size: 11.5px; }
+    .deck { font-size: 18px; }
+    .cols p { text-align: left; }
+    .day { min-height: 46px; padding: 3px 4px; }
+    .day .amt { font-size: 10px; letter-spacing: -.02em; }
+    .day .amt .cur { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="util">
+  <div class="paper">
+    <a class="back" href="../index.html">← <span class="hide-sm">Back to </span>gallery</a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</div>
+<div class="mockline" role="note"><b>Design prototype · v05.</b> This is a <b>sample edition</b>: every account, figure, headline and AI summary is <b>mock data</b>. No real bank or brokerage connection is implemented.</div>
+
+<main class="paper" id="top">
+  <!-- ============ MASTHEAD ============ -->
+  <header class="mast">
+    <div class="ear">
+      <div>“Your accounts, read for you every morning.”</div>
+      <div class="keep"><span class="mock">SAMPLE EDITION · MOCK DATA</span></div>
+      <div>Written by Ledgerline AI from your bank &amp; brokerage accounts</div>
+    </div>
+    <h1>The Ledgerline Daily</h1>
+    <div class="dateline">
+      <span>Monday, October 5, 2026</span>
+      <span class="sections" role="group" aria-label="Choose which accounts this edition covers">
+        <span class="lbl">This edition covers:</span>
+        <button type="button" class="sec-btn" data-edition="bank">Bank</button>
+        <button type="button" class="sec-btn" data-edition="brok">Brokerage</button>
+        <button type="button" class="sec-btn" data-edition="all">Both</button>
+      </span>
+      <span class="hide-sm">Personal edition · No. 5</span>
+    </div>
+    <div class="index" id="index" aria-label="Today's numbers"></div>
+  </header>
+
+  <!-- ============ FRONT PAGE ============ -->
+  <section class="front">
+    <article class="lead" id="lead"></article>
+    <aside>
+      <div class="about">
+        <h3>About this paper</h3>
+        <p><b>Ledgerline</b> reads your bank accounts, your brokerage accounts, or both, and writes you a short briefing each morning: what changed, why, and what's worth a look. You can also ask it questions.</p>
+        <button class="btn" data-open-demo>Read the demo edition →</button>
+      </div>
+      <h3 class="aside-h">The briefing in 30 seconds <span class="mock">AI · MOCK</span></h3>
+      <ul class="thirty" id="thirty"></ul>
+      <h3 class="aside-h">Sources for this edition <span class="mock">MOCK</span></h3>
+      <div class="sources" data-sources></div>
+    </aside>
+  </section>
+
+  <section class="row3" id="row3" aria-label="More stories"></section>
+
+  <!-- ============ MARKETS ============ -->
+  <section class="band" id="markets-band">
+    <div class="band-head"><span class="pg">Section B</span><h2>Markets &amp; Your Portfolio</h2><span class="pg" id="mk-src">Schwab + IBKR</span></div>
+    <div class="markets">
+      <div id="cal-box"></div>
+      <div>
+        <div class="day-story" id="day-story"></div>
+        <div class="scroll-x"><table class="agate" id="agate"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOUSEHOLD ============ -->
+  <section class="band" id="house-band">
+    <div class="band-head"><span class="pg">Section C</span><h2>Household &amp; Cash Flow</h2><span class="pg">Mock Bank</span></div>
+    <div class="household">
+      <div id="hh-checking"></div>
+      <div>
+        <h3>Where September's money went</h3>
+        <p>You spent <b>$5,120</b>. Housing led, and dining was the only category well above normal.</p>
+        <div class="bars" id="spend"></div>
+      </div>
+      <div>
+        <h3>Six months of saving</h3>
+        <p>You've kept between $1,370 and $1,930 every month since April. September's <b class="gain">$1,730</b> beat your average of $1,630.</p>
+        <div class="chart" id="cashflow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LETTERS ============ -->
+  <section class="band">
+    <div class="band-head"><span class="pg">Opinion</span><h2>Letters to the Editor</h2><span class="pg">Answered by Ledgerline AI · scripted</span></div>
+    <div class="letters" id="letters"></div>
+  </section>
+
+  <section class="band">
+    <div class="band-head"><span class="pg">Editor's note</span><h2>How this paper gets made</h2></div>
+    <div class="howmade">
+      <div><span class="num">01</span><b>Choose your sections</b>Bank accounts, brokerage accounts, or both. Each one adds its own pages.</div>
+      <div><span class="num">02</span><b>Connect (concept only)</b>Account linking isn't built in this prototype. This edition is printed from mock accounts.</div>
+      <div><span class="num">03</span><b>Read it each morning</b>Headlines for what changed, stories for why, and an editor that answers your questions.</div>
+    </div>
+  </section>
+
+  <section class="closing">
+    <h2>Read a full demo edition</h2>
+    <p>Pick your sources, flip through back issues by date, and write in with your own questions.</p>
+    <button class="btn" data-open-demo>View Demo →</button>
+  </section>
+</main>
+
+<footer>
+  <div class="paper">
+    <span>The Ledgerline Daily is a fictional product concept. v05 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<!-- ============ DEMO: a reader with back issues ============ -->
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline Daily demo edition">
+  <div class="demo-top">
+    <span class="t">The Ledgerline Daily</span>
+    <span class="mock">DEMO EDITION · ALL DATA IS MOCK</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html" style="color:var(--muted)">← Gallery</a>
+    <button class="btn ghost" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-body">
+    <aside class="demo-side">
+      <h3 class="aside-h">Sources <span class="mock">MOCK</span></h3>
+      <div class="sources" data-sources></div>
+      <h3 class="aside-h" style="margin-top:18px">Back issues</h3>
+      <div id="demo-cal"></div>
+    </aside>
+    <div class="demo-issue" id="demo-issue"></div>
+    <aside class="demo-ask">
+      <div class="h"><h3 class="aside-h" style="margin:0">Write to the editor <span class="mock">SCRIPTED</span></h3></div>
+      <div class="msgs" id="demo-msgs" aria-live="polite"></div>
+      <div class="chips" id="demo-chips"></div>
+      <form id="demo-form"><input id="demo-text" type="text" placeholder="Dear Ledgerline…" aria-label="Ask a question"><button class="btn" type="submit">Send</button></form>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v04.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", inst: "Schwab (mock)", mask: "••5512", short: "Schwab", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", inst: "IBKR (mock)", mask: "U•••908", short: "IBKR", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  acct: "sch", qty: 120, px: 287.40, vol: 0.8, tech: false },
+    { sym: "AAPL", acct: "sch", qty: 45,  px: 228.10, vol: 1.4, tech: true },
+    { sym: "MSFT", acct: "sch", qty: 30,  px: 431.20, vol: 1.2, tech: true },
+    { sym: "NVDA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8, tech: true },
+    { sym: "TSLA", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2, tech: false },
+    { sym: "QQQ",  acct: "ibk", qty: 25,  px: 489.50, vol: 1.1, tech: true }
+  ],
+  cashflow: [
+    { m: "Apr", inc: 6850, sp: 5480 }, { m: "May", inc: 6850, sp: 4920 }, { m: "Jun", inc: 7100, sp: 5610 },
+    { m: "Jul", inc: 6850, sp: 5050 }, { m: "Aug", inc: 6850, sp: 5390 }, { m: "Sep", inc: 6850, sp: 5120 }
+  ],
+  spending: [
+    { c: "Housing", v: 2100 }, { c: "Groceries", v: 640 }, { c: "Dining", v: 612, flag: true },
+    { c: "Shopping", v: 520 }, { c: "Transport", v: 380 }, { c: "Utilities", v: 290 }, { c: "Other", v: 578 }
+  ],
+  checkingWeek: [
+    { d: "Oct 3", desc: "Payroll deposit (mock employer)", amt: 3425 },
+    { d: "Oct 3", desc: "Rent, October", amt: -2100 },
+    { d: "Oct 2", desc: "Transfer to savings", amt: -500 },
+    { d: "Sep 30", desc: "Card payment", amt: -1250 },
+    { d: "Week", desc: "Everyday purchases (14)", amt: -487.30 }
+  ],
+  holidays: { "2026-09-07": "Labor Day" },
+  months: [[2026, 7], [2026, 8], [2026, 9]],
+  lastDataDay: "2026-10-02"
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 0) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 0) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const pct = n => (n >= 0 ? "+" : "−") + Math.abs(n).toFixed(2) + "%";
+const gl = n => (n >= 0 ? "gain" : "loss");
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const nice = s => { const t = parse(s); return `${DOW[t.getDay()].slice(0, 3)}, ${MONTHS[t.getMonth()].slice(0, 3)} ${t.getDate()}`; };
+const longDate = s => { const t = parse(s); return `${DOW[t.getDay()]}, ${MONTHS[t.getMonth()]} ${t.getDate()}`; };
+
+MOCK.positions.forEach(p => p.val = p.qty * p.px);
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const brokValue = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0) + MOCK.brok.find(a => a.id === id).cash;
+const acctValue = id => isBank(id) ? MOCK.bank.find(a => a.id === id).bal : brokValue(id);
+
+/* ---------- deterministic mock daily P&L (same generator as v02–v04) ---------- */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, bs) {
+  const moves = rawDay(date).filter(m => bs.has(m.acct)).sort((a, b) => b.amt - a.amt);
+  const by = id => moves.filter(m => m.acct === id).reduce((s, m) => s + m.amt, 0);
+  return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0), sch: by("sch"), ibk: by("ibk") };
+}
+function status(y, m, d) {
+  const date = iso(y, m, d), dow = new Date(y, m, d).getDay();
+  if (date > MOCK.lastDataDay) return { kind: "future", date };
+  if (dow === 0 || dow === 6) return { kind: "weekend", date };
+  if (MOCK.holidays[date]) return { kind: "holiday", date };
+  return { kind: "trade", date };
+}
+function monthStats(y, m, bs) {
+  const days = [];
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) { const s = status(y, m, d); if (s.kind === "trade") days.push(dayFor(s.date, bs)); }
+  const sorted = [...days].sort((a, b) => b.total - a.total);
+  const bySym = {};
+  days.forEach(dd => dd.moves.forEach(mv => bySym[mv.sym] = (bySym[mv.sym] || 0) + mv.amt));
+  const syms = Object.entries(bySym).sort((a, b) => b[1] - a[1]);
+  return { days, total: days.reduce((s, x) => s + x.total, 0), up: days.filter(x => x.total >= 0).length, down: days.filter(x => x.total < 0).length, best: sorted[0], worst: sorted[sorted.length - 1], syms };
+}
+
+/* ---------- selection (sources) ---------- */
+const sel = new Set(ALL.map(a => a.id));
+const S = () => {
+  const bank = MOCK.bank.filter(a => sel.has(a.id)), brok = MOCK.brok.filter(a => sel.has(a.id)), bs = new Set(brok.map(a => a.id));
+  const bankTotal = bank.reduce((s, a) => s + a.bal, 0), inv = brok.reduce((s, a) => s + brokValue(a.id), 0);
+  return { bank, brok, bs, bankTotal, inv, net: bankTotal + inv, last: dayFor(MOCK.lastDataDay, bs), sep: monthStats(2026, 8, bs), chk: sel.has("chk") };
+};
+const names = s => s.brok.map(a => a.short).join(" and ");
+const edition = () => { const s = S(); return s.bank.length && s.brok.length ? "all" : s.bank.length ? "bank" : s.brok.length ? "brok" : "none"; };
+
+/* ---------- sources box (v01 account-picker idea) ---------- */
+function sourcesHTML() {
+  const s = S(), ed = edition();
+  const row = a => {
+    const sub = isBank(a.id) ? `<small class="${gl(a.wk)}">${signed(a.wk)} this week</small>` : (() => { const v = dayFor(MOCK.lastDataDay, new Set([a.id])).total; return `<small class="${gl(v)}">${signed(v)} Fri</small>`; })();
+    return `<label class="src-row"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""}><span class="nm">${a.name}<small>${a.inst} ${a.mask}</small></span><span class="amt n">${money(acctValue(a.id), 2)}${sub}</span></label>`;
+  };
+  return `<div class="src-group"><div class="src-title"><span class="b">Bank · Mock Bank</span><span class="n">${money(MOCK.bank.reduce((x, a) => x + a.bal, 0))}</span></div>${MOCK.bank.map(row).join("")}</div>
+    <div class="src-group"><div class="src-title"><span class="k">Brokerage</span><span class="n">${money(MOCK.brok.reduce((x, a) => x + brokValue(a.id), 0))}</span></div>${MOCK.brok.map(row).join("")}</div>
+    <div class="src-foot"><button type="button" class="sec-btn" data-edition="bank" aria-pressed="${ed === "bank" && MOCK.bank.every(a => sel.has(a.id))}">Bank only</button><button type="button" class="sec-btn" data-edition="brok" aria-pressed="${ed === "brok" && MOCK.brok.every(a => sel.has(a.id))}">Brokerage only</button><button type="button" class="sec-btn" data-edition="all" aria-pressed="${sel.size === ALL.length}">All</button>
+      <span class="tot">${sel.size} of ${ALL.length} · <b class="n">${money(s.net)}</b></span></div>`;
+}
+
+/* ---------- stories (all scripted, computed from mock data) ---------- */
+const dragLine = last => last[1] < 0 ? `while ${last[0]} was the month's drag (${sg(last[1])})` : `and every holding finished higher; ${last[0]} added the least (${sg(last[1])})`;
+function contribFigure(s) {
+  const max = Math.max(...s.sep.syms.map(x => Math.abs(x[1])));
+  return `<figure><div class="bars">${s.sep.syms.map(([k, v]) => `<div class="row"><span><b>${k}</b></span><div class="track"><div class="fill" style="width:${Math.abs(v) / max * 100}%;background:${v >= 0 ? "var(--gain)" : "var(--loss)"}"></div></div><span class="v ${gl(v)}">${signed(v)}</span></div>`).join("")}</div><figcaption>September, by holding: who added and who took away. Mock prices.</figcaption></figure>`;
+}
+function leadStory(s) {
+  const top = s.sep.syms[0], last = s.sep.syms[s.sep.syms.length - 1];
+  if (s.brok.length && s.bank.length) return {
+    kicker: "Front page · Your money",
+    h: `Markets add ${money(Math.abs(s.sep.total))} in September as you set aside $1,730 more`,
+    deck: `Both halves of your money grew last month. This week's dip in checking is timing, not trouble.`,
+    body: [
+      `Your investments across ${names(s)} finished September <b>${signed(s.sep.total)}</b>, with ${s.sep.up} up days against ${s.sep.down} down. <b>${top[0]}</b> did the most work (${sg(top[1])}), ${dragLine(last)}.`,
+      `On the bank side, you kept <b>$1,730</b> of September's $6,850 income, a little above your six-month average of $1,630. Net worth across the ${sel.size} accounts in this edition stands at <b>${money(s.net)}</b>.`,
+      s.chk ? `Checking looks lower this morning, down $912 on the week, but that's because rent, a card payment and a savings transfer all went out right after Friday's paycheck. See “Paycheck in, three bills out” below.` : `With checking left out of this edition, the cash picture covers savings and your card only.`,
+      `For the day-by-day story of the month, turn to <b>Section B</b>, where every trading day is printed in green or red.`
+    ],
+    figure: contribFigure(s)
+  };
+  if (s.brok.length) return {
+    kicker: "Front page · Markets",
+    h: `September closes ${s.sep.total >= 0 ? "up" : "down"} ${money(Math.abs(s.sep.total))} as ${top[0]} leads your portfolio`,
+    deck: `${s.sep.up} up days, ${s.sep.down} down, and a best session on ${longDate(s.sep.best.date)}.`,
+    body: [
+      `Your ${names(s)} holdings ended September <b>${signed(s.sep.total)}</b>. <b>${top[0]}</b> contributed the most (${sg(top[1])}), ${dragLine(last)}.`,
+      `The best day was ${longDate(s.sep.best.date)} (${sg(s.sep.best.total)}), the worst ${longDate(s.sep.worst.date)} (${sg(s.sep.worst.total)}).`,
+      `On Friday, the last trading day before this edition, positions moved ${sg(s.last.total)}.`,
+      `Turn to <b>Section B</b> for the full month, day by day, and the stock table.`
+    ],
+    figure: contribFigure(s)
+  };
+  return {
+    kicker: "Front page · Household",
+    h: s.chk ? `Paycheck lands, but checking ends the week $912 lighter` : `You kept $1,730 in September, slightly above your average`,
+    deck: s.chk ? `Rent, a card payment and a transfer to savings all went out right after payday. Our read: timing, not overspending.` : `Spending held near normal, with one exception: dining out.`,
+    body: s.chk ? [
+      `Your <b>$3,425 paycheck</b> arrived Friday. Within days, three planned payments followed: <b>$2,100</b> for October rent, a <b>$1,250</b> card payment and a <b>$500</b> transfer into savings.`,
+      `Add $487 of everyday purchases and Everyday Checking ends the week down <b class="loss">$912</b>, at $8,412.55. None of the payments were unusual; they just landed together.`,
+      `Over the full month, you spent <b>$5,120</b> and kept <b>$1,730</b>, a bit better than your six-month average.`
+    ] : [
+      `September income was $6,850 and spending was $5,120, leaving <b>$1,730</b> kept, against a six-month average of $1,630.`,
+      `Dining out ($612) ran 18% above its usual level. Everything else was within normal range.`
+    ],
+    figure: s.chk ? `<figure><table class="ledger">${MOCK.checkingWeek.map(t => `<tr><td>${t.desc} <small>${t.d}</small></td><td class="${gl(t.amt)}">${signed(t.amt, 2)}</td></tr>`).join("")}<tr><td>Net change, Everyday Checking</td><td class="loss">−$912.30</td></tr></table><figcaption>The week in checking. Mock transactions.</figcaption></figure>` : null
+  };
+}
+function renderLead(el, s) {
+  if (!sel.size) { el.innerHTML = `<div class="kicker">Front page</div><h2>No sources, no news</h2><p class="deck">Tick at least one account under “Sources for this edition” and the paper will print itself.</p>`; return; }
+  const L = leadStory(s);
+  el.innerHTML = `<div class="kicker">${L.kicker} <span class="mock">MOCK</span></div><h2>${L.h}</h2><p class="deck">${L.deck}</p>
+    <div class="byline"><span>By <b>Ledgerline AI</b></span><span>·</span><span>Written from ${sel.size} mock account${sel.size === 1 ? "" : "s"}</span><span>·</span><span>2-minute read</span></div>
+    <div class="cols">${L.body.map((p, i) => `<p${i === 0 ? ' class="dropcap"' : ""}>${p}</p>`).join("")}${L.figure || ""}</div>`;
+}
+function thirty(s) {
+  const out = [];
+  if (sel.size) out.push(`Net worth in this edition: <b>${money(s.net)}</b> across ${sel.size} account${sel.size === 1 ? "" : "s"}.`);
+  if (s.brok.length) out.push(`Friday's market move: ${sg(s.last.total)}. September: ${sg(s.sep.total)}.`);
+  if (s.chk) out.push(`Checking −$912 this week: rent, card bill and savings transfer after payday.`);
+  if (s.bank.length) out.push(`Dining is 18% above your usual. Everything else, normal.`);
+  if (s.brok.length && s.bs.size === 2) out.push(`About half your invested money is in tech, across both brokerages.`);
+  if (!sel.size) out.push(`No sources selected. Tick an account below.`);
+  return out.slice(0, 4).map(x => `<li>${x}</li>`).join("");
+}
+function secondaries(s) {
+  const st = [];
+  if (s.brok.length) {
+    const top = s.last.moves[0], low = s.last.moves[s.last.moves.length - 1];
+    st.push({ k: "Markets", h: `Friday: ${top.sym} ${top.amt >= 0 ? "rises" : "slips"}, ${low.sym} ${low.amt >= 0 ? "edges up" : "lags"}`, p: `Positions moved ${sg(s.last.total)} on the last trading day. ${top.sym} added ${sg(top.amt)}; ${low.sym} ${low.amt < 0 ? "took away" : "added"} ${sg(low.amt)}.`, ai: `${Math.abs(s.last.total) / s.inv < .005 ? "A quiet day" : "A noticeable day"}: a ${(Math.abs(s.last.total) / s.inv * 100).toFixed(2)}% move on what you have invested.` });
+  }
+  if (s.chk && (s.brok.length)) st.push({ k: "Household", h: `Paycheck in, three bills out`, p: `Checking is down <b class="loss">$912</b> on the week even though $3,425 arrived Friday. Rent, a card payment and $500 to savings went out right after.`, ai: `Timing, not overspending. Your balance is still $8,412.` });
+  if (s.bank.length) st.push({ k: "Spending", h: `Dining out runs 18% above your usual`, p: `You spent <b>$612</b> on restaurants in September, against a six-month average near $518. It was the only category well above normal.`, ai: `Groceries, transport and the rest stayed close to normal.` });
+  if (s.brok.length && s.bs.size === 2) st.push({ k: "Portfolio", h: `Half your portfolio rides on tech`, p: `AAPL and MSFT at Schwab plus NVDA and QQQ at IBKR add up to about <b>53%</b> of what you have invested, more than either account shows on its own.`, ai: `A description of your mix, not advice.` });
+  if (s.bank.length && !s.brok.length) st.push({ k: "Saving", h: `A steady six months`, p: `You've kept between $1,370 and $1,930 every month since April. May was your best month.`, ai: `Savings grew $500 this week from your automatic transfer.` });
+  if (s.brok.length && !s.bank.length) {
+    const held = MOCK.positions.filter(p => s.bs.has(p.acct)).sort((x, y) => y.val - x.val);
+    st.push({ k: "Holdings", h: `${held.length} positions, ${s.brok.length === 2 ? "two brokerages" : "one brokerage"}, one list`, p: `Your largest holding is ${held[0].sym} (${money(held[0].val)}), followed by ${held[1].sym} and ${held[2].sym}.`, ai: `Uninvested cash: ${money(s.brok.reduce((x, a) => x + a.cash, 0))}.` });
+  }
+  return st.slice(0, 3);
+}
+function renderRow3(s) {
+  const st = secondaries(s);
+  $("#row3").innerHTML = st.map(x => `<article class="story"><div class="kicker">${x.k}</div><h3>${x.h}</h3><p>${x.p}</p><div class="ai"><b>AI summary · mock</b>${x.ai}</div></article>`).join("");
+  $("#row3").classList.toggle("hide", !st.length);
+}
+function renderIndex(s) {
+  const k = [["Net worth", sel.size ? money(s.net) : "—"]];
+  if (s.bank.length) k.push(["Cash", money(s.bankTotal)], ["Kept in Sep", `<span class="gain">+$1,730</span>`]);
+  if (s.brok.length) k.push(["Invested", money(s.inv)], ["Friday", sg(s.last.total)], ["September", sg(s.sep.total)]);
+  $("#index").innerHTML = k.map(([l, v]) => `<div><small>${l}</small><b class="n">${v}</b></div>`).join("");
+}
+
+/* ---------- markets: calendar + day story + stock table ---------- */
+const cal = { mi: 1, day: null };
+function calendarHTML(c, s, compact) {
+  const [y, m] = MOCK.months[c.mi], ms = monthStats(y, m, s.bs);
+  if (!c.day || !c.day.startsWith(iso(y, m, 1).slice(0, 7))) c.day = (m === 8 ? ms.best : ms.days[ms.days.length - 1]).date;
+  const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d.slice(0, 1)}<span class="hide-sm">${d.slice(1, 3)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="day blank"></div>`;
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) {
+    const t = status(y, m, d);
+    if (t.kind === "trade") {
+      const v = dayFor(t.date, s.bs).total, a = Math.abs(v);
+      cells += `<button type="button" class="day ${v >= 0 ? "up" : "down"} l${lvl(v)}${t.date === c.day ? " sel" : ""}" data-day="${t.date}" aria-pressed="${t.date === c.day}" aria-label="${nice(t.date)}: ${v >= 0 ? "gain" : "loss"} of ${money(a)}"><span class="dn">${d}</span><span class="amt">${v >= 0 ? "+" : "−"}<span class="cur">$</span>${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`;
+    } else if (t.kind === "future") cells += `<div class="day future"><span class="dn">${d}</span></div>`;
+    else cells += `<div class="day off"><span class="dn">${d}</span><span class="amt">${t.kind === "holiday" ? "Closed" : ""}</span></div>`;
+  }
+  const sw = (k, a) => `<span class="sw" style="background:rgba(var(--${k}-rgb),${a})"></span>`;
+  return `<div class="cal-head"><h3>${compact ? "" : "The month, day by day"}</h3><div class="cal-nav"><button type="button" data-cal="-1" aria-label="Previous month" ${c.mi === 0 ? "disabled" : ""}>‹</button><span class="m">${MONTHS[m]} ${y}</span><button type="button" data-cal="1" aria-label="Next month" ${c.mi === MOCK.months.length - 1 ? "disabled" : ""}>›</button></div></div>
+    <div class="cal" role="group" aria-label="Daily gains and losses, ${MONTHS[m]} ${y}">${cells}</div>
+    <div class="cal-legend" aria-hidden="true">Loss ${sw("loss", .52)}${sw("loss", .36)}${sw("loss", .22)}${sw("loss", .10)}<span class="gap"></span>${sw("gain", .10)}${sw("gain", .22)}${sw("gain", .36)}${sw("gain", .52)} Gain<span class="gap"></span>dashed = market closed</div>
+    ${compact ? "" : `<p style="font-size:15.5px;margin:10px 0 0;font-style:italic;color:var(--muted)">${m === 9 ? "Month to date" : MONTHS[m] + " in total"}: ${sg(ms.total)}, ${ms.up} up days and ${ms.down} down. Choose any day to read its story.</p>`}`;
+}
+function dayHeadline(dd) {
+  const top = dd.moves[0], low = dd.moves[dd.moves.length - 1];
+  return dd.total >= 0 ? `${top.sym} leads a ${money(dd.total)} gain` : `${low.sym} drags your portfolio down ${money(-dd.total)}`;
+}
+function dayStoryHTML(dd, s) {
+  const top = dd.moves[0], low = dd.moves[dd.moves.length - 1];
+  return `<div class="kicker">Markets · ${longDate(dd.date)} <span class="mock">MOCK</span></div><h3>${dayHeadline(dd)}</h3>
+    <div class="meta">${s.brok.map(a => `${a.short} ${signed(dd[a.id])}`).join(" · ")}</div>
+    <p>${dd.total >= 0 ? `Your investments gained ${sg(dd.total)} on ${longDate(dd.date)}. <b>${top.sym}</b> did the most (${sg(top.amt)})${low.amt < 0 ? `, while ${low.sym} slipped (${sg(low.amt)})` : ", and every position finished higher"}.` : `You were down <b class="loss">${money(-dd.total)}</b> on ${longDate(dd.date)}, mostly from <b>${low.sym}</b> (${sg(low.amt)})${top.amt > 0 ? `. ${top.sym} softened the drop (${sg(top.amt)})` : ". Every position finished lower"}.`}</p>`;
+}
+function agateHTML(s, dd) {
+  const rows = MOCK.positions.filter(p => s.bs.has(p.acct)).map(p => ({ p, mv: dd.moves.find(m => m.sym === p.sym) })).sort((a, b) => b.mv.amt - a.mv.amt);
+  return `<caption>Your stock table · ${nice(dd.date)} · mock prices</caption><thead><tr><th>Sym</th><th>Acct</th><th>Qty</th><th>Chg %</th><th>Chg $</th><th>Value</th></tr></thead><tbody>${
+    rows.map(({ p, mv }) => `<tr><td><b>${p.sym}</b></td><td style="text-align:right">${p.acct === "sch" ? "SCHW" : "IBKR"}</td><td>${p.qty}</td><td class="${gl(mv.pct)}">${pct(mv.pct)}</td><td class="${gl(mv.amt)}">${signed(mv.amt, 2)}</td><td>${money(p.val)}</td></tr>`).join("")
+  }</tbody><tfoot><tr><td>Total</td><td></td><td></td><td></td><td class="${gl(dd.total)}">${signed(dd.total, 2)}</td><td>${money(rows.reduce((x, r) => x + r.p.val, 0))}</td></tr></tfoot>`;
+}
+function renderMarkets(s) {
+  $("#markets-band").classList.toggle("hide", !s.brok.length);
+  if (!s.brok.length) return;
+  $("#mk-src").textContent = s.brok.map(a => a.short).join(" + ");
+  $("#cal-box").innerHTML = calendarHTML(cal, s, false);
+  const dd = dayFor(cal.day, s.bs);
+  $("#day-story").innerHTML = dayStoryHTML(dd, s);
+  $("#agate").innerHTML = agateHTML(s, dd);
+}
+
+/* ---------- household ---------- */
+function renderHousehold(s) {
+  $("#house-band").classList.toggle("hide", !s.bank.length);
+  if (!s.bank.length) return;
+  $("#hh-checking").innerHTML = s.chk
+    ? `<h3>Paycheck in, three bills out</h3><p>Checking fell <b class="loss">$912</b> this week. Here's every line.</p><table class="ledger">${MOCK.checkingWeek.map(t => `<tr><td>${t.desc} <small>${t.d}</small></td><td class="${gl(t.amt)}">${signed(t.amt, 2)}</td></tr>`).join("")}<tr><td>Net change</td><td class="loss">−$912.30</td></tr></table>`
+    : `<h3>Checking isn't in this edition</h3><p>Tick Everyday Checking under Sources to read this week's checking story.</p>`;
+  const max = Math.max(...MOCK.spending.map(x => x.v));
+  $("#spend").innerHTML = MOCK.spending.map(x => `<div class="row"><span>${x.c}</span><div class="track"><div class="fill" style="width:${x.v / max * 100}%;background:${x.flag ? "var(--accent)" : "var(--ink)"}"></div></div><span class="v">${money(x.v)}</span></div>`).join("");
+  const w = 360, h = 170, mx = 8000, gap = (w - 30) / 6, bw = 14, y = v => h - 22 - (v / mx) * (h - 34);
+  let svg = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Mock monthly income and spending, April to September">`;
+  [0, 4000, 8000].forEach(v => svg += `<line class="gl" x1="30" x2="${w}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="0" y="${y(v) + 4}">${v / 1000}k</text>`);
+  MOCK.cashflow.forEach((d, i) => { const cx = 30 + gap * i + gap / 2; svg += `<rect x="${cx - bw - 1}" y="${y(d.inc)}" width="${bw}" height="${y(0) - y(d.inc)}" style="fill:var(--ink)"/><rect x="${cx + 1}" y="${y(d.sp)}" width="${bw}" height="${y(0) - y(d.sp)}" style="fill:var(--muted);opacity:.45"/><text class="ax" x="${cx}" y="${h - 6}" text-anchor="middle">${d.m}</text><text x="${cx}" y="${y(d.inc) - 5}" text-anchor="middle" style="fill:var(--gain);font:700 10.5px -apple-system,sans-serif">+${((d.inc - d.sp) / 1000).toFixed(1)}k</text>`; });
+  $("#cashflow").innerHTML = svg + `</svg><div style="font:12.5px -apple-system,sans-serif;color:var(--muted)">Dark: income · light: spending · green: kept</div>`;
+}
+
+/* ---------- letters (scripted Q&A) ---------- */
+const LETTERS = [
+  { need: "chk", q: "I just got paid, so why is my checking account lower than last week?", from: "Puzzled, Everyday Checking", a: () => `Dear Puzzled: Timing. Your $3,425 paycheck arrived, then rent ($2,100), a card payment ($1,250) and a $500 savings transfer followed within days. Net: −$912. Nothing unusual.` },
+  { need: "brok", q: "Was September actually a good month for my investments?", from: "Wondering, Schwab & IBKR", a: () => { const s = S(); return `Dear Wondering: Yes. Across ${names(s)} you finished ${sg(s.sep.total)}, with ${s.sep.up} up days and ${s.sep.down} down. Your best day was ${longDate(s.sep.best.date)}.`; } },
+  { need: "any", q: "Can I afford to invest another $1,000 a month?", from: "Ambitious, all accounts", a: () => `Dear Ambitious: I can show you the numbers: you've kept $1,370–$1,930 a month since April, and checking holds $8,412. Whether to invest it is your call. This paper doesn't give personal financial advice.` },
+  { need: "bank", q: "Am I spending too much on eating out?", from: "Hungry, Rewards Card", a: () => `Dear Hungry: Dining was $612 in September, 18% above your six-month average. It's the only category well above normal.` },
+  { need: "both", q: "Did my savings or my investments grow more last month?", from: "Curious, both sections", a: () => { const s = S(); return `Dear Curious: You kept $1,730 in cash; your investments moved ${sg(s.sep.total)}. ${Math.abs(s.sep.total) > 1730 ? "The market moved more than your saving did this time." : "Your own saving moved the needle more."}`; } }
+];
+const letterOk = (L, s) => L.need === "any" ? sel.size > 0 : L.need === "chk" ? s.chk : L.need === "brok" ? s.brok.length > 0 : L.need === "bank" ? s.bank.length > 0 : s.bank.length > 0 && s.brok.length > 0;
+function renderLetters(s) {
+  $("#letters").innerHTML = LETTERS.filter(L => letterOk(L, s)).slice(0, 3).map(L => `<div class="letter"><p class="q">“${L.q}”</p><div class="from">— ${L.from} <span class="mock">MOCK</span></div><p class="a">${L.a()}</p></div>`).join("");
+}
+
+/* ---------- render ---------- */
+function renderAll() {
+  const s = S(), ed = edition();
+  $$(".dateline [data-edition]").forEach(b => b.setAttribute("aria-pressed", b.dataset.edition === ed));
+  $$("[data-sources]").forEach(x => x.innerHTML = sourcesHTML());
+  renderIndex(s);
+  renderLead($("#lead"), s);
+  $("#thirty").innerHTML = thirty(s);
+  renderRow3(s);
+  renderMarkets(s);
+  renderHousehold(s);
+  renderLetters(s);
+  if ($("#demo").classList.contains("open")) renderDemo();
+}
+
+/* =========================================================
+   DEMO: reader with back issues
+   ========================================================= */
+const dcal = { mi: 1, day: null };
+function renderDemo() {
+  const s = S();
+  $("#demo-cal").innerHTML = s.brok.length ? calendarHTML(dcal, s, true) + `<p style="font:13px -apple-system,sans-serif;color:var(--muted);margin:8px 0 0">Choose a day to read that morning's edition.</p>` : `<p style="font-size:15px;color:var(--muted)">Back issues need a brokerage source. Tick Schwab or IBKR above.</p>`;
+  let h = "";
+  if (!sel.size) h = `<div class="lead"><div class="kicker">No edition</div><h2>No sources, no news</h2><p class="deck">Tick at least one account on the left.</p></div>`;
+  else {
+    const dd = s.brok.length ? dayFor(dcal.day, s.bs) : null;
+    const next = (() => { const t = parse(dcal.day); do { t.setDate(t.getDate() + 1); } while (t.getDay() === 0 || t.getDay() === 6); return `${DOW[t.getDay()]}, ${MONTHS[t.getMonth()]} ${t.getDate()}`; })();
+    h = `<div class="kicker">${s.brok.length ? `Edition of ${next} · covering ${nice(dcal.day)}` : "Household edition"} <span class="mock">MOCK</span></div>`;
+    if (dd) h += `<div class="lead"><h2>${dayHeadline(dd)}</h2><p class="deck">${dd.total >= 0 ? "A green day" : "A red day"} for your ${names(s)} accounts, ${sg(dd.total)} in total.</p></div>${dayStoryHTML(dd, s)}<div class="scroll-x"><table class="agate">${agateHTML(s, dd)}</table></div>`;
+    if (s.bank.length) h += `<div style="margin-top:22px"><div class="kicker">Household</div><h3 style="font-size:24px;margin:0 0 8px">${s.chk ? "Paycheck in, three bills out" : "A steady month for saving"}</h3><p>${s.chk ? "Checking is down $912 on the week after rent, a card payment and a savings transfer followed Friday's paycheck." : "You kept $1,730 in September, above your $1,630 average."} Dining ran 18% above normal at $612.</p></div>`;
+  }
+  $("#demo-issue").innerHTML = h;
+  const L = LETTERS.filter(x => letterOk(x, s));
+  $("#demo-chips").innerHTML = L.map(x => `<button type="button" class="chip" data-letter="${LETTERS.indexOf(x)}">${x.q}</button>`).join("");
+}
+function postLetter(q, a) {
+  const d = document.createElement("div"); d.className = "lt";
+  d.innerHTML = `<div class="q">“${q}”</div><div class="a">${a} <span class="mock">SCRIPTED</span></div>`;
+  $("#demo-msgs").appendChild(d); $("#demo-msgs").scrollTop = $("#demo-msgs").scrollHeight;
+}
+$("#demo-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#demo-text").value.trim(); if (!t) return; $("#demo-text").value = "";
+  const l = t.toLowerCase(), s = S();
+  const map = [["checking", 0], ["paid", 0], ["september", 1], ["month", 1], ["invest", 1], ["portfolio", 1], ["afford", 2], ["advice", 2], ["eat", 3], ["dining", 3], ["spend", 3], ["savings or", 4], ["grow", 4]];
+  const hit = map.find(([k]) => l.includes(k));
+  if (!hit) return postLetter(t.replace(/</g, "&lt;"), "The editor only has scripted replies in this prototype. Try one of the suggested letters.");
+  const L = LETTERS[hit[1]];
+  postLetter(t.replace(/</g, "&lt;"), letterOk(L, s) ? L.a() : "The editor needs the right sources for that one. Tick the matching accounts on the left.");
+});
+let lastFocus = null;
+function openDemo() {
+  lastFocus = document.activeElement;
+  $("#demo").classList.add("open"); document.body.style.overflow = "hidden";
+  if (!$("#demo-msgs").children.length) postLetter("What is this?", "A demo edition of the Ledgerline Daily, printed from mock accounts. Choose your sources, flip back issues by date, and write in with a question.");
+  renderAll();
+  $("#demo-close").focus();
+}
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; if (lastFocus) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#demo").classList.contains("open")) closeDemo(); });
+
+/* ---------- events ---------- */
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-acct]"); if (!c) return;
+  c.checked ? sel.add(c.dataset.acct) : sel.delete(c.dataset.acct);
+  const id = c.dataset.acct, box = c.closest("[data-sources]"), inDemo = !!c.closest(".demo");
+  renderAll();
+  const again = $(`${inDemo ? ".demo " : "main "}[data-acct="${id}"]`); if (again) again.focus();
+});
+document.addEventListener("click", e => {
+  const ed = e.target.closest("[data-edition]");
+  if (ed) { sel.clear(); ALL.forEach(a => { if (ed.dataset.edition === "all" || (ed.dataset.edition === "bank") === isBank(a.id)) sel.add(a.id); }); renderAll(); return; }
+  const inDemo = !!e.target.closest(".demo"), c = inDemo ? dcal : cal;
+  const nav = e.target.closest("[data-cal]");
+  if (nav) { c.mi = Math.max(0, Math.min(MOCK.months.length - 1, c.mi + +nav.dataset.cal)); c.day = null; renderAll(); return; }
+  const d = e.target.closest("[data-day]");
+  if (d) { c.day = d.dataset.day; renderAll(); const f = $(`${inDemo ? ".demo " : "main "}[data-day="${c.day}"]`); if (f) f.focus(); return; }
+  const lt = e.target.closest("[data-letter]");
+  if (lt) { const L = LETTERS[+lt.dataset.letter]; postLetter(L.q, L.a()); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+
+renderAll();
+if (location.hash === "#demo") openDemo();
+</script>
+</body>
+</html>
