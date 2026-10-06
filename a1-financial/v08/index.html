@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v08 · The Timeline — Ledgerline</title>
+<meta name="description" content="v08 — The Timeline: one chronological feed of everything that happened across your bank and brokerage accounts, with AI notes for each week and month, what's coming up next, and the gains calendar as a date scrubber. All data is mock.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f6f6f4;
+    --surface: #ffffff;
+    --surface-2: #f2f2ef;
+    --ink: #16181d;
+    --muted: #5a5f6a;
+    --faint: #8b909a;
+    --line: #e3e3de;
+    --line-2: #d2d2cb;
+    --rail: #d9d9d2;
+    --accent: #2b5bd4;
+    --accent-soft: #e9eefb;
+    --bank: #1774be; --bank-soft: #e2eff9;
+    --brok: #7848c8; --brok-soft: #efe7fa;
+    --flag: #c46500; --flag-soft: #fcefdc;
+    --gain: #14804a; --loss: #c7372c;
+    --gain-rgb: 20, 128, 74; --loss-rgb: 199, 55, 44;
+    --mock-ink: #84520a; --mock-bg: #fff0c6;
+    --shadow: 0 1px 2px rgba(20,20,30,.05), 0 10px 28px rgba(20,20,30,.07);
+  }
+  [data-theme="dark"] {
+    --bg: #111214;
+    --surface: #191a1e;
+    --surface-2: #202227;
+    --ink: #eeeff1;
+    --muted: #a8acb5;
+    --faint: #787d87;
+    --line: #2a2c31;
+    --line-2: #373a40;
+    --rail: #34373d;
+    --accent: #7f9eff;
+    --accent-soft: #1d2645;
+    --bank: #66b4f2; --bank-soft: #16293b;
+    --brok: #b99bff; --brok-soft: #2b2145;
+    --flag: #f2a43f; --flag-soft: #382810;
+    --gain: #46cd8a; --loss: #ff7d71;
+    --gain-rgb: 70, 205, 138; --loss-rgb: 255, 125, 113;
+    --mock-ink: #ffd88a; --mock-bg: #3a2c0d;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .n { font-variant-numeric: tabular-nums; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--mock-ink); background: var(--mock-bg); padding: 2px 6px; border-radius: 4px; vertical-align: 1px; white-space: nowrap; }
+  .tag { font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+  .tag.bank { background: var(--bank-soft); color: var(--bank); }
+  .tag.brok { background: var(--brok-soft); color: var(--brok); }
+  .tag.ai { background: var(--accent-soft); color: var(--accent); }
+
+  /* ---------- chrome ---------- */
+  .mockbar { background: var(--mock-bg); color: var(--mock-ink); font-size: 13.5px; text-align: center; padding: 7px 16px; }
+  header.top { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; height: 58px; }
+  .back { font-size: 14px; text-decoration: none; color: var(--muted); padding: 5px 12px; border: 1px solid var(--line-2); border-radius: 8px; white-space: nowrap; }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 750; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .brand .mark { width: 28px; height: 28px; border-radius: 8px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 14px; font-weight: 800; }
+  .brand small { font-size: 11px; color: var(--faint); border: 1px solid var(--line-2); border-radius: 5px; padding: 0 6px; font-weight: 600; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; padding: 3px; cursor: pointer; font-size: 13px; }
+  .theme-btn > span { padding: 3px 10px; border-radius: 5px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--ink); color: var(--bg); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; padding: 10px 18px; font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; text-decoration: none; white-space: nowrap; background: var(--accent); color: #fff; }
+  [data-theme="dark"] .btn { color: #111214; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+  .btn.sm { padding: 6px 12px; font-size: 13.5px; border-radius: 7px; }
+
+  /* ---------- intro ---------- */
+  .intro { padding: 34px 0 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end; }
+  .intro h1 { font-size: clamp(28px, 4.2vw, 44px); line-height: 1.08; letter-spacing: -.03em; margin: 0 0 8px; }
+  .intro p { margin: 0; color: var(--muted); font-size: 17px; max-width: 64ch; }
+
+  /* ---------- layout: feed + side ---------- */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: start; padding-bottom: 40px; }
+  .side { position: sticky; top: 74px; display: grid; gap: 14px; max-height: calc(100vh - 90px); overflow-y: auto; }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .box h3 { margin: 0 0 8px; font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); display: flex; gap: 6px; align-items: center; }
+  .box details > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; justify-content: space-between; }
+  .box details > summary::-webkit-details-marker { display: none; }
+  .box .cnt { font-size: 12.5px; font-weight: 500; color: var(--muted); text-transform: none; letter-spacing: 0; }
+
+  /* filter switch */
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .filters .lbl { font-size: 13px; color: var(--muted); margin-right: 2px; }
+  .fbtn { font-size: 13.5px; font-weight: 650; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .fbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  /* the feed */
+  .feed { position: relative; }
+  .feed::before { content: ""; position: absolute; left: 15px; top: 8px; bottom: 8px; width: 2px; background: var(--rail); border-radius: 2px; }
+  .day { position: relative; padding-left: 40px; margin-bottom: 18px; scroll-margin-top: 80px; }
+  .day-h { position: sticky; top: 58px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 6px 0; background: var(--bg); font-size: 13.5px; font-weight: 750; }
+  .day-h::before { content: ""; position: absolute; left: -31px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 3px solid var(--rail); }
+  .day-h .rel { color: var(--faint); font-weight: 500; }
+  .day-h .tot { margin-left: auto; font-weight: 650; font-size: 13px; color: var(--muted); }
+  .day.focus .day-h::before { border-color: var(--accent); background: var(--accent); }
+  .ev { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-top: 6px; overflow: hidden; }
+  .ev.flag { border-left: 4px solid var(--flag); }
+  .ev-row { width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; background: transparent; border: 0; text-align: left; }
+  button.ev-row { cursor: pointer; }
+  button.ev-row:hover { background: var(--surface-2); }
+  .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 14px; font-weight: 800; }
+  .ic.bank { background: var(--bank-soft); color: var(--bank); }
+  .ic.brok { background: var(--brok-soft); color: var(--brok); }
+  .ic.ai { background: var(--accent-soft); color: var(--accent); }
+  .ic.flag { background: var(--flag-soft); color: var(--flag); }
+  .ev-t { font-weight: 650; font-size: 15px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .ev-n { font-size: 14px; color: var(--muted); margin-top: 1px; }
+  .ev-n .ai-i { color: var(--accent); font-weight: 800; }
+  .ev-a { text-align: right; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 15px; }
+  .ev-a small { display: block; font-weight: 500; font-size: 12px; color: var(--faint); }
+  .ev-more { padding: 0 12px 12px 52px; font-size: 14px; }
+  .chev { color: var(--faint); font-size: 12px; margin-left: 4px; }
+
+  /* AI recap cards (week / month) */
+  .recap { position: relative; padding-left: 40px; margin: 6px 0 22px; }
+  .recap::before { content: "✦"; position: absolute; left: 6px; top: 12px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px; }
+  [data-theme="dark"] .recap::before { color: #111214; }
+  .recap .card { background: var(--accent-soft); border-radius: 14px; padding: 13px 16px; }
+  .recap .k { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--accent); text-transform: uppercase; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .recap p { margin: 4px 0 0; font-size: 15.5px; }
+  .recap .stats { display: flex; gap: 6px 16px; flex-wrap: wrap; margin-top: 8px; font-size: 13.5px; }
+  .recap .stats span { white-space: nowrap; }
+  .recap.month .card { background: var(--surface); border: 2px solid var(--accent); }
+
+  /* today + upcoming */
+  .future .ev { background: transparent; border-style: dashed; }
+  .up-card { padding: 4px 12px; }
+  .up-row { display: grid; grid-template-columns: 30px 92px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line-2); font-size: 14.5px; }
+  .up-row:last-child { border-bottom: 0; }
+  .up-row .d { font-weight: 650; font-size: 13.5px; }
+  .up-row small { display: block; font-size: 12px; color: var(--faint); font-weight: 500; }
+  .up-row .t { font-weight: 600; }
+  .up-row .a { font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .up-row.key .t { color: var(--flag); }
+  .future .day-h::before { border-style: dashed; }
+  .today { position: relative; padding-left: 40px; margin: 10px 0 18px; }
+  .today::before { content: ""; position: absolute; left: 7px; top: 50%; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+  .today .bar { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--accent); }
+  .today .bar::after { content: ""; flex: 1; height: 2px; background: var(--accent); opacity: .5; }
+  .catch { margin-top: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 13px 16px; box-shadow: var(--shadow); }
+  .catch .k { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--accent); }
+  .catch p { margin: 4px 0 0; font-size: 16px; }
+  .catch .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .catch .chips span { font-size: 13px; background: var(--surface-2); padding: 3px 9px; border-radius: 999px; }
+  .load { margin: 6px 0 0 40px; }
+
+  /* calendar scrubber (sizes to its own width, as in the v05 fix) */
+  .cal-host { container: cal / inline-size; }
+  .cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .cal-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .cal-nav button { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; }
+  .cal-nav button:disabled { opacity: .3; cursor: default; }
+  .cal-nav .m { padding: 0 4px; white-space: nowrap; font-weight: 700; font-size: 14px; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .dow { font-size: 10.5px; font-weight: 700; color: var(--faint); text-align: center; }
+  .cday { position: relative; min-width: 0; overflow: hidden; min-height: 42px; border-radius: 7px; padding: 3px 4px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1px solid transparent; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+  button.cday { cursor: pointer; }
+  button.cday:hover { border-color: var(--ink); }
+  .cday .dn, .cday .amt { display: block; max-width: 100%; overflow: hidden; }
+  .cday .dn { font-size: 10.5px; color: var(--muted); font-weight: 650; }
+  .cday .amt { font-size: 11px; font-weight: 800; white-space: nowrap; letter-spacing: -.02em; }
+  .cday .dot { position: absolute; right: 4px; top: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--bank); }
+  .cday.up .amt { color: var(--gain); } .cday.down .amt { color: var(--loss); }
+  .cday.up.l1 { background: rgba(var(--gain-rgb), .10); } .cday.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .cday.up.l3 { background: rgba(var(--gain-rgb), .36); } .cday.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .cday.down.l1 { background: rgba(var(--loss-rgb), .10); } .cday.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .cday.down.l3 { background: rgba(var(--loss-rgb), .36); } .cday.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .cday.l3 .amt, .cday.l4 .amt { color: var(--ink); }
+  .cday.off { background: transparent; border: 1px dashed var(--line-2); }
+  .cday.blank { background: transparent; }
+  .cday.future { background: transparent; border: 1px dotted var(--line-2); }
+  .cday.focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .cday.cur .cur-s { display: inline; }
+  @container cal (max-width: 300px) { .cal { gap: 2px; } .dow .rest { display: none; } .cday { min-height: 36px; padding: 2px 2px 2px 3px; } .cday .amt { font-size: 9.5px; } .cday .dn { font-size: 9.5px; } }
+  .cal-legend { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin-top: 8px; }
+  .cal-legend .sw { width: 13px; height: 9px; border-radius: 2px; }
+  .cal-legend .gap { width: 6px; }
+  .cal-legend .bd { width: 7px; height: 7px; border-radius: 50%; background: var(--bank); }
+
+  /* account picker (from v01) */
+  .pk-title { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 12px 0 6px; }
+  .pk-title .sum { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 650; }
+  .pk-row { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 9px; cursor: pointer; font-size: 13.5px; border: 1px solid transparent; }
+  .pk-row:has(input:checked) { background: var(--surface-2); border-color: var(--line); }
+  .pk-row input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; flex: none; }
+  .pk-row .nm { flex: 1; min-width: 0; line-height: 1.3; }
+  .pk-row .nm small { display: block; font-size: 11.5px; color: var(--faint); }
+  .pk-row .amt { text-align: right; font-weight: 650; font-size: 13px; }
+  .pk-row .amt small { display: block; font-weight: 500; font-size: 11px; }
+  .pk-row:not(:has(input:checked)) .amt { color: var(--faint); }
+  .pk-quick { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+  .qbtn { font-size: 12.5px; font-weight: 650; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  .qbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pk-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line-2); font-size: 13px; color: var(--muted); }
+  .pk-total b { color: var(--ink); font-size: 15px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: right; font-size: 11px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; padding: 4px 6px; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
+  td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .scroll-x { overflow-x: auto; }
+
+  /* ---------- below ---------- */
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 10px 0 20px; }
+  .how > div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .how b { display: block; margin-bottom: 4px; font-size: 16px; }
+  .how p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .final { text-align: center; padding: 30px 20px 50px; }
+  .final h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .final p { color: var(--muted); margin: 0 0 18px; }
+  footer { border-top: 1px solid var(--line); padding: 18px 0 34px; font-size: 13px; color: var(--faint); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  /* ---------- demo ---------- */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+  .demo-scroll { flex: 1; overflow-y: auto; }
+  .demo .layout { padding-top: 16px; }
+  .demo .side { top: 12px; max-height: calc(100vh - 90px); }
+  .demo .day-h { top: 0; }
+  .find { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; margin-bottom: 12px; }
+  .find input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 15px; padding: 4px 6px; outline: none; }
+  .find-r { font-size: 14px; margin: -4px 0 12px; color: var(--muted); }
+  .ev.hit { box-shadow: 0 0 0 3px var(--accent); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .side { position: static; max-height: none; overflow: visible; grid-template-columns: repeat(2, minmax(0, 1fr)); order: -1; }
+    .demo .side { max-height: none; }
+  }
+  @media (max-width: 680px) {
+    .intro { grid-template-columns: 1fr; }
+    .side { grid-template-columns: minmax(0, 1fr); }
+    .how { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .hide-sm, .brand small { display: none; }
+    header.top .wrap { gap: 8px; }
+    header.top .btn { padding: 8px 12px; font-size: 14px; }
+    .feed::before { left: 9px; }
+    .day, .recap, .today { padding-left: 28px; }
+    .day-h::before { left: -25px; }
+    .recap::before { left: 0; }
+    .today::before { left: 1px; }
+    .load { margin-left: 28px; }
+    .ev-row { grid-template-columns: 26px minmax(0, 1fr); }
+    .ic { width: 26px; height: 26px; font-size: 12px; }
+    .ev-a { grid-column: 2; text-align: left; }
+    .ev-a small { display: inline; margin-left: 6px; }
+    .ev-more { padding-left: 12px; }
+    .up-row { grid-template-columns: 26px minmax(0, 1fr) auto; }
+    .up-row .d { grid-column: 2; }
+    .up-row .t { grid-column: 2 / -1; }
+    .up-row .a { grid-column: 3; grid-row: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note"><b>Design prototype · v08.</b> Every transaction, market day, balance and AI note here is <b>mock data</b>. No real bank or brokerage connection is implemented.</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <a class="brand" href="#top"><span class="mark">L</span> Ledgerline <small>v08</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <section class="intro">
+    <div>
+      <h1>Everything that happened to your money, in order.</h1>
+      <p>Ledgerline puts your bank and brokerage accounts on one timeline: paychecks, bills, market days and what's coming up next. Its AI sums up each week and month, so you can scroll back to any day and see what changed.</p>
+    </div>
+    <button class="btn" data-open-demo>View Demo →</button>
+  </section>
+
+  <div class="layout" data-root="land">
+    <div>
+      <div class="filters" role="group" aria-label="What to show"><span class="lbl">Show:</span>
+        <button type="button" class="fbtn" data-mode="land|all">Everything</button>
+        <button type="button" class="fbtn" data-mode="land|key">Key moments only</button>
+      </div>
+      <div class="feed" data-feed aria-live="polite"></div>
+    </div>
+    <aside class="side">
+      <div class="box"><h3>Jump to a day</h3><div data-cal></div></div>
+      <div class="box"><details class="acc" open><summary><h3 style="margin:0">Accounts</h3><span class="cnt" data-cnt></span></summary><div data-picker></div></details></div>
+    </aside>
+  </div>
+
+  <section class="how" aria-label="How the timeline works">
+    <div><b>One stream, every account</b><p>Bank transactions and market days from Schwab and IBKR, side by side in the order they happened.</p></div>
+    <div><b>AI recaps as you scroll</b><p>Each week and month ends with a short AI summary: what moved, what was normal, what stood out.</p></div>
+    <div><b>Look back, and ahead</b><p>Upcoming paychecks and bills sit above today, so you can see what's coming as well as what happened.</p></div>
+  </section>
+</main>
+
+<section class="final">
+  <h2>Scroll through the full timeline</h2>
+  <p>Load earlier months, filter by account, and search for any moment. Everything is mock data.</p>
+  <button class="btn" data-open-demo>View Demo →</button>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Ledgerline is a fictional product concept. v08 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<!-- ============ DEMO ============ -->
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline timeline demo">
+  <div class="demo-top">
+    <span class="brand"><span class="mark">L</span><span class="hide-sm">Ledgerline timeline</span></span>
+    <span class="mock">DEMO · ALL DATA IS MOCK</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <button class="btn ghost sm" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-scroll" id="demo-scroll">
+    <div class="wrap layout" data-root="demo">
+      <div>
+        <form class="find" id="find-form"><span class="tag ai">✦ Find</span><input id="find-text" type="text" placeholder="Find a moment, e.g. “rent”, “worst day”, “steakhouse”, “paycheck”" aria-label="Find in timeline" autocomplete="off"><button class="btn sm" type="submit">Find</button></form>
+        <div id="find-r"></div>
+        <div class="filters" role="group" aria-label="What to show"><span class="lbl">Show:</span>
+          <button type="button" class="fbtn" data-mode="demo|all">Everything</button>
+          <button type="button" class="fbtn" data-mode="demo|key">Key moments only</button>
+        </div>
+        <div class="feed" data-feed aria-live="polite"></div>
+      </div>
+      <aside class="side">
+        <div class="box"><h3>Jump to a day</h3><div data-cal></div></div>
+        <div class="box"><details class="acc" open><summary><h3 style="margin:0">Accounts</h3><span class="cnt" data-cnt></span></summary><div data-picker></div></details></div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v07.
+   Paychecks every other Saturday, rent on the 3rd, savings
+   transfer on the 2nd (skipped in September).
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", inst: "Schwab (mock)", mask: "••5512", short: "Schwab", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", inst: "IBKR (mock)", mask: "U•••908", short: "IBKR", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  acct: "sch", qty: 120, px: 287.40, vol: 0.8 },
+    { sym: "AAPL", acct: "sch", qty: 45,  px: 228.10, vol: 1.4 },
+    { sym: "MSFT", acct: "sch", qty: 30,  px: 431.20, vol: 1.2 },
+    { sym: "NVDA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8 },
+    { sym: "TSLA", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2 },
+    { sym: "QQQ",  acct: "ibk", qty: 25,  px: 489.50, vol: 1.1 }
+  ],
+  // Bank activity worth showing on the timeline (mock merchants)
+  bankEvents: [
+    { date: "2026-10-03", acct: "chk", icon: "↓", t: "Paycheck", who: "Payroll deposit (mock employer)", amt: 3425, note: "Every other Saturday, same amount as usual." },
+    { date: "2026-10-03", acct: "chk", icon: "⌂", t: "Rent, October", amt: -2100, note: "Right on schedule, the 3rd of the month." },
+    { date: "2026-10-02", acct: "sav", icon: "⇄", t: "Checking → Savings", amt: 500, xfer: true, note: "Automatic transfer is back after skipping September.", key: true },
+    { date: "2026-10-01", acct: "cc", icon: "▪", t: "Grocery store", amt: -142.18 },
+    { date: "2026-10-01", acct: "cc", icon: "▪", t: "Restaurant", amt: -86.40 },
+    { date: "2026-09-30", acct: "chk", icon: "⇄", t: "Card payment", who: "Checking → Rewards Card", amt: -1250, xfer: true, note: "Paid the previous statement in full. A transfer between your own accounts." },
+    { date: "2026-09-27", acct: "cc", icon: "▪", t: "Bistro", amt: -118.70 },
+    { date: "2026-09-26", acct: "cc", icon: "▪", t: "Thai restaurant", amt: -58.90 },
+    { date: "2026-09-22", acct: "cc", icon: "◷", t: "Card statement closed", amt: -1236.40, note: "Due Thu, Oct 22. Checking covers it with $7,176 left.", key: true, info: true },
+    { date: "2026-09-20", acct: "cc", icon: "▪", t: "Taco shop", amt: -31.40 },
+    { date: "2026-09-19", acct: "chk", icon: "↓", t: "Paycheck", who: "Payroll deposit (mock employer)", amt: 3425 },
+    { date: "2026-09-19", acct: "cc", icon: "▪", t: "Steakhouse", amt: -142.60, note: "Your largest dining charge of the month.", key: true },
+    { date: "2026-09-15", acct: "chk", icon: "⚡", t: "Utilities", amt: -290, note: "A bit under your usual $301." },
+    { date: "2026-09-13", acct: "cc", icon: "▪", t: "Brunch café", amt: -48.30 },
+    { date: "2026-09-12", acct: "cc", icon: "▪", t: "Sushi bar", amt: -96.50 },
+    { date: "2026-09-05", acct: "chk", icon: "↓", t: "Paycheck", who: "Payroll deposit (mock employer)", amt: 3425 },
+    { date: "2026-09-05", acct: "cc", icon: "▪", t: "Italian restaurant", amt: -74.20 },
+    { date: "2026-09-03", acct: "chk", icon: "⌂", t: "Rent, September", amt: -2100 },
+    { date: "2026-09-02", acct: "sav", icon: "!", t: "No savings transfer this month", amt: 0, note: "Your usual $500 transfer to savings didn't happen in September. It resumed on Oct 2.", key: true, info: true },
+    { date: "2026-08-30", acct: "chk", icon: "⇄", t: "Card payment", who: "Checking → Rewards Card", amt: -1180, xfer: true },
+    { date: "2026-08-22", acct: "chk", icon: "↓", t: "Paycheck", who: "Payroll deposit (mock employer)", amt: 3425 },
+    { date: "2026-08-15", acct: "chk", icon: "⚡", t: "Utilities", amt: -308 },
+    { date: "2026-08-08", acct: "chk", icon: "↓", t: "Paycheck", who: "Payroll deposit (mock employer)", amt: 3425 },
+    { date: "2026-08-03", acct: "chk", icon: "⌂", t: "Rent, August", amt: -2100 },
+    { date: "2026-08-02", acct: "sav", icon: "⇄", t: "Checking → Savings", amt: 500, xfer: true }
+  ],
+  upcoming: [
+    { date: "2026-11-03", acct: "chk", icon: "⌂", t: "Rent, November", amt: -2100, note: "Expected" },
+    { date: "2026-11-02", acct: "sav", icon: "⇄", t: "Checking → Savings", amt: 500, xfer: true, note: "Scheduled transfer" },
+    { date: "2026-10-22", acct: "cc", icon: "◷", t: "Rewards Card payment due", amt: -1236.40, note: "17 days away · statement balance", key: true },
+    { date: "2026-10-17", acct: "chk", icon: "↓", t: "Next paycheck", amt: 3425, note: "Expected, based on every other Saturday" }
+  ],
+  holidays: { "2026-09-07": "Labor Day" },
+  months: [[2026, 7], [2026, 8], [2026, 9]],
+  today: "2026-10-05",
+  lastDataDay: "2026-10-02"
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 0) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 0) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const pct = n => (n >= 0 ? "▲ +" : "▼ −") + Math.abs(n).toFixed(2) + "%";
+const gl = n => (n >= 0 ? "gain" : "loss");
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const toDate = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const toIso = t => iso(t.getFullYear(), t.getMonth(), t.getDate());
+const nice = s => { const t = toDate(s); return `${DOW[t.getDay()]}, ${MONTHS[t.getMonth()].slice(0, 3)} ${t.getDate()}`; };
+const longD = s => { const t = toDate(s); return `${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][t.getDay()]}, ${MONTHS[t.getMonth()]} ${t.getDate()}`; };
+const daysBetween = (a, b) => Math.round((toDate(b) - toDate(a)) / 864e5);
+function rel(s) { const n = daysBetween(s, MOCK.today); return n === 0 ? "today" : n === 1 ? "yesterday" : n > 0 ? `${n} days ago` : `in ${-n} days`; }
+
+MOCK.positions.forEach(p => p.val = p.qty * p.px);
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const brokValue = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0) + MOCK.brok.find(a => a.id === id).cash;
+const acct = id => ALL.find(a => a.id === id);
+
+/* ---------- deterministic mock daily P&L (same generator as v02–v07) ---------- */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, bs) { const moves = rawDay(date).filter(m => bs.has(m.acct)).sort((a, b) => b.amt - a.amt); return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0) }; }
+function isTrading(s) { const t = toDate(s), dw = t.getDay(); return s <= MOCK.lastDataDay && dw !== 0 && dw !== 6 && !MOCK.holidays[s]; }
+function monthDays(y, m) { const out = []; for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) out.push(iso(y, m, d)); return out; }
+
+/* ---------- selection ---------- */
+const sel = new Set(ALL.map(a => a.id));
+const brokSel = () => new Set(MOCK.brok.filter(a => sel.has(a.id)).map(a => a.id));
+const brokNames = () => MOCK.brok.filter(a => sel.has(a.id)).map(a => a.short).join(" + ");
+function monthMarket(y, m) {
+  const bs = brokSel(), days = monthDays(y, m).filter(isTrading).map(d => dayFor(d, bs));
+  const sorted = [...days].sort((a, b) => b.total - a.total);
+  return { days, total: days.reduce((s, d) => s + d.total, 0), best: sorted[0], worst: sorted[sorted.length - 1], up: days.filter(d => d.total >= 0).length, down: days.filter(d => d.total < 0).length };
+}
+
+/* =========================================================
+   BUILD THE TIMELINE
+   ========================================================= */
+const state = { land: { mode: "all", from: "2026-09-01", open: new Set(["m:2026-09-21"]) }, demo: { mode: "all", from: "2026-09-01", open: new Set(), hit: null } };
+
+function eventsOn(date) {
+  const out = [], bs = brokSel();
+  MOCK.bankEvents.filter(e => e.date === date && sel.has(e.acct)).forEach(e => out.push({ ...e, id: "b:" + date + ":" + e.t, kind: "bank" }));
+  if (bs.size && isTrading(date)) {
+    const dd = dayFor(date, bs), [y, m] = [toDate(date).getFullYear(), toDate(date).getMonth()], mm = monthMarket(y, m);
+    const full = mm.days.length >= 15; // only label best/worst days for months with enough trading days
+    const isBest = full && mm.best.date === date, isWorst = full && mm.worst.date === date;
+    const top = dd.moves[0], low = dd.moves[dd.moves.length - 1];
+    out.unshift({ id: "m:" + date, kind: "brok", date, icon: "◆", t: `Markets: ${signed(dd.total)}`, amt: dd.total, market: dd,
+      sub: isBest ? `Best day of ${MONTHS[m]}` : isWorst ? `Worst day of ${MONTHS[m]}` : "",
+      note: dd.total >= 0 ? `${top.sym} led (${signed(top.amt)})${low.amt < 0 ? `; ${low.sym} slipped (${signed(low.amt)})` : ""}.` : `${low.sym} weighed most (${signed(low.amt)})${top.amt > 0 ? `; ${top.sym} helped (${signed(top.amt)})` : ""}.`,
+      key: isBest || isWorst });
+  }
+  return out;
+}
+function weekRecap(days) {
+  // days: ISO dates (Sun..Sat) in this week that are within range
+  const bs = brokSel(), ev = days.flatMap(d => MOCK.bankEvents.filter(e => e.date === d && sel.has(e.acct) && !e.info && !e.xfer));
+  const inflow = ev.filter(e => e.amt > 0 && e.acct === "chk").reduce((s, e) => s + e.amt, 0), out = ev.filter(e => e.amt < 0).reduce((s, e) => s + e.amt, 0);
+  const mk = bs.size ? days.filter(isTrading).map(d => dayFor(d, bs)) : [], mt = mk.reduce((s, d) => s + d.total, 0);
+  const dining = ev.filter(e => e.acct === "cc" && /restaurant|bistro|steak|sushi|taco|brunch/i.test(e.t)).reduce((s, e) => s + e.amt, 0);
+  const parts = [];
+  if (mk.length) { const b = [...mk].sort((a, c) => c.total - a.total); parts.push(`Your ${brokNames()} investments moved ${sg(mt)} over ${mk.length} trading day${mk.length === 1 ? "" : "s"}${mk.length > 1 ? `, best on ${nice(b[0].date).slice(0, 3)} (${signed(b[0].total)})` : ""}.`); }
+  if (inflow) parts.push(`A ${money(inflow)} paycheck came in.`);
+  if (dining) parts.push(`Dining out came to ${money(-dining, 2)}${-dining > 150 ? ", more than a typical week" : ""}.`);
+  if (ev.some(e => /Rent/.test(e.t))) parts.push("Rent went out on schedule.");
+  if (!parts.length) return null;
+  return { text: parts.join(" "), stats: [mk.length ? ["Investments", mt] : null, inflow ? ["Money in", inflow] : null, out ? ["Money out", out] : null].filter(Boolean) };
+}
+function monthRecap(y, m) {
+  const bs = brokSel(), mm = bs.size ? monthMarket(y, m) : null, bankOn = MOCK.bank.some(a => sel.has(a.id));
+  const p = [];
+  const kept = { 7: 1460, 8: 1730 }[m];
+  if (bankOn && kept) p.push(`You kept <b>${money(kept)}</b> of $6,850 income${m === 8 ? ", above your $1,630 average. Dining ran 18% over your usual, mostly on weekends, and the savings transfer was skipped" : ""}.`);
+  if (mm) p.push(`Investments finished ${sg(mm.total)} across ${brokNames()}: ${mm.up} up days, ${mm.down} down. Best ${nice(mm.best.date)} (${signed(mm.best.total)}), worst ${nice(mm.worst.date)} (${signed(mm.worst.total)}).`);
+  return p.join(" ");
+}
+
+function catchUp(fri, since, cin) {
+  const bits = [];
+  if (cin) bits.push(`your ${money(cin)} paycheck came in`);
+  if (since.some(e => /Rent/.test(e.t))) bits.push("rent went out");
+  if (since.some(e => e.acct === "sav")) bits.push("$500 moved to savings");
+  const bank = bits.length ? bits.join(", ").replace(/, ([^,]*)$/, " and $1") : "";
+  const out = [];
+  if (fri) out.push(`Markets moved ${sg(fri.total)} on Friday.`);
+  if (bank) out.push(bank[0].toUpperCase() + bank.slice(1) + ".");
+  out.push("Nothing unusual.");
+  return out.join(" ");
+}
+function evHTML(e, key, future) {
+  const st = state[key], open = st.open.has(e.id), canOpen = !!e.market;
+  const icClass = e.key ? "flag" : e.kind === "brok" ? "brok" : e.acct === "chk" || e.acct === "sav" || e.acct === "cc" ? "bank" : "ai";
+  const a = acct(e.acct), chip = e.kind === "brok" ? `<span class="tag brok">${brokNames()}</span>` : `<span class="tag bank">${a.name}</span>`;
+  const amt = e.info ? (e.amt ? `<span class="n">${money(Math.abs(e.amt), 2)}</span><small>statement</small>` : "") : e.xfer ? `<span class="n">${money(Math.abs(e.amt), 2)}</span><small>transfer</small>` : `<span class="${e.amt >= 0 ? "gain" : ""}">${e.kind === "brok" ? signed(e.amt) : signed(e.amt, 2)}</span>${future ? "<small>expected</small>" : ""}`;
+  const row = `<span class="ic ${icClass}" aria-hidden="true">${e.icon}</span><span><span class="ev-t">${e.t}${e.sub ? ` <span class="tag" style="background:var(--flag-soft);color:var(--flag)">${e.sub}</span>` : ""} ${chip}${canOpen ? `<span class="chev">${open ? "▴ hide" : "▾ details"}</span>` : ""}</span>${e.note ? `<span class="ev-n" style="display:block">${e.key || e.kind === "brok" ? '<span class="ai-i">✦ </span>' : ""}${e.note}</span>` : e.who ? `<span class="ev-n" style="display:block">${e.who}</span>` : ""}</span><span class="ev-a">${amt}</span>`;
+  const body = canOpen && open ? `<div class="ev-more"><div class="scroll-x"><table class="mono"><thead><tr><th>Symbol</th><th>Acct</th><th>Day %</th><th>Day $</th></tr></thead><tbody>${e.market.moves.map(x => `<tr><td><b>${x.sym}</b></td><td>${acct(x.acct).short}</td><td class="${gl(x.pct)}">${pct(x.pct)}</td><td class="${gl(x.amt)}">${signed(x.amt, 2)}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+  return `<div class="ev${e.key ? " flag" : ""}${st.hit === e.id ? " hit" : ""}" data-ev="${e.id}">${canOpen ? `<button type="button" class="ev-row" data-toggle="${key}|${e.id}" aria-expanded="${open}">${row}</button>` : `<div class="ev-row">${row}</div>`}${body}</div>`;
+}
+
+function renderFeed(key) {
+  const root = $(`[data-root="${key}"] [data-feed]`), st = state[key];
+  $$(`[data-root="${key}"] [data-mode]`).forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === `${key}|${st.mode}`));
+  if (!sel.size) { root.innerHTML = `<div class="day"><div class="ev"><div class="ev-row"><span class="ic ai">✦</span><span>Tick at least one account to fill your timeline.</span><span></span></div></div></div>`; return; }
+  const keyOnly = st.mode === "key";
+  let h = "";
+
+  // Coming up (future events above today)
+  const up = MOCK.upcoming.filter(e => sel.has(e.acct) && (!keyOnly || e.key));
+  if (up.length) {
+    h += `<div class="future day" data-day="2026-10-17"><div class="day-h">Coming up <span class="rel">next 30 days</span><span class="tot">${up.length} expected</span></div><div class="ev up-card">${[...up].reverse().map(e => `<div class="up-row${e.key ? " key" : ""}" data-ev="u:${e.date}"><span class="ic ${e.key ? "flag" : "bank"}" aria-hidden="true">${e.icon}</span><span class="d">${nice(e.date)}<small>${rel(e.date)}</small></span><span class="t">${e.t}<small>${e.note}</small></span><span class="a ${e.amt > 0 && !e.xfer ? "gain" : ""}">${e.xfer ? money(e.amt, 2) : signed(e.amt, 2)}</span></div>`).join("")}</div></div>`;
+  }
+
+  // Today marker + catch-up since Friday
+  const bs = brokSel(), fri = bs.size ? dayFor(MOCK.lastDataDay, bs) : null;
+  const since = MOCK.bankEvents.filter(e => e.date > "2026-10-01" && sel.has(e.acct));
+  const cin = since.filter(e => e.amt > 0 && e.acct === "chk").reduce((s, e) => s + e.amt, 0), cout = since.filter(e => e.amt < 0 && !e.xfer).reduce((s, e) => s + e.amt, 0);
+  h += `<div class="today" data-day="${MOCK.today}"><div class="bar">Today · ${longD(MOCK.today)}</div>
+    <div class="catch"><div class="k">✦ SINCE YOU LAST CHECKED (THU, OCT 1) · MOCK</div><p>${catchUp(fri, since, cin)}</p>
+    <div class="chips">${fri ? `<span>Markets ${signed(fri.total)}</span>` : ""}${since.length ? `<span>Money in ${signed(cin)}</span><span>Money out ${signed(cout, 0)}</span>` : ""}<span>${since.length + (fri ? 1 : 0)} new events</span></div></div></div>`;
+
+  // Past days, newest first, grouped into weeks (Sun–Sat) with AI recaps
+  const cur = toDate(MOCK.today);
+  const days = [];
+  for (let t = new Date(cur); toIso(t) >= st.from; t.setDate(t.getDate() - 1)) days.push(toIso(t));
+  // group into weeks (Sun–Sat); recap card sits at the top of each week (its most recent end)
+  const weeks = [];
+  days.forEach(d => { const t = toDate(d), sun = new Date(t); sun.setDate(t.getDate() - t.getDay()); const k = toIso(sun); let w = weeks.find(x => x.k === k); if (!w) weeks.push(w = { k, days: [] }); w.days.push(d); });
+  weeks.forEach(w => {
+    const r = weekRecap(w.days);
+    const sat = new Date(toDate(w.k)); sat.setDate(sat.getDate() + 6);
+    const label = `Week of ${MONTHS[toDate(w.k).getMonth()].slice(0, 3)} ${toDate(w.k).getDate()}–${MONTHS[sat.getMonth()].slice(0, 3)} ${sat.getDate()}`;
+    if (r && w.days[w.days.length - 1] <= MOCK.lastDataDay) h += `<div class="recap"><div class="card"><div class="k">✦ ${label} · AI recap · mock</div><p>${r.text}</p><div class="stats">${r.stats.map(([l, v]) => `<span>${l}: <b class="${v >= 0 ? "gain" : "loss"}">${signed(v)}</b></span>`).join("")}</div></div></div>`;
+    w.days.forEach(d => {
+      const t = toDate(d);
+      if (t.getDate() === new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate() && d < MOCK.today) {
+        const txt = monthRecap(t.getFullYear(), t.getMonth());
+        if (txt) h += `<div class="recap month"><div class="card"><div class="k">✦ ${MONTHS[t.getMonth()]} ${t.getFullYear()} closed · AI month summary · mock</div><p>${txt}</p></div></div>`;
+      }
+      let ev = eventsOn(d); if (keyOnly) ev = ev.filter(e => e.key);
+      if (!ev.length) return;
+      const dayTot = ev.filter(e => !e.info && !e.xfer).reduce((s, e) => s + e.amt, 0);
+      h += `<div class="day" data-day="${d}"><div class="day-h">${nice(d)} <span class="rel">${rel(d)}</span><span class="tot">${ev.length} event${ev.length === 1 ? "" : "s"} · net ${signed(dayTot)}</span></div>${ev.map(e => evHTML(e, key)).join("")}</div>`;
+    });
+  });
+  const earlier = st.from > "2026-08-01";
+  h += earlier ? `<button type="button" class="btn ghost load" data-load="${key}">Load August ↓</button>` : `<p class="load" style="color:var(--faint);font-size:14px">Start of the mock history (Aug 1, 2026).</p>`;
+  root.innerHTML = h;
+}
+
+/* ---------- calendar scrubber ---------- */
+const calSt = { land: { mi: 1, focus: null }, demo: { mi: 1, focus: null } };
+function renderCal(key) {
+  const c = calSt[key], [y, m] = MOCK.months[c.mi], bs = brokSel(), host = $(`[data-root="${key}"] [data-cal]`);
+  const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d[0]}<span class="rest">${d.slice(1, 2)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="cday blank"></div>`;
+  monthDays(y, m).forEach(d => {
+    const n = +d.slice(8), hasBank = MOCK.bankEvents.some(e => e.date === d && sel.has(e.acct)), inFeed = d >= state[key].from;
+    const dot = hasBank ? `<i class="dot" aria-hidden="true"></i>` : "";
+    if (d > MOCK.lastDataDay && d > MOCK.today) { cells += `<div class="cday future"><span class="dn">${n}</span></div>`; return; }
+    if (bs.size && isTrading(d)) { const v = dayFor(d, bs).total, a = Math.abs(v); cells += `<button type="button" class="cday ${v >= 0 ? "up" : "down"} l${lvl(v)}${c.focus === d ? " focus" : ""}" data-jump="${key}|${d}" aria-label="${nice(d)}: markets ${v >= 0 ? "gain" : "loss"} of ${money(a)}${hasBank ? ", plus bank activity" : ""}. Jump to this day."><span class="dn">${n}</span>${dot}<span class="amt">${v >= 0 ? "+" : "−"}${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`; }
+    else if (hasBank) cells += `<button type="button" class="cday${c.focus === d ? " focus" : ""}" data-jump="${key}|${d}" aria-label="${nice(d)}: bank activity. Jump to this day."><span class="dn">${n}</span>${dot}<span class="amt"></span></button>`;
+    else cells += `<div class="cday off"${MOCK.holidays[d] ? ` title="Market closed: ${MOCK.holidays[d]}"` : ""}><span class="dn">${n}</span></div>`;
+  });
+  const sw = (k, a) => `<span class="sw" style="background:rgba(var(--${k}-rgb),${a})"></span>`;
+  host.innerHTML = `<div class="cal-host"><div class="cal-head">${bs.size ? `<span class="tag brok">${brokNames()}</span>` : `<span class="tag bank">bank activity</span>`}<div class="cal-nav"><button type="button" data-calnav="${key}|-1" aria-label="Previous month" ${c.mi === 0 ? "disabled" : ""}>‹</button><span class="m">${MONTHS[m].slice(0, 3)} ${y}</span><button type="button" data-calnav="${key}|1" aria-label="Next month" ${c.mi === MOCK.months.length - 1 ? "disabled" : ""}>›</button></div></div>
+    <div class="cal" role="group" aria-label="Jump to a day in ${MONTHS[m]} ${y}">${cells}</div>
+    <div class="cal-legend" aria-hidden="true">${bs.size ? `Loss ${sw("loss", .52)}${sw("loss", .22)}${sw("gain", .22)}${sw("gain", .52)} Gain<span class="gap"></span>` : ""}<i class="bd"></i> bank activity</div></div>`;
+}
+
+/* ---------- account picker (from v01) ---------- */
+function pickerHTML() {
+  const allB = MOCK.bank.every(a => sel.has(a.id)), allK = MOCK.brok.every(a => sel.has(a.id)), anyB = MOCK.bank.some(a => sel.has(a.id)), anyK = MOCK.brok.some(a => sel.has(a.id));
+  const tot = MOCK.bank.filter(a => sel.has(a.id)).reduce((s, a) => s + a.bal, 0) + MOCK.brok.filter(a => sel.has(a.id)).reduce((s, a) => s + brokValue(a.id), 0);
+  const row = a => { const v = isBank(a.id) ? a.bal : brokValue(a.id), sub = isBank(a.id) ? `<small class="${gl(a.wk)}">${signed(a.wk)} 7d</small>` : (() => { const d = dayFor(MOCK.lastDataDay, new Set([a.id])).total; return `<small class="${gl(d)}">${signed(d)} Fri</small>`; })(); return `<label class="pk-row"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""}><span class="nm">${a.name}<small>${a.inst} ${a.mask}</small></span><span class="amt n">${money(v, 2)}${sub}</span></label>`; };
+  return `<div class="pk-title"><span class="tag bank">Bank</span> Mock Bank<span class="sum n">${money(MOCK.bank.reduce((s, a) => s + a.bal, 0))}</span></div>${MOCK.bank.map(row).join("")}
+    <div class="pk-title"><span class="tag brok">Brokerage</span><span class="sum n">${money(MOCK.brok.reduce((s, a) => s + brokValue(a.id), 0))}</span></div>${MOCK.brok.map(row).join("")}
+    <div class="pk-quick"><button type="button" class="qbtn" data-quick="bank" aria-pressed="${allB && !anyK}">Bank only</button><button type="button" class="qbtn" data-quick="brok" aria-pressed="${allK && !anyB}">Brokerage only</button><button type="button" class="qbtn" data-quick="all" aria-pressed="${sel.size === ALL.length}">All</button></div>
+    <div class="pk-total"><span>Selected total</span><b class="n">${money(tot)}</b></div>`;
+}
+
+function renderRoot(key) {
+  const r = $(`[data-root="${key}"]`);
+  $("[data-picker]", r).innerHTML = pickerHTML();
+  $("[data-cnt]", r).textContent = `${sel.size} of ${ALL.length}`;
+  renderFeed(key); renderCal(key);
+}
+function renderAll() { renderRoot("land"); if ($("#demo").classList.contains("open")) renderRoot("demo"); }
+
+/* ---------- jump + scroll-sync ---------- */
+function jump(key, d) {
+  const st = state[key];
+  if (d < st.from) { st.from = "2026-08-01"; renderFeed(key); }
+  let el = $(`[data-root="${key}"] [data-day="${d}"]`);
+  if (!el) { // nearest earlier day that has events
+    const all = $$(`[data-root="${key}"] .day[data-day]`).map(x => x.dataset.day).filter(x => x <= d).sort().reverse();
+    el = all.length ? $(`[data-root="${key}"] [data-day="${all[0]}"]`) : null;
+  }
+  if (!el) return;
+  el.scrollIntoView({ block: "start" });
+  $$(`[data-root="${key}"] .day.focus`).forEach(x => x.classList.remove("focus")); el.classList.add("focus");
+  calSt[key].focus = d; renderCal(key);
+}
+function syncCal(key, scroller) {
+  const days = $$(`[data-root="${key}"] .day[data-day]`), limit = (scroller ? scroller.getBoundingClientRect().top : 0) + 110;
+  let cur = null; for (const d of days) { if (d.getBoundingClientRect().top <= limit) cur = d; else break; }
+  const date = cur ? cur.dataset.day : null;
+  if (!date || date === calSt[key].focus) return;
+  calSt[key].focus = date;
+  const t = toDate(date), mi = MOCK.months.findIndex(([y, m]) => y === t.getFullYear() && m === t.getMonth());
+  if (mi >= 0) calSt[key].mi = mi;
+  renderCal(key);
+}
+let ticking = false;
+addEventListener("scroll", () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { syncCal("land"); ticking = false; }); }, { passive: true });
+$("#demo-scroll").addEventListener("scroll", () => requestAnimationFrame(() => syncCal("demo", $("#demo-scroll"))), { passive: true });
+
+/* ---------- events ---------- */
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-acct]"); if (!c) return;
+  c.checked ? sel.add(c.dataset.acct) : sel.delete(c.dataset.acct);
+  const id = c.dataset.acct, key = c.closest("[data-root]").dataset.root;
+  renderAll(); const again = $(`[data-root="${key}"] [data-acct="${id}"]`); if (again) again.focus();
+});
+document.addEventListener("click", e => {
+  const q = e.target.closest("[data-quick]");
+  if (q) { sel.clear(); ALL.forEach(a => { if (q.dataset.quick === "all" || (q.dataset.quick === "bank") === isBank(a.id)) sel.add(a.id); }); renderAll(); return; }
+  const md = e.target.closest("[data-mode]");
+  if (md) { const [k, m] = md.dataset.mode.split("|"); state[k].mode = m; renderFeed(k); return; }
+  const tg = e.target.closest("[data-toggle]");
+  if (tg) { const [k, id] = tg.dataset.toggle.split("|"), o = state[k].open; o.has(id) ? o.delete(id) : o.add(id); renderFeed(k); const b = $(`[data-root="${k}"] [data-toggle="${k}|${id}"]`); if (b) b.focus(); return; }
+  const ld = e.target.closest("[data-load]");
+  if (ld) { const k = ld.dataset.load; state[k].from = "2026-08-01"; renderFeed(k); renderCal(k); return; }
+  const j = e.target.closest("[data-jump]");
+  if (j) { const [k, d] = j.dataset.jump.split("|"); jump(k, d); return; }
+  const cn = e.target.closest("[data-calnav]");
+  if (cn) { const [k, d] = cn.dataset.calnav.split("|"); calSt[k].mi = Math.max(0, Math.min(MOCK.months.length - 1, calSt[k].mi + +d)); renderCal(k); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+
+/* ---------- demo ---------- */
+$("#find-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#find-text").value.toLowerCase().trim(); if (!t) return;
+  const st = state.demo; let target = null, label = "";
+  if (/worst/.test(t) || /best/.test(t)) {
+    if (!brokSel().size) { $("#find-r").innerHTML = `<p class="find-r">Market days need a brokerage account. Tick Schwab or IBKR. <span class="mock">SCRIPTED</span></p>`; return; }
+    const mm = monthMarket(2026, 8), d = /worst/.test(t) ? mm.worst : mm.best; target = d.date; label = `${/worst/.test(t) ? "Worst" : "Best"} market day in September: ${nice(d.date)}, ${signed(d.total)}`;
+    st.hit = "m:" + d.date;
+  } else {
+    const ev = [...MOCK.upcoming, ...MOCK.bankEvents].find(x => sel.has(x.acct) && (x.t.toLowerCase().includes(t.replace(/^(my|the) /, "")) || (x.who || "").toLowerCase().includes(t)));
+    if (ev) { target = ev.date; label = `${ev.t}, ${nice(ev.date)}`; st.hit = (MOCK.upcoming.includes(ev) ? "u:" + ev.date : "b:" + ev.date + ":" + ev.t); }
+  }
+  if (!target) { $("#find-r").innerHTML = `<p class="find-r">Nothing in the scripted timeline matches that. Try rent, paycheck, steakhouse, savings, card, worst day or best day. <span class="mock">SCRIPTED</span></p>`; return; }
+  if (target < st.from) st.from = "2026-08-01";
+  renderFeed("demo");
+  $("#find-r").innerHTML = `<p class="find-r"><b>✦ Found:</b> ${label}. <span class="mock">SCRIPTED</span></p>`;
+  const el = $(`[data-root="demo"] [data-ev="${st.hit}"]`); if (el) el.scrollIntoView({ block: "center" });
+  $("#find-text").value = "";
+});
+let lastFocus = null;
+function openDemo() { lastFocus = document.activeElement; $("#demo").classList.add("open"); document.body.style.overflow = "hidden"; renderRoot("demo"); $("#demo-close").focus(); }
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#demo").classList.contains("open")) closeDemo(); });
+
+if (matchMedia("(max-width: 960px)").matches) $$(".acc").forEach(d => d.open = false);
+renderAll();
+if (location.hash === "#demo") openDemo();
+</script>
+</body>
+</html>

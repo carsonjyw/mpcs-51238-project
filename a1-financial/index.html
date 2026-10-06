@@ -217,6 +217,20 @@
           </ul>
           <p>A breadcrumb trail and “Zoom out” button keep navigation simple. The v01-style account picker decides which branches exist, and an arrow on each account jumps straight to it. The demo adds a scripted “find” box (e.g. “NVDA” zooms to that holding).</p>
         </li>
+        <li>
+          <div class="when">Stage 9 · Decision → v08</div>
+          <h4>Approach 3, “The Timeline,” chosen</h4>
+          <p><b>Your decision:</b> move on to The Timeline, organized by time.</p>
+          <p><b>How v08 responds:</b> one chronological feed instead of panels or levels.</p>
+          <ul>
+            <li><b>Above the Today marker:</b> a compact “Coming up” card (next paycheck, card due date, savings transfer, rent).</li>
+            <li><b>Below it:</b> a “since you last checked” summary, then every day with activity, newest first. Bank transactions from Mock Bank sit beside daily market results from Schwab and IBKR.</li>
+            <li><b>AI recaps:</b> each week and each month closes with an AI recap (investment result, money in and out, anything unusual, such as the skipped September savings transfer).</li>
+            <li><b>Transfers:</b> moves between your own accounts are labeled as transfers and kept out of the totals.</li>
+            <li><b>Market days:</b> each one opens to show every position's move.</li>
+          </ul>
+          <p>The gains calendar sits beside the feed as a scrubber: clicking a day jumps to it, and the calendar follows as you scroll. Blue dots mark days with bank activity. The v01-style account picker filters the feed, “Key moments only” keeps just the flagged events, and “Load August” extends history. The demo adds a scripted “find” box (e.g. “steakhouse,” “worst day”).</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -284,6 +298,13 @@ const VERSIONS = [
     stage: "explore",
     date: "2026-10-05",
     note: "<b>New approach 2, chosen by you.</b> The page is organized by levels of detail. It opens on one number, net worth, with a one-line AI summary, then zooms in step by step: Cash / Invested → each account → each holding. Every level has its own AI explanation and data, and a breadcrumb trail shows where you are. The gains calendar appears at the Invested and brokerage levels. The v01-style account picker decides which branches exist and can jump straight to an account. Light/dark kept; all mock."
+  },
+  {
+    v: "v08",
+    title: "The Timeline",
+    stage: "explore",
+    date: "2026-10-05",
+    note: "<b>New approach 3, chosen by you.</b> The page is organized by time. One feed merges bank activity and market days from every account, newest first, with a “Coming up” card and a Today marker on top, a “since you last checked” summary, and AI recaps closing each week and month. The <b>gains calendar</b> works as a scrubber: click a day to jump there, and it follows along as you scroll. The v01-style account picker filters the feed; “Key moments only” trims it. Light/dark kept; all mock."
   }
 ];
 
