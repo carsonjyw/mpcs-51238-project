@@ -67,8 +67,8 @@
   .dir .pick { font: 600 11px var(--mono); color: var(--accent); }
 
   ol.log { margin: 0; padding: 0; list-style: none; border-left: 2px solid var(--line); }
-  ol.log li { position: relative; padding: 0 0 22px 22px; }
-  ol.log li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+  ol.log > li { position: relative; padding: 0 0 22px 22px; }
+  ol.log > li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
   ol.log .when { font: 12px var(--mono); color: var(--faint); }
   ol.log h4 { margin: 2px 0 4px; font-size: 16px; }
   ol.log p { margin: 0 0 6px; color: var(--muted); font-size: 15px; max-width: 75ch; }
@@ -248,6 +248,33 @@
           </ul>
           <p>Bands are sized by amount, and items worth a look (dining, the skipped savings transfer) carry an orange dot. Hovering lights up connected flows; clicking any box or band opens a side panel with an AI explanation and its data: dining by month and the weekend meals, the savings balance with the flat September, each holding's contribution, or the gains calendar for Market gains and each brokerage. The panel opens on a September overview with “worth a look” shortcuts. The v01-style account picker is laid out as a bar above the map and decides which flows exist. The demo adds a scripted “find” box (e.g. “rent” highlights Housing).</p>
         </li>
+        <li>
+          <div class="when">Stage 11 · Feedback on v09 → v10</div>
+          <h4>The flow view is clear at a glance; last of the five new approaches tried next</h4>
+          <p><b>Your review of v09:</b> you like how it shows where the money comes from and where it goes. The main flows are easy to understand without extra clicks.</p>
+          <p><b>Your request:</b> move on to approach 5, “One Card at a Time,” organized as a short sequence, for v10.</p>
+        </li>
+        <li>
+          <div class="when">Stage 11 · Decision → v10</div>
+          <h4>Approach 5, “One Card at a Time,” built</h4>
+          <p><b>How v10 responds:</b> instead of one long page, eight full-screen cards that snap into place, each with one idea and one visual:</p>
+          <ol style="margin:0 0 8px;padding-left:20px;color:var(--muted);font-size:15px">
+            <li>Intro</li>
+            <li>Choose accounts (v01-style picker)</li>
+            <li>Since you last checked, with a big +$1,388</li>
+            <li>Where the money went, as two simple flow diagrams</li>
+            <li>The gains calendar</li>
+            <li>One thing worth a look (tech at 53%)</li>
+            <li>Coming up in the next 30 days</li>
+            <li>Ask, with scripted questions</li>
+          </ol>
+          <p><b>Carried over from your feedback:</b></p>
+          <ul>
+            <li><b>From v08:</b> recent changes come first and upcoming events come later.</li>
+            <li><b>From v09:</b> money flows are visible without extra clicks.</li>
+          </ul>
+          <p>A counter, progress bar and side dots show position; each card ends with a “Next” button. Every card after the account picker uses only the selected accounts. View Demo shows the same cards one at a time, moving sideways with Back/Next buttons and arrow keys, plus a scripted question box on the last card.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -328,7 +355,14 @@ const VERSIONS = [
     title: "Money Map",
     stage: "explore",
     date: "2026-10-06",
-    note: "<b>New approach 4, chosen by you.</b> The page is organized by how money moves. One interactive flow diagram of September runs left to right: paychecks and market gains → checking, Schwab and IBKR → spending, kept and savings → spending categories, with each band sized by its amount. Clicking any box or band opens the AI's explanation and its data beside the map. The <b>gains calendar</b> appears under Market gains and each brokerage. The v01-style account picker sits above as a bar and decides which flows are drawn. Light/dark kept; all mock."
+    note: "<b>New approach 4, chosen by you.</b> The page is organized by how money moves. One interactive flow diagram of September runs left to right: paychecks and market gains → checking, Schwab and IBKR → spending, kept and savings → spending categories, with each band sized by its amount. Clicking any box or band opens the AI's explanation and its data beside the map. The <b>gains calendar</b> appears under Market gains and each brokerage. The v01-style account picker sits above as a bar and decides which flows are drawn. Light/dark kept; all mock. <b>Your review:</b> you like how it shows where the money comes from and where it goes; the main flows are easy to understand without extra clicks."
+  },
+  {
+    v: "v10",
+    title: "One Card at a Time",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>New approach 5, chosen by you.</b> The page is organized as a short sequence: eight full-screen cards, one idea each (intro, pick accounts, what happened since you last checked, where the money went, investments, one thing worth a look, what's coming up, ask). Following your v08 and v09 feedback, recent changes come before upcoming events, and the money flows are shown directly without clicks. Uses the v01-style account picker (card 2) and the <b>gains calendar</b> (card 5); progress dots and a counter show where you are. Light/dark kept; all mock."
   }
 ];
 
