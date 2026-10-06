@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v14 · The What-If Lab — Ledgerline</title>
+<meta name="description" content="v14 — The What-If Lab: try simple what-ifs with your money (eat out like usual, restart savings, what if stocks fall) and see your bank and brokerage accounts respond together, explained in plain language. All data is mock; illustrations only.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f7f5fb;
+    --surface: #ffffff;
+    --surface-2: #f4f1fa;
+    --ink: #1b1726;
+    --muted: #5d5770;
+    --faint: #8e88a0;
+    --line: #e5e0ef;
+    --line-2: #d3cce2;
+    --accent: #5b3fd1;
+    --accent-soft: #ece7fd;
+    --on-accent: #ffffff;
+    --cash: #1773bd; --cash-soft: #e2eff9;
+    --save: #0f8c7a; --save-soft: #dff3ef;
+    --inv: #7646c6;  --inv-soft: #eee7fa;
+    --owed: #b4562b;
+    --gain: #14804a; --loss: #c7372c;
+    --gain-rgb: 20, 128, 74; --loss-rgb: 199, 55, 44;
+    --mock-ink: #84520a; --mock-bg: #fff0c6;
+    --shadow: 0 1px 2px rgba(30,20,60,.05), 0 12px 32px rgba(30,20,60,.08);
+  }
+  [data-theme="dark"] {
+    --bg: #120f19;
+    --surface: #1b1724;
+    --surface-2: #221d2e;
+    --ink: #efecf6;
+    --muted: #aaa3bd;
+    --faint: #7c7590;
+    --line: #2d2739;
+    --line-2: #3a3349;
+    --accent: #a891ff;
+    --accent-soft: #2a2348;
+    --on-accent: #120f19;
+    --cash: #66b4f2; --cash-soft: #16293b;
+    --save: #4fd0bc; --save-soft: #12332f;
+    --inv: #b99bff;  --inv-soft: #2b2145;
+    --owed: #f09a6c;
+    --gain: #46cd8a; --loss: #ff7d71;
+    --gain-rgb: 70, 205, 138; --loss-rgb: 255, 125, 113;
+    --mock-ink: #ffd88a; --mock-bg: #3a2c0d;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16.5px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .n { font-variant-numeric: tabular-nums; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--mock-ink); background: var(--mock-bg); padding: 2px 6px; border-radius: 4px; vertical-align: 2px; white-space: nowrap; }
+  .tag { font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .tag.bank { background: var(--cash-soft); color: var(--cash); }
+  .tag.brok { background: var(--inv-soft); color: var(--inv); }
+
+  /* ---------- chrome ---------- */
+  .mockbar { background: var(--mock-bg); color: var(--mock-ink); font-size: 13.5px; text-align: center; padding: 7px 16px; }
+  header.top { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; height: 58px; }
+  .back { font-size: 14px; text-decoration: none; color: var(--muted); padding: 5px 12px; border: 1px solid var(--line-2); border-radius: 999px; white-space: nowrap; background: var(--surface); }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 750; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .brand .mark { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-size: 15px; font-weight: 800; }
+  .brand small { font-size: 11px; color: var(--faint); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 7px; font-weight: 600; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 3px; cursor: pointer; font-size: 13px; }
+  .theme-btn > span { padding: 3px 10px; border-radius: 999px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--ink); color: var(--bg); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; padding: 10px 18px; font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; text-decoration: none; white-space: nowrap; background: var(--accent); color: var(--on-accent); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+  .btn.sm { padding: 6px 13px; font-size: 14px; }
+
+  /* ---------- intro ---------- */
+  .intro { padding: 32px 0 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end; }
+  .intro h1 { font-size: clamp(28px, 4.4vw, 46px); line-height: 1.07; letter-spacing: -.03em; margin: 0 0 8px; }
+  .intro h1 em { font-style: normal; color: var(--accent); }
+  .intro p { margin: 0; color: var(--muted); font-size: 17.5px; max-width: 64ch; }
+
+  /* account picker (v01 contents) */
+  .accts { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) auto; gap: 14px; align-items: start; }
+  .pk-title { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 0 0 6px; }
+  .pk-title .sum { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 650; }
+  .pk-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+  .pk-row { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 8px; align-items: center; padding: 7px 9px; border-radius: 10px; cursor: pointer; font-size: 13.5px; border: 1px solid var(--line); background: var(--surface-2); }
+  .pk-row:not(:has(input:checked)) { opacity: .55; background: transparent; }
+  .pk-row input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; grid-row: span 2; }
+  .pk-row .nm { min-width: 0; font-weight: 600; line-height: 1.25; }
+  .pk-row .amt { font-weight: 650; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pk-row .amt small { font-weight: 500; font-size: 11.5px; margin-left: 6px; }
+  .pk-side { display: grid; gap: 8px; justify-items: end; }
+  .pk-quick { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+  .qbtn { font-size: 12.5px; font-weight: 650; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  .qbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pk-total { font-size: 13px; color: var(--muted); text-align: right; }
+  .pk-total b { display: block; color: var(--ink); font-size: 18px; font-variant-numeric: tabular-nums; }
+
+  /* presets */
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .presets .lbl { font-weight: 700; font-size: 14.5px; margin-right: 2px; }
+  .preset { border: 1.5px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14.5px; font-weight: 600; }
+  .preset:hover { border-color: var(--accent); color: var(--accent); }
+  .preset.reset { border-style: dashed; color: var(--muted); }
+
+  /* ---------- the lab: levers | results ---------- */
+  .lab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 18px; align-items: start; margin-bottom: 26px; }
+  .levers { display: grid; gap: 10px; }
+  .grp-h { font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin: 8px 2px 0; display: flex; gap: 8px; align-items: center; }
+  .lever { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px; display: grid; gap: 6px; transition: border-color .15s, background .15s; }
+  .lever.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface)); }
+  .lever .row { display: flex; align-items: center; gap: 12px; }
+  .lever .t { font-weight: 700; font-size: 16.5px; flex: 1; }
+  .lever .d { font-size: 14.5px; color: var(--muted); }
+  .lever .eff { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  /* switch */
+  .sw { position: relative; width: 50px; height: 28px; flex: none; }
+  .sw input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; z-index: 1; }
+  .sw span { position: absolute; inset: 0; border-radius: 999px; background: var(--line-2); transition: background .15s; }
+  .sw span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+  .sw input:checked + span { background: var(--accent); }
+  .sw input:checked + span::after { transform: translateX(22px); }
+  .sw input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+  /* slider */
+  .slider { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 12px; align-items: center; }
+  .slider input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
+  .slider output { text-align: right; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--faint); margin-top: -4px; padding-right: 84px; }
+  @media (prefers-reduced-motion: reduce) { .sw span, .sw span::after { transition: none; } }
+
+  .results { position: sticky; top: 74px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
+  .res-h { padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
+  .res-h .k { font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .nwrow { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+  .nwrow .from { font-size: 18px; color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); font-variant-numeric: tabular-nums; }
+  .nwrow .to { font-size: 40px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .nwrow .diff { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .res-h .same { font-size: 14.5px; color: var(--muted); margin-top: 2px; }
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-bottom: 1px solid var(--line); }
+  .cards > div { padding: 12px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .cards > div:nth-child(2n) { border-right: 0; }
+  .cards > div:nth-last-child(-n+2) { border-bottom: 0; }
+  .cards .l { font-size: 13.5px; color: var(--muted); font-weight: 600; display: flex; gap: 6px; align-items: center; }
+  .cards .l i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .cards .v { font-size: 22px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .cards .s { font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .where { padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  .where h4 { margin: 0 0 8px; font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .stack { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px 10px; align-items: center; font-size: 13.5px; }
+  .stack .bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: var(--surface-2); }
+  .stack .bar span { height: 100%; transition: width .3s; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .explain { padding: 14px 20px 18px; }
+  .explain .who { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--accent); margin-bottom: 4px; }
+  .explain ul { margin: 0; padding-left: 20px; font-size: 15.5px; }
+  .explain li { margin-bottom: 6px; }
+  .explain .disc { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  /* ---------- what really happened (gains calendar) ---------- */
+  .really { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; margin-bottom: 26px; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 22px; }
+  .really h2 { font-size: 22px; letter-spacing: -.02em; margin: 0 0 6px; }
+  .really p { color: var(--muted); margin: 0 0 10px; font-size: 15.5px; }
+  .really .scale { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; font-size: 15px; }
+  .cal-host { container: cal / inline-size; }
+  .cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .cal-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .cal-nav button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; }
+  .cal-nav button:disabled { opacity: .3; cursor: default; }
+  .cal-nav .m { padding: 0 4px; white-space: nowrap; font-weight: 700; font-size: 14px; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .dow { font-size: 11px; font-weight: 700; color: var(--faint); text-align: center; }
+  .day { min-width: 0; overflow: hidden; min-height: 46px; border-radius: 8px; padding: 4px 6px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1px solid transparent; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+  button.day { cursor: pointer; }
+  button.day:hover { border-color: var(--ink); }
+  .day .dn, .day .amt { display: block; max-width: 100%; overflow: hidden; }
+  .day .dn { font-size: 11px; color: var(--muted); font-weight: 650; }
+  .day .amt { font-size: 12.5px; font-weight: 800; white-space: nowrap; letter-spacing: -.01em; }
+  .day.up .amt { color: var(--gain); } .day.down .amt { color: var(--loss); }
+  .day.up.l1 { background: rgba(var(--gain-rgb), .10); } .day.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .day.up.l3 { background: rgba(var(--gain-rgb), .36); } .day.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .day.down.l1 { background: rgba(var(--loss-rgb), .10); } .day.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .day.down.l3 { background: rgba(var(--loss-rgb), .36); } .day.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .day.l3 .amt, .day.l4 .amt { color: var(--ink); }
+  .day.off { background: transparent; border: 1px dashed var(--line-2); }
+  .day.off .amt { font-size: 10.5px; font-weight: 500; color: var(--faint); }
+  .day.blank { background: transparent; }
+  .day.future { background: transparent; border: 1px dotted var(--line-2); }
+  .day.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  @container cal (max-width: 520px) { .day { min-height: 42px; padding: 4px; } .day .amt { font-size: 11px; } .day .amt .cur { display: none; } }
+  @container cal (max-width: 360px) { .cal { gap: 2px; } .dow .rest { display: none; } .day { min-height: 38px; padding: 3px 2px 3px 3px; } .day .dn { font-size: 10px; } .day .amt { font-size: 10px; letter-spacing: -.03em; } .day.off .amt { display: none; } }
+  .cal-legend { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .cal-legend .sw2 { width: 15px; height: 10px; border-radius: 2px; }
+  .cal-legend .gap { width: 8px; }
+  .cal-day { margin-top: 10px; font-size: 14.5px; }
+
+  /* ---------- below ---------- */
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 0 0 20px; }
+  .how > div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .how b { display: block; margin-bottom: 4px; font-size: 16px; }
+  .how p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .final { text-align: center; padding: 30px 20px 50px; }
+  .final h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .final p { color: var(--muted); margin: 0 0 18px; }
+  footer { border-top: 1px solid var(--line); padding: 18px 0 34px; font-size: 13px; color: var(--faint); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  /* mobile summary bar */
+  .mini { display: none; }
+
+  /* ---------- demo ---------- */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+  .demo-body { flex: 1; overflow-y: auto; padding: 14px 0 30px; }
+  .demo .results { top: 12px; }
+  .ask { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 14px; margin-bottom: 10px; align-items: center; }
+  .ask input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 15.5px; padding: 6px 4px; outline: none; }
+  .ask-r { margin: -2px 0 12px; font-size: 14.5px; color: var(--muted); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 960px) {
+    .lab { grid-template-columns: minmax(0, 1fr); }
+    .results { position: static; }
+    .really { grid-template-columns: minmax(0, 1fr); }
+    .accts { grid-template-columns: minmax(0, 1fr); }
+    .pk-side { justify-items: start; grid-template-columns: auto auto; align-items: center; justify-content: space-between; }
+    .mini { display: flex; position: sticky; top: 58px; z-index: 30; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; box-shadow: var(--shadow); }
+    .mini b { font-size: 17px; font-variant-numeric: tabular-nums; }
+    .mini a { margin-left: auto; font-weight: 700; text-decoration: none; }
+    .demo .mini { top: 0; }
+  }
+  @media (max-width: 680px) { .intro { grid-template-columns: 1fr; } .how { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) {
+    .hide-sm, .brand small { display: none; }
+    header.top .wrap { gap: 8px; }
+    header.top .btn { padding: 8px 12px; font-size: 14px; }
+    .pk-rows { grid-template-columns: minmax(0, 1fr); }
+    .pk-side { grid-template-columns: 1fr; }
+    .cards { grid-template-columns: minmax(0, 1fr); }
+    .cards > div { border-right: 0 !important; border-bottom: 1px solid var(--line) !important; }
+    .cards > div:last-child { border-bottom: 0 !important; }
+    .nwrow .to { font-size: 32px; }
+    .slider { grid-template-columns: minmax(0, 1fr) 62px; }
+    .ticks { padding-right: 74px; }
+  }
+  @media (max-width: 420px) { header.top .btn { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note"><b>Design prototype · v14.</b> Every account and number here is <b>mock data</b>, and every result is an <b>illustration</b>, not a prediction or advice. No real bank or brokerage connection is implemented.</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <a class="brand" href="#top"><span class="mark">?</span> Ledgerline <small>v14</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<main class="wrap" id="top" data-root="land">
+  <section class="intro">
+    <div>
+      <h1>What happens to your money <em>if…?</em></h1>
+      <p>Ledgerline brings your bank and brokerage accounts together, then lets you try simple what-ifs. Flip a switch or move a slider, and see your checking, savings and investments change together, with a plain-English explanation of why.</p>
+    </div>
+    <button class="btn" data-open-demo>View Demo →</button>
+  </section>
+
+  <div class="accts" data-picker aria-label="Accounts in the lab"></div>
+  <div class="presets" data-presets></div>
+  <div class="mini" data-mini aria-live="polite"></div>
+
+  <section class="lab" aria-label="What-if lab">
+    <div class="levers" data-levers></div>
+    <aside class="results" data-results aria-live="polite" id="land-results"></aside>
+  </section>
+
+  <section class="really" data-really></section>
+
+  <section class="how" aria-label="How the lab works">
+    <div><b>Start from today</b><p>Every what-if begins with your real balances (mock here), so the numbers are yours, not a generic example.</p></div>
+    <div><b>All your accounts react together</b><p>Moving money to savings, a bad week for stocks, a paycheck landing: see checking, savings and investments respond at once.</p></div>
+    <div><b>Illustrations, not advice</b><p>The lab shows what the numbers would look like. It doesn't predict markets or tell you what to do.</p></div>
+  </section>
+</main>
+
+<section class="final">
+  <h2>Try your own what-ifs</h2>
+  <p>In the demo you can also type a question like “what if stocks fall 15%?” Everything is mock data.</p>
+  <button class="btn" data-open-demo>View Demo →</button>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Ledgerline is a fictional product concept. v14 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<!-- ============ DEMO ============ -->
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline what-if lab demo">
+  <div class="demo-top">
+    <span class="brand"><span class="mark">?</span><span class="hide-sm">Ledgerline lab</span></span>
+    <span class="mock">DEMO · ALL DATA IS MOCK</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <button class="btn ghost sm" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-body">
+    <div class="wrap" data-root="demo">
+      <form class="ask" id="ask-form"><span class="tag" style="background:var(--accent-soft);color:var(--accent)">✦ What if…</span><input id="ask-text" type="text" placeholder="e.g. “what if stocks fall 15%?”, “what if I restart savings?”, “what if I eat out like usual?”" aria-label="Ask a what-if" autocomplete="off"><button class="btn sm" type="submit">Try it</button></form>
+      <div id="ask-r"></div>
+      <div class="accts" data-picker aria-label="Accounts in the lab"></div>
+      <div class="presets" data-presets></div>
+      <div class="mini" data-mini aria-live="polite"></div>
+      <section class="lab"><div class="levers" data-levers></div><aside class="results" data-results aria-live="polite" id="demo-results"></aside></section>
+      <section class="really" data-really></section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v13.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", inst: "Schwab (mock)", mask: "••5512", short: "Schwab", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", inst: "IBKR (mock)", mask: "U•••908", short: "IBKR", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  acct: "sch", qty: 120, px: 287.40, vol: 0.8, tech: false, name: "a fund of the whole US market" },
+    { sym: "AAPL", acct: "sch", qty: 45,  px: 228.10, vol: 1.4, tech: true,  name: "Apple" },
+    { sym: "MSFT", acct: "sch", qty: 30,  px: 431.20, vol: 1.2, tech: true,  name: "Microsoft" },
+    { sym: "NVDA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8, tech: true,  name: "Nvidia" },
+    { sym: "TSLA", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2, tech: false, name: "Tesla" },
+    { sym: "QQQ",  acct: "ibk", qty: 25,  px: 489.50, vol: 1.1, tech: true,  name: "a fund of large tech-heavy companies" }
+  ],
+  avgSpend: 5262,                // six-month average monthly spending
+  dining: { sep: 612, usual: 518 },
+  card: { due: 1236.40, date: "Thu, Oct 22" },
+  paycheck: { amt: 3425, date: "Sat, Oct 17" },
+  holidays: { "2026-09-07": "Labor Day" },
+  months: [[2026, 7], [2026, 8], [2026, 9]],
+  lastDataDay: "2026-10-02"
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 0) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 0) => (Math.round(n) === 0 ? "±" : n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const gl = n => (n >= 0 ? "gain" : "loss");
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const nice = s => { const [y, m, d] = s.split("-").map(Number); return `${DOW[new Date(y, m - 1, d).getDay()]}, ${MONTHS[m - 1].slice(0, 3)} ${d}`; };
+
+MOCK.positions.forEach(p => { p.val = p.qty * p.px; p.swing = p.vol / 1.2; });   // how much a holding tends to move vs. the market
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const brokValue = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0) + MOCK.brok.find(a => a.id === id).cash;
+
+/* ---------- deterministic mock daily P&L (same generator as v02–v13) ---------- */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, bs) { const moves = rawDay(date).filter(m => bs.has(m.acct)).sort((a, b) => b.amt - a.amt); return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0) }; }
+function status(y, m, d) { const date = iso(y, m, d), dw = new Date(y, m, d).getDay(); if (date > MOCK.lastDataDay) return "future"; if (dw === 0 || dw === 6) return "weekend"; if (MOCK.holidays[date]) return "holiday"; return "trade"; }
+function monthStats(y, m, bs) {
+  const days = []; for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) if (status(y, m, d) === "trade") days.push(dayFor(iso(y, m, d), bs));
+  const sorted = [...days].sort((a, b) => b.total - a.total);
+  return { days, total: days.reduce((s, x) => s + x.total, 0), up: days.filter(x => x.total >= 0).length, down: days.filter(x => x.total < 0).length, best: sorted[0], worst: sorted[sorted.length - 1] };
+}
+
+/* ---------- selection + lever state (shared by page and demo) ---------- */
+const sel = new Set(ALL.map(a => a.id));
+const L0 = { dining: false, save: false, pay: false, card: false, invest: 0, market: 0, tech: 0 };
+const L = { ...L0 };
+
+/* =========================================================
+   THE LEVERS: plain language, each says what it does.
+   ========================================================= */
+const LEVERS = [
+  { grp: "Everyday money", id: "dining", type: "switch", need: () => sel.has("cc") && sel.has("chk"), t: "Eat out like usual", d: `Dining was $612 in September, $94 more than usual. What if it went back to your usual $518?`, eff: () => L.dining ? "+$94 a month stays in checking" : "" },
+  { grp: "Everyday money", id: "save", type: "switch", need: () => sel.has("chk") && sel.has("sav"), t: "Restart the $500 savings transfer", d: "September's automatic move to savings didn't happen. What if it ran this month?", eff: () => L.save ? "$500 moves from checking to savings" : "" },
+  { grp: "Coming up", id: "pay", type: "switch", need: () => sel.has("chk"), t: `Next paycheck arrives (${MOCK.paycheck.date})`, d: "Add your expected $3,425 paycheck to checking.", eff: () => L.pay ? "+$3,425 in checking" : "" },
+  { grp: "Coming up", id: "card", type: "switch", need: () => sel.has("chk") && sel.has("cc"), t: `Pay the card bill in full (${MOCK.card.date})`, d: "Pay the $1,236.40 Rewards Card statement from checking.", eff: () => L.card ? "−$1,236.40 checking, card paid off" : "" },
+  { grp: "Investing", id: "invest", type: "slider", need: () => sel.has("chk") && MOCK.brok.some(a => sel.has(a.id)), t: "Move money from checking into investments", d: "Shift some cash into your brokerage account. It's still your money, just in a different place.", min: 0, max: 4000, step: 250, fmt: v => money(v), ticks: ["$0", "$2,000", "$4,000"], eff: () => L.invest ? `${money(L.invest)} from checking to ${firstBrok().short}` : "" },
+  { grp: "The stock market", id: "market", type: "slider", need: () => MOCK.brok.some(a => sel.has(a.id)), t: "What if the stock market moves…", d: "Some of your holdings tend to move more than the market (like Nvidia and Tesla), others less.", min: -20, max: 20, step: 1, fmt: v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + "%", ticks: ["−20%", "no change", "+20%"], eff: () => "" },
+  { grp: "The stock market", id: "tech", type: "slider", need: () => MOCK.brok.some(a => sel.has(a.id)) && MOCK.positions.some(p => p.tech && sel.has(p.acct)), t: "What if only tech companies move…", d: "Apple, Microsoft, Nvidia and the tech fund (QQQ) move; everything else stays put.", min: -20, max: 20, step: 1, fmt: v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + "%", ticks: ["−20%", "no change", "+20%"], eff: () => "" }
+];
+const firstBrok = () => MOCK.brok.find(a => sel.has(a.id)) || MOCK.brok[0];
+const PRESETS = [
+  { id: "normal", t: "Back to usual habits", set: { dining: true, save: true } },
+  { id: "payday", t: "Next payday, bills paid", set: { pay: true, card: true } },
+  { id: "dip", t: "A rough month for stocks (−10%)", set: { market: -10 } },
+  { id: "techdrop", t: "Tech companies fall 15%", set: { tech: -15 } },
+  { id: "reset", t: "Reset to today", set: {}, reset: true }
+];
+
+/* =========================================================
+   THE MATH: today's balances → what-if balances
+   ========================================================= */
+function compute() {
+  const has = id => sel.has(id);
+  const base = { chk: has("chk") ? 8412.55 : 0, sav: has("sav") ? 24180 : 0, cc: has("cc") ? -1236.40 : 0 };
+  const posB = MOCK.positions.filter(p => has(p.acct)).map(p => ({ ...p, v0: p.val }));
+  const after = { ...base };
+  const on = id => { const lv = LEVERS.find(x => x.id === id); return lv.need() && L[id]; };
+  if (on("dining")) after.chk += 94;
+  if (on("save")) { after.chk -= 500; after.sav += 500; }
+  if (on("pay")) after.chk += 3425;
+  if (on("card")) { after.chk -= 1236.40; after.cc += 1236.40; }
+  const inv = on("invest") ? L.invest : 0;
+  if (inv) after.chk -= inv;
+  const m = on("market") ? L.market / 100 : 0, t = on("tech") ? L.tech / 100 : 0;
+  posB.forEach(p => { p.v1 = p.v0 * (1 + m * p.swing + (p.tech ? t : 0)); });
+  const brok = MOCK.brok.filter(a => has(a.id)).map(a => {
+    const list = posB.filter(p => p.acct === a.id), v0 = list.reduce((s, p) => s + p.v0, 0) + a.cash, v1 = list.reduce((s, p) => s + p.v1, 0) + a.cash + (inv && a.id === firstBrok().id ? inv : 0);
+    return { ...a, v0, v1 };
+  });
+  const invest0 = brok.reduce((s, a) => s + a.v0, 0), invest1 = brok.reduce((s, a) => s + a.v1, 0);
+  const net0 = base.chk + base.sav + base.cc + invest0, net1 = after.chk + after.sav + after.cc + invest1;
+  return { base, after, brok, posB, invest0, invest1, net0, net1, cush0: (base.chk + base.sav) / MOCK.avgSpend, cush1: (after.chk + after.sav) / MOCK.avgSpend, m, t, inv };
+}
+function narrate(c) {
+  const out = [], has = id => sel.has(id);
+  const marketDelta = c.posB.reduce((s, p) => s + (p.v1 - p.v0), 0);
+  if (c.m || c.t) {
+    const movers = [...c.posB].sort((a, b) => Math.abs(b.v1 - b.v0) - Math.abs(a.v1 - a.v0)).slice(0, 2);
+    const byAcct = c.brok.map(a => `${a.short} ${signed(c.posB.filter(p => p.acct === a.id).reduce((s, p) => s + p.v1 - p.v0, 0))}`).join(", ");
+    out.push(`Your investments would ${marketDelta >= 0 ? "rise" : "fall"} about <b>${money(Math.abs(marketDelta))}</b> (${byAcct}). The biggest dollar changes would come from ${movers.map(p => `${p.sym} (${p.name})`).join(" and ")}.`);
+    if (c.m) {
+      const big = c.posB.filter(p => p.swing > 1.5), small = c.posB.filter(p => p.swing < 0.8);
+      if (big.length || small.length) out.push(`Not everything moves the same amount: ${big.length ? `${big.map(p => p.name).join(" and ")} tend${big.length === 1 ? "s" : ""} to move about ${Math.round(Math.min(...big.map(p => p.swing)) * 10) / 10}–${Math.round(Math.max(...big.map(p => p.swing)) * 10) / 10}× as much as the market` : ""}${big.length && small.length ? ", while " : ""}${small.length ? `${small.map(p => p.sym).join(" and ")} tend${small.length === 1 ? "s" : ""} to move less` : ""}.`);
+    }
+    if (has("chk") || has("sav")) out.push(`Your cash in checking and savings wouldn't change. A stock move only affects your investments.`);
+    const biggest = monthStats(2026, 8, new Set(c.brok.map(a => a.id))).best;
+    if (biggest && Math.abs(marketDelta) > 0) out.push(`For scale: your biggest real day in September was ${signed(biggest.total)}. This what-if is about <b>${Math.max(1, Math.round(Math.abs(marketDelta) / Math.abs(biggest.total)))}×</b> that.`);
+  }
+  if (L.save && LEVERS[1].need()) out.push(`Restarting the savings transfer moves $500 from checking to savings. Your total doesn't change; the money just sits where you planned it.`);
+  if (L.dining && LEVERS[0].need()) out.push(`Eating out like usual would leave about <b>$94 more</b> in checking each month.`);
+  if (L.pay && LEVERS[2].need()) out.push(`Your Oct 17 paycheck would bring checking to <b>${money(c.after.chk, 2)}</b>${L.card && LEVERS[3].need() ? " after paying the card bill" : ""}.`);
+  else if (L.card && LEVERS[3].need()) out.push(`Paying the card bill in full leaves checking at <b>${money(c.after.chk, 2)}</b>. Your total doesn't change; you just owe nothing on the card.`);
+  if (c.inv) out.push(`Moving ${money(c.inv)} into investments lowers your cash cushion from ${c.cush0.toFixed(1)} to <b>${c.cush1.toFixed(1)} months</b> of spending, while your total stays the same${c.m || c.t ? " (before any market move)" : ""}.`);
+  if (!out.length) out.push(`This is where things stand today. Flip a switch or move a slider on the left to see what would change, or try one of the ready-made what-ifs above.`);
+  return out;
+}
+
+/* ---------- rendering ---------- */
+function leversHTML(key) {
+  let grp = "", h = "";
+  LEVERS.filter(lv => lv.need()).forEach(lv => {
+    if (lv.grp !== grp) { grp = lv.grp; h += `<div class="grp-h">${grp}</div>`; }
+    const on = lv.type === "switch" ? L[lv.id] : L[lv.id] !== 0;
+    h += `<div class="lever${on ? " on" : ""}">${lv.type === "switch"
+      ? `<div class="row"><label class="t" for="${key}-${lv.id}">${lv.t}</label><span class="sw"><input type="checkbox" role="switch" id="${key}-${lv.id}" data-lever="${lv.id}" ${L[lv.id] ? "checked" : ""}><span></span></span></div><div class="d">${lv.d}</div>`
+      : `<label class="t" for="${key}-${lv.id}">${lv.t}</label><div class="d">${lv.d}</div><div class="slider"><input type="range" id="${key}-${lv.id}" data-lever="${lv.id}" min="${lv.min}" max="${lv.max}" step="${lv.step}" value="${L[lv.id]}" aria-valuetext="${lv.fmt(L[lv.id])}"><output>${lv.fmt(L[lv.id])}</output></div><div class="ticks"><span>${lv.ticks[0]}</span><span>${lv.ticks[1]}</span><span>${lv.ticks[2]}</span></div>`}
+      ${lv.eff() ? `<div class="eff">→ ${lv.eff()}</div>` : ""}</div>`;
+  });
+  return h || `<div class="lever"><div class="t">No what-ifs available</div><div class="d">Tick at least one account above.</div></div>`;
+}
+function resultsHTML(c) {
+  const d = c.net1 - c.net0, changed = Math.abs(d) >= .5 || Object.keys(L).some(k => L[k] !== L0[k]);
+  const quiet = t => changed ? `<span style="color:var(--faint)">${t}</span>` : `<span style="color:var(--faint)">today</span>`;
+  const card = (l, col, v0, v1, extra) => `<div><div class="l"><i style="background:${col}"></i>${l}</div><div class="v">${money(v1, 0)}</div><div class="s">${Math.abs(v1 - v0) < .5 ? quiet("no change") : `${sg(v1 - v0)} <span style="color:var(--faint)">from ${money(v0, 0)}</span>`}${extra || ""}</div></div>`;
+  const has = id => sel.has(id);
+  const cards = [];
+  if (has("chk")) cards.push(card("Checking", "var(--cash)", c.base.chk, c.after.chk));
+  if (has("sav")) cards.push(card("Savings", "var(--save)", c.base.sav, c.after.sav));
+  if (c.brok.length) cards.push(card(`Investments`, "var(--inv)", c.invest0, c.invest1));
+  if (has("cc")) cards.push(card("Card balance owed", "var(--owed)", c.base.cc, c.after.cc));
+  if (has("chk") || has("sav")) cards.push(`<div><div class="l"><i style="background:var(--faint)"></i>Cash cushion <span style="font-weight:500">(months of spending)</span></div><div class="v">${c.cush1.toFixed(1)} months</div><div class="s">${Math.abs(c.cush1 - c.cush0) < .05 ? quiet("no change") : `<span class="${c.cush1 >= c.cush0 ? "gain" : "loss"}">${c.cush1 >= c.cush0 ? "+" : "−"}${Math.abs(c.cush1 - c.cush0).toFixed(1)}</span> <span style="color:var(--faint)">from ${c.cush0.toFixed(1)}</span>`}</div></div>`);
+  if (cards.length % 2) cards.push(`<div></div>`);
+  const seg = (vals) => { const pos = vals.filter(v => v[1] > 0), tot = pos.reduce((s, v) => s + v[1], 0) || 1; return pos.map(([col, v]) => `<span style="width:${v / tot * 100}%;background:${col}" title="${money(v)}"></span>`).join(""); };
+  const before = [["var(--cash)", c.base.chk], ["var(--save)", c.base.sav], ["var(--inv)", c.invest0]], after = [["var(--cash)", c.after.chk], ["var(--save)", c.after.sav], ["var(--inv)", c.invest1]];
+  return `<div class="res-h"><div class="k">${changed ? "With your what-ifs" : "Where you stand today"} · Tue, Oct 6 <span class="mock">ILLUSTRATION · MOCK</span></div>
+      <div class="nwrow">${changed && Math.abs(d) >= .5 ? `<span class="from">${money(c.net0, 0)}</span>` : ""}<span class="to">${money(c.net1, 0)}</span>${changed ? `<span class="diff ${gl(d)}">${Math.abs(d) < .5 ? "no change" : signed(d)}</span>` : ""}</div>
+      <div class="same">Net worth across ${sel.size} account${sel.size === 1 ? "" : "s"}${changed && Math.abs(d) < .5 ? ": your money moved between accounts, but the total stayed the same" : ""}</div></div>
+    <div class="cards">${cards.join("")}</div>
+    <div class="where"><h4>Where your money sits</h4><div class="stack"><span>Today</span><div class="bar">${seg(before)}</div><span>What-if</span><div class="bar">${seg(after)}</div></div>
+      <div class="legend"><span><i style="background:var(--cash)"></i>Checking</span><span><i style="background:var(--save)"></i>Savings</span><span><i style="background:var(--inv)"></i>Investments</span></div></div>
+    <div class="explain"><div class="who">✦ IN PLAIN ENGLISH · LEDGERLINE AI · MOCK</div><ul>${narrate(c).map(x => `<li>${x}</li>`).join("")}</ul><div class="disc">An illustration using mock numbers, not a prediction or financial advice.</div></div>`;
+}
+function miniHTML(c) { const d = c.net1 - c.net0; return `<span>Net worth</span><b>${money(c.net1, 0)}</b><span class="${gl(d)}" style="font-weight:700">${Math.abs(d) < .5 ? "" : signed(d)}</span><a href="#land-results" data-to-results>See results ↓</a>`; }
+const cals = {};
+function reallyHTML(key) {
+  const bs = new Set(MOCK.brok.filter(a => sel.has(a.id)).map(a => a.id));
+  if (!bs.size) return `<div style="grid-column:1/-1"><h2>What really happened</h2><p>Tick Schwab or IBKR to compare your what-ifs with your real daily gains and losses.</p></div>`;
+  const c = cals[key] || (cals[key] = { mi: 1, day: null }), [y, m] = MOCK.months[c.mi], ms = monthStats(y, m, bs);
+  if (!c.day || !c.day.startsWith(iso(y, m, 1).slice(0, 7))) c.day = (m === 8 ? ms.best : ms.days[ms.days.length - 1]).date;
+  const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d[0]}<span class="rest">${d.slice(1)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="day blank"></div>`;
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) {
+    const t = status(y, m, d), date = iso(y, m, d);
+    if (t === "trade") { const v = dayFor(date, bs).total, a = Math.abs(v); cells += `<button type="button" class="day ${v >= 0 ? "up" : "down"} l${lvl(v)}${date === c.day ? " sel" : ""}" data-day="${key}|${date}" aria-pressed="${date === c.day}" aria-label="${nice(date)}: ${v >= 0 ? "gain" : "loss"} of ${money(a)}"><span class="dn">${d}</span><span class="amt">${v >= 0 ? "+" : "−"}<span class="cur">$</span>${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`; }
+    else if (t === "future") cells += `<div class="day future"><span class="dn">${d}</span></div>`;
+    else cells += `<div class="day off"${t === "holiday" ? ` title="Market closed: ${MOCK.holidays[date]}"` : ""}><span class="dn">${d}</span><span class="amt">${t === "holiday" ? "Closed" : ""}</span></div>`;
+  }
+  const dd = dayFor(c.day, bs), top = dd.moves[0], low = dd.moves[dd.moves.length - 1];
+  const sw = (k, a) => `<span class="sw2" style="background:rgba(var(--${k}-rgb),${a})"></span>`;
+  const sep = monthStats(2026, 8, bs), cc = compute(), md = cc.posB.reduce((s, p) => s + p.v1 - p.v0, 0);
+  return `<div><h2>What really happened</h2><p>Your what-ifs are easier to judge next to real days. Here's every trading day across ${MOCK.brok.filter(a => bs.has(a.id)).map(a => a.short).join(" and ")}: green for a gain, red for a loss.</p>
+      <div class="scale">${Math.abs(md) >= 1 ? `Your current what-if moves your investments <b>${signed(md)}</b>. In September, your biggest real day was <b>${signed(sep.best.total)}</b> and your worst <b>${signed(sep.worst.total)}</b>.` : `In September your investments finished <b>${signed(sep.total)}</b>: ${sep.up} up days, ${sep.down} down. Best ${nice(sep.best.date)} (${signed(sep.best.total)}), worst ${nice(sep.worst.date)} (${signed(sep.worst.total)}).`}</div></div>
+    <div class="cal-host"><div class="cal-head"><span class="tag brok">mock prices</span><div class="cal-nav"><button type="button" data-cal="${key}|-1" aria-label="Previous month" ${c.mi === 0 ? "disabled" : ""}>‹</button><span class="m">${MONTHS[m]} ${y}</span><button type="button" data-cal="${key}|1" aria-label="Next month" ${c.mi === MOCK.months.length - 1 ? "disabled" : ""}>›</button></div></div>
+      <div class="cal" role="group" aria-label="Daily gains and losses, ${MONTHS[m]} ${y}">${cells}</div>
+      <div class="cal-legend" aria-hidden="true">Loss ${sw("loss", .52)}${sw("loss", .36)}${sw("loss", .22)}${sw("loss", .10)}<span class="gap"></span>${sw("gain", .10)}${sw("gain", .22)}${sw("gain", .36)}${sw("gain", .52)} Gain<span class="gap"></span>dashed = market closed</div>
+      <div class="cal-day"><b>${nice(dd.date)}: ${sg(dd.total)}.</b> ${dd.total >= 0 ? `${top.sym} led (${sg(top.amt)}).` : `${low.sym} weighed most (${sg(low.amt)}).`}</div></div>`;
+}
+function pickerHTML() {
+  const allB = MOCK.bank.every(a => sel.has(a.id)), allK = MOCK.brok.every(a => sel.has(a.id)), anyB = MOCK.bank.some(a => sel.has(a.id)), anyK = MOCK.brok.some(a => sel.has(a.id));
+  const tot = MOCK.bank.filter(a => sel.has(a.id)).reduce((s, a) => s + a.bal, 0) + MOCK.brok.filter(a => sel.has(a.id)).reduce((s, a) => s + brokValue(a.id), 0);
+  const row = a => { const v = isBank(a.id) ? a.bal : brokValue(a.id), sub = isBank(a.id) ? `<small class="${gl(a.wk)}">${signed(a.wk)} 7d</small>` : (() => { const d = dayFor(MOCK.lastDataDay, new Set([a.id])).total; return `<small class="${gl(d)}">${signed(d)} Fri</small>`; })(); return `<label class="pk-row" title="${a.name}, ${a.inst} ${a.mask}"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""}><span class="nm">${a.name}</span><span class="amt">${money(v, 2)}${sub}</span></label>`; };
+  return `<div><div class="pk-title"><span class="tag bank">Bank</span> Mock Bank<span class="sum">${money(MOCK.bank.reduce((s, a) => s + a.bal, 0))}</span></div><div class="pk-rows">${MOCK.bank.map(row).join("")}</div></div>
+    <div><div class="pk-title"><span class="tag brok">Brokerage</span><span class="sum">${money(MOCK.brok.reduce((s, a) => s + brokValue(a.id), 0))}</span></div><div class="pk-rows">${MOCK.brok.map(row).join("")}</div></div>
+    <div class="pk-side"><div class="pk-quick"><button type="button" class="qbtn" data-quick="bank" aria-pressed="${allB && !anyK}">Bank only</button><button type="button" class="qbtn" data-quick="brok" aria-pressed="${allK && !anyB}">Brokerage only</button><button type="button" class="qbtn" data-quick="all" aria-pressed="${sel.size === ALL.length}">All</button></div><div class="pk-total">${sel.size} of ${ALL.length} in the lab<b>${money(tot)}</b></div></div>`;
+}
+function render(key, opts = {}) {
+  const r = $(`[data-root="${key}"]`), c = compute();
+  if (!opts.keepLevers) $("[data-levers]", r).innerHTML = leversHTML(key);
+  else LEVERS.forEach(lv => { const box = $(`#${key}-${lv.id}`)?.closest(".lever"); if (!box) return; box.classList.toggle("on", lv.type === "switch" ? !!L[lv.id] : L[lv.id] !== 0); const out = $("output", box); if (out) out.textContent = lv.fmt(L[lv.id]); const inp = $(`#${key}-${lv.id}`); if (lv.type === "slider") inp.setAttribute("aria-valuetext", lv.fmt(L[lv.id])); let eff = $(".eff", box); const e = lv.eff(); if (e) { if (!eff) { eff = document.createElement("div"); eff.className = "eff"; box.appendChild(eff); } eff.textContent = "→ " + e; } else if (eff) eff.remove(); });
+  $("[data-picker]", r).innerHTML = pickerHTML();
+  $("[data-presets]", r).innerHTML = `<span class="lbl">Try one:</span>` + PRESETS.map(p => `<button type="button" class="preset${p.reset ? " reset" : ""}" data-preset="${key}|${p.id}">${p.t}</button>`).join("");
+  $("[data-results]", r).innerHTML = sel.size ? resultsHTML(c) : `<div class="res-h"><div class="k">No accounts</div><p>Tick at least one account above.</p></div>`;
+  $("[data-mini]", r).innerHTML = miniHTML(c);
+  $("[data-really]", r).innerHTML = reallyHTML(key);
+}
+function renderAll(opts) { render("land", opts); if ($("#demo").classList.contains("open")) render("demo", opts); }
+
+/* ---------- events ---------- */
+document.addEventListener("input", e => {
+  const lv = e.target.closest("[data-lever]");
+  if (lv && lv.type === "range") { L[lv.dataset.lever] = +lv.value; renderAll({ keepLevers: true }); }
+});
+document.addEventListener("change", e => {
+  const lv = e.target.closest("[data-lever]");
+  if (lv && lv.type === "checkbox") { L[lv.dataset.lever] = lv.checked; renderAll({ keepLevers: true }); return; }
+  const c = e.target.closest("[data-acct]");
+  if (c) { c.checked ? sel.add(c.dataset.acct) : sel.delete(c.dataset.acct); const id = c.dataset.acct, key = c.closest("[data-root]").dataset.root; renderAll(); const again = $(`[data-root="${key}"] [data-acct="${id}"]`); if (again) again.focus(); }
+});
+document.addEventListener("click", e => {
+  const q = e.target.closest("[data-quick]");
+  if (q) { sel.clear(); ALL.forEach(a => { if (q.dataset.quick === "all" || (q.dataset.quick === "bank") === isBank(a.id)) sel.add(a.id); }); renderAll(); return; }
+  const p = e.target.closest("[data-preset]");
+  if (p) { const [k, id] = p.dataset.preset.split("|"), pr = PRESETS.find(x => x.id === id); Object.assign(L, L0); Object.assign(L, pr.set); renderAll(); const b = $(`[data-root="${k}"] [data-preset="${k}|${id}"]`); if (b) b.focus(); return; }
+  const cn = e.target.closest("[data-cal]");
+  if (cn) { const [k, d] = cn.dataset.cal.split("|"); cals[k].mi = Math.max(0, Math.min(MOCK.months.length - 1, cals[k].mi + +d)); cals[k].day = null; $(`[data-root="${k}"] [data-really]`).innerHTML = reallyHTML(k); return; }
+  const dy = e.target.closest("[data-day]");
+  if (dy) { const [k, d] = dy.dataset.day.split("|"); cals[k].day = d; $(`[data-root="${k}"] [data-really]`).innerHTML = reallyHTML(k); const f = $(`[data-root="${k}"] [data-day="${k}|${d}"]`); if (f) f.focus(); return; }
+  const tr = e.target.closest("[data-to-results]");
+  if (tr) { e.preventDefault(); const k = tr.closest("[data-root]").dataset.root; $(`#${k}-results`).scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+
+/* ---------- demo: type a what-if ---------- */
+$("#ask-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#ask-text").value.toLowerCase().trim(); if (!t) return;
+  const num = +(t.match(/(\d+(\.\d+)?)/) || [])[1] || 0, down = /fall|drop|down|lose|crash|decline|−|-\d/.test(t);
+  let msg = "";
+  if (/tech|apple|nvidia|microsoft/.test(t)) { L.tech = Math.max(-20, Math.min(20, (down ? -1 : 1) * (num || 10))); msg = `Set tech companies to ${L.tech > 0 ? "+" : "−"}${Math.abs(L.tech)}%.`; }
+  else if (/market|stock|invest.*(fall|drop|rise|up|down)/.test(t)) { L.market = Math.max(-20, Math.min(20, (down ? -1 : 1) * (num || 10))); msg = `Set the stock market to ${L.market > 0 ? "+" : "−"}${Math.abs(L.market)}%.`; }
+  else if (/sav/.test(t)) { L.save = true; msg = "Turned on the $500 savings transfer."; }
+  else if (/eat|dining|restaurant/.test(t)) { L.dining = true; msg = "Set dining back to your usual."; }
+  else if (/pay ?check|payday|salary/.test(t)) { L.pay = true; msg = "Added your next paycheck."; }
+  else if (/card|bill/.test(t)) { L.card = true; msg = "Paid the card bill in full."; }
+  else if (/invest|move/.test(t) && num) { L.invest = Math.min(4000, Math.round(num / 250) * 250); msg = `Moved ${money(L.invest)} into investments.`; }
+  else if (/reset|start over|today/.test(t)) { Object.assign(L, L0); msg = "Back to today."; }
+  $("#ask-r").innerHTML = `<p class="ask-r">${msg ? `<b>✦</b> ${msg} The results below have updated.` : "This prototype only understands a few scripted what-ifs: stocks or tech rising/falling by a %, restarting savings, eating out like usual, the next paycheck, paying the card bill, or moving money into investments."} <span class="mock">SCRIPTED</span></p>`;
+  renderAll(); $("#ask-text").value = "";
+});
+let lastFocus = null;
+function openDemo() { lastFocus = document.activeElement; $("#demo").classList.add("open"); document.body.style.overflow = "hidden"; render("demo"); $("#demo-close").focus(); }
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#demo").classList.contains("open")) closeDemo(); });
+
+render("land");
+if (location.hash === "#demo") openDemo();
+</script>
+</body>
+</html>

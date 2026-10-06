@@ -337,6 +337,25 @@
           </ul>
           <p>Tech share is computed, not scripted, and in this mock data it held steady (52.9%), so it is folded as unchanged rather than claimed as a change. The demo adds a scripted “find a line” box and n/p keyboard shortcuts.</p>
         </li>
+        <li>
+          <div class="when">Stage 15 · Feedback on v13 → v14</div>
+          <h4>Comparing what changed is useful; a code-review look is wrong for this audience</h4>
+          <p><b>Your review of v13:</b> you like the idea of comparing what changed, but the presentation feels too much like a GitHub diff. The target users want to understand their finances, and we shouldn't assume they're familiar with coding tools. v13 stays in the gallery with that distinction recorded: <b>the comparison idea is useful; this presentation doesn't fit the audience.</b></p>
+          <p><b>Your request for v14:</b> move on to another direction, The What-If Lab, keeping the target users in mind and making the experience understandable without technical knowledge.</p>
+        </li>
+        <li>
+          <div class="when">Stage 15 · Decision → v14</div>
+          <h4>“The What-If Lab” built, in everyday language</h4>
+          <p><b>How v14 responds:</b> the visitor tries what-ifs instead of reading a dashboard.</p>
+          <ul>
+            <li><b>Switches and sliders, grouped plainly</b> as “Everyday money,” “Coming up,” “Investing” and “The stock market.” Each lever says what it does in a sentence.</li>
+            <li><b>One results panel</b> updates live: net worth before and after, checking, savings, investments, card balance owed and cash cushion, plus a “where your money sits” bar.</li>
+            <li><b>A plain-English explanation</b> of why things changed. For example: “Restarting the savings transfer moves $500 from checking to savings. Your total doesn't change,” or, for a 10% market drop, which holdings move the most dollars and which tend to swing more than the market.</li>
+            <li><b>Starting point:</b> “Where you stand today,” plus ready-made what-ifs (back to usual habits, next payday, a rough month for stocks, tech companies fall 15%, reset).</li>
+            <li><b>Scale:</b> “What really happened” puts the September gains calendar beside the what-ifs.</li>
+          </ul>
+          <p><b>Following your v13 note:</b> no technical vocabulary. Holdings are described by name (“Nvidia,” “a fund of the whole US market”), and every result is labeled an illustration, not a prediction or advice. The demo adds a scripted “What if…” box (e.g. “what if stocks fall 15%?”).</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -445,7 +464,14 @@ const VERSIONS = [
     title: "The Diff",
     stage: "explore",
     date: "2026-10-06",
-    note: "<b>Bolder direction 3, chosen by you.</b> The page is organized by what changed. One document lines up every account, compared September vs. August or “since you last checked,” line by line, side by side or unified. Changed lines are highlighted with the difference; unchanged lines fold away. The AI leaves review-style comments on the lines that matter (dining, the skipped savings transfer). The <b>gains calendar</b> appears as August and September side by side. A summary of changes and net-worth difference sits on top; next/previous buttons jump between changes. v01 account picker; light/dark; all mock."
+    note: "<b>Bolder direction 3, chosen by you.</b> The page is organized by what changed. One document lines up every account, compared September vs. August or “since you last checked,” line by line, side by side or unified. Changed lines are highlighted with the difference; unchanged lines fold away. The AI leaves review-style comments on the lines that matter (dining, the skipped savings transfer). The <b>gains calendar</b> appears as August and September side by side. A summary of changes and net-worth difference sits on top; next/previous buttons jump between changes. v01 account picker; light/dark; all mock. <b>Your review:</b> the comparison idea is useful, but the presentation feels too much like a GitHub diff. The target users want to understand their finances and shouldn't be assumed to know coding tools."
+  },
+  {
+    v: "v14",
+    title: "The What-If Lab",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Bolder direction 4, chosen by you, written for non-technical users.</b> The page is organized around levers. Plain-language switches and sliders (eat out like usual, restart the $500 savings transfer, next paycheck, pay the card bill, move money into investments, what if the stock market or tech companies move) update one results panel live: net worth, checking, savings, investments, card and cash cushion before and after, a ‘where your money sits’ bar, and a plain-English explanation. Ready-made what-ifs give a starting point. The <b>gains calendar</b> shows what really happened in September for scale. v01 account picker; light/dark; illustrations, not advice; all mock."
   }
 ];
 
