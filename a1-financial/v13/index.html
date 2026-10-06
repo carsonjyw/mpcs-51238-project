@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v13 · The Diff — Ledgerline</title>
+<meta name="description" content="v13 — The Diff: one document comparing last month with this month (or since you last checked) across bank and brokerage accounts, line by line. Unchanged lines fold away; the AI comments on the changes that matter. All data is mock.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #f6f8fa;
+    --ink: #1f2328;
+    --muted: #59636e;
+    --faint: #8c959f;
+    --line: #d1d9e0;
+    --line-2: #e6eaef;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --add-bg: #e6ffec; --add-strong: #abf2bc; --add-ink: #1a7f37;
+    --del-bg: #ffebe9; --del-strong: #ffcecb; --del-ink: #cf222e;
+    --hunk: #ddf4ff; --hunk-ink: #0550ae;
+    --bank: #1773bd; --bank-soft: #e2eff9;
+    --brok: #7646c6; --brok-soft: #eee7fa;
+    --flag: #bf5b00;
+    --gain: #1a7f37; --loss: #cf222e;
+    --gain-rgb: 26, 127, 55; --loss-rgb: 207, 34, 46;
+    --mock-ink: #84520a; --mock-bg: #fff0c6;
+    --shadow: 0 1px 2px rgba(31,35,40,.06), 0 8px 24px rgba(31,35,40,.06);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --surface: #151b23;
+    --surface-2: #1b222c;
+    --ink: #e6edf3;
+    --muted: #9198a1;
+    --faint: #6e7681;
+    --line: #30363d;
+    --line-2: #262c34;
+    --accent: #4493f8;
+    --accent-soft: #12263f;
+    --add-bg: #12261e; --add-strong: #1f4a2c; --add-ink: #3fb950;
+    --del-bg: #25171c; --del-strong: #4d1f24; --del-ink: #f85149;
+    --hunk: #12263f; --hunk-ink: #79c0ff;
+    --bank: #66b4f2; --bank-soft: #16293b;
+    --brok: #b99bff; --brok-soft: #2b2145;
+    --flag: #f0a33f;
+    --gain: #3fb950; --loss: #f85149;
+    --gain-rgb: 63, 185, 80; --loss-rgb: 248, 81, 73;
+    --mock-ink: #ffd88a; --mock-bg: #3a2c0d;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .n { font-variant-numeric: tabular-nums; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--mock-ink); background: var(--mock-bg); padding: 2px 6px; border-radius: 4px; vertical-align: 1px; white-space: nowrap; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .tag { font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; white-space: nowrap; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .tag.bank { background: var(--bank-soft); color: var(--bank); }
+  .tag.brok { background: var(--brok-soft); color: var(--brok); }
+
+  /* ---------- chrome ---------- */
+  .mockbar { background: var(--mock-bg); color: var(--mock-ink); font-size: 13.5px; text-align: center; padding: 7px 16px; }
+  header.top { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; height: 58px; }
+  .back { font-size: 14px; text-decoration: none; color: var(--muted); padding: 5px 12px; border: 1px solid var(--line); border-radius: 6px; white-space: nowrap; background: var(--surface); }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .brand .mark { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; font: 800 13px ui-monospace, Menlo, monospace; background: linear-gradient(135deg, var(--del-strong) 50%, var(--add-strong) 50%); color: var(--ink); }
+  .brand small { font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; font-weight: 600; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 3px; cursor: pointer; font-size: 13px; }
+  .theme-btn > span { padding: 3px 10px; border-radius: 4px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--ink); color: var(--bg); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 15px; cursor: pointer; border: 1px solid rgba(31,35,40,.15); text-decoration: none; white-space: nowrap; background: #1f883d; color: #fff; }
+  .btn:hover { filter: brightness(1.06); }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
+  .btn.sm { padding: 5px 12px; font-size: 13.5px; }
+
+  /* ---------- intro ---------- */
+  .intro { padding: 30px 0 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end; }
+  .intro h1 { font-size: clamp(28px, 4.2vw, 44px); line-height: 1.08; letter-spacing: -.03em; margin: 0 0 8px; }
+  .intro h1 .del { background: var(--del-strong); text-decoration: line-through; text-decoration-thickness: 3px; padding: 0 4px; border-radius: 4px; }
+  .intro h1 .add { background: var(--add-strong); padding: 0 4px; border-radius: 4px; }
+  .intro p { margin: 0; color: var(--muted); font-size: 17px; max-width: 66ch; }
+
+  /* ---------- compare bar ---------- */
+  .compare { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 8px 8px 0 0; padding: 10px 14px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 5px 12px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  [data-theme="dark"] .seg button[aria-pressed="true"] { color: #0d1117; }
+  .compare .lbl { font-size: 13px; color: var(--muted); }
+  .compare .range { font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; }
+
+  /* summary: the clear starting point */
+  .summary { background: var(--surface); border: 1px solid var(--line); border-top: 0; padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+  .summary .ai { font-size: 16.5px; }
+  .summary .ai .who { font-size: 11.5px; font-weight: 800; letter-spacing: .05em; color: var(--accent); margin-bottom: 2px; }
+  .stat-line { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; font: 13.5px ui-monospace, Menlo, monospace; }
+  .stat-line span { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); }
+  .stat-line .a { color: var(--add-ink); } .stat-line .d { color: var(--del-ink); }
+  .bigdiff { text-align: right; }
+  .bigdiff .l { font-size: 13px; color: var(--muted); }
+  .bigdiff .v { font: 800 30px ui-monospace, Menlo, monospace; letter-spacing: -.02em; }
+  .bigdiff .s { font: 13px ui-monospace, Menlo, monospace; color: var(--muted); }
+
+  /* account picker (v01 contents) */
+  .files { background: var(--surface); border: 1px solid var(--line); border-top: 0; padding: 10px 14px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) auto; gap: 14px; align-items: start; }
+  .pk-title { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 0 0 6px; }
+  .pk-title .sum { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 650; }
+  .pk-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+  .pk-row { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 8px; align-items: center; padding: 6px 9px; border-radius: 6px; cursor: pointer; font-size: 13.5px; border: 1px solid var(--line); background: var(--surface-2); }
+  .pk-row:not(:has(input:checked)) { opacity: .55; background: transparent; }
+  .pk-row input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; grid-row: span 2; }
+  .pk-row .nm { min-width: 0; font-weight: 600; line-height: 1.25; }
+  .pk-row .amt { font: 650 12.5px ui-monospace, Menlo, monospace; white-space: nowrap; }
+  .pk-row .amt small { font-weight: 500; font-size: 11.5px; margin-left: 6px; }
+  .pk-side { display: grid; gap: 8px; justify-items: end; }
+  .pk-quick { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+  .qbtn { font-size: 12.5px; font-weight: 650; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  .qbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pk-total { font-size: 13px; color: var(--muted); text-align: right; }
+  .pk-total b { display: block; color: var(--ink); font: 800 17px ui-monospace, Menlo, monospace; }
+
+  /* toolbar */
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--surface-2); border: 1px solid var(--line); border-top: 0; padding: 8px 14px; font-size: 13.5px; color: var(--muted); position: sticky; top: 58px; z-index: 20; }
+
+  /* ---------- the diff document ---------- */
+  .doc { border: 1px solid var(--line); border-top: 0; border-radius: 0 0 8px 8px; background: var(--surface); overflow: hidden; margin-bottom: 26px; }
+  .file { border-top: 1px solid var(--line); }
+  .file:first-child { border-top: 0; }
+  .file-h { display: flex; align-items: center; gap: 8px; padding: 9px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 650; position: relative; }
+  .file-h .cnt { font: 12.5px ui-monospace, Menlo, monospace; margin-left: auto; }
+  .file-h .cnt .a { color: var(--add-ink); } .file-h .cnt .d { color: var(--del-ink); }
+  .bar5 { display: inline-flex; gap: 2px; margin-left: 6px; vertical-align: -1px; }
+  .bar5 i { width: 8px; height: 8px; border-radius: 1px; background: var(--line); }
+  .bar5 i.a { background: var(--add-ink); } .bar5 i.d { background: var(--del-ink); }
+  .hunk { font: 12.5px ui-monospace, Menlo, monospace; color: var(--hunk-ink); background: var(--hunk); padding: 4px 14px; }
+
+  /* split view: label | before | after | change */
+  .rowd { display: grid; grid-template-columns: 26px minmax(0, 1.25fr) minmax(0, 1fr) 26px minmax(0, 1fr) minmax(90px, auto); font: 14px/1.45 ui-monospace, "SF Mono", Menlo, Consolas, monospace; border-bottom: 1px solid var(--line-2); scroll-margin-top: 120px; }
+  .rowd > div { padding: 6px 10px; min-width: 0; }
+  .rowd .g { text-align: center; color: var(--faint); padding-left: 0; padding-right: 0; user-select: none; }
+  .rowd .lab { font-family: -apple-system, "Segoe UI", sans-serif; font-size: 14.5px; }
+  .rowd .lab small { display: block; color: var(--faint); font-size: 12px; }
+  .rowd .old, .rowd .new { text-align: right; white-space: nowrap; }
+  .rowd .chg { text-align: right; white-space: nowrap; font-weight: 700; }
+  .rowd.up .g1, .rowd.up .old, .rowd.dn .g1, .rowd.dn .old { background: var(--del-bg); }
+  .rowd.up .g2, .rowd.up .new, .rowd.up .chg, .rowd.dn .g2, .rowd.dn .new, .rowd.dn .chg { background: var(--add-bg); }
+  .rowd.up .old em, .rowd.dn .old em { background: var(--del-strong); font-style: normal; border-radius: 3px; padding: 0 2px; }
+  .rowd.up .new em, .rowd.dn .new em { background: var(--add-strong); font-style: normal; border-radius: 3px; padding: 0 2px; }
+  .rowd .g1 { color: var(--del-ink); } .rowd .g2 { color: var(--add-ink); }
+  .rowd.same { color: var(--muted); }
+  .rowd.focus { box-shadow: inset 4px 0 0 var(--accent); }
+  .colhead { display: grid; grid-template-columns: 26px minmax(0, 1.25fr) minmax(0, 1fr) 26px minmax(0, 1fr) minmax(90px, auto); font: 700 11.5px -apple-system, "Segoe UI", sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line); background: var(--surface); }
+  .colhead > div { padding: 6px 10px; }
+  .colhead .r { text-align: right; }
+  .expander { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line-2); background: var(--surface-2); color: var(--accent); padding: 5px 14px; cursor: pointer; font: 12.5px ui-monospace, Menlo, monospace; }
+  .expander:hover { background: var(--hunk); }
+
+  /* unified view (also used on small screens) */
+  .unified .rowd, .unified .colhead { display: none; }
+  .urow { display: none; }
+  .unified .urow { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; font: 14px/1.45 ui-monospace, Menlo, monospace; border-bottom: 1px solid var(--line-2); scroll-margin-top: 120px; }
+  .urow > div { padding: 5px 10px; min-width: 0; }
+  .urow .g { text-align: center; padding: 5px 0; user-select: none; }
+  .urow.del { background: var(--del-bg); } .urow.del .g { color: var(--del-ink); }
+  .urow.add { background: var(--add-bg); } .urow.add .g { color: var(--add-ink); }
+  .urow.same { color: var(--muted); }
+  .urow .lab { font-family: -apple-system, "Segoe UI", sans-serif; }
+  .urow .v { text-align: right; white-space: nowrap; }
+  .urow.add .v b { color: var(--add-ink); margin-left: 8px; }
+
+  /* AI review comments */
+  .thread { margin: 8px 14px 10px 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .thread-h { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .thread-h .av { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 800; }
+  [data-theme="dark"] .thread-h .av { color: #0d1117; }
+  .thread-h b { color: var(--ink); }
+  .thread-h .hide { margin-left: auto; border: 0; background: none; color: var(--accent); cursor: pointer; font-size: 12.5px; }
+  .thread-b { padding: 10px 12px; font-size: 15px; }
+  .thread.important { border-color: var(--flag); }
+  .thread.important .thread-h::after { content: "worth a look"; font-size: 11px; font-weight: 800; color: var(--flag); border: 1px solid var(--flag); border-radius: 999px; padding: 0 7px; }
+  .thread.collapsed .thread-b { display: none; }
+
+  /* calendars side by side (the gains calendar, before vs after) */
+  .cal-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-bottom: 1px solid var(--line-2); }
+  .cal-pair > div { padding: 12px 14px; }
+  .cal-pair > div:first-child { background: color-mix(in srgb, var(--del-bg) 50%, var(--surface)); border-right: 1px solid var(--line-2); }
+  .cal-pair > div:last-child { background: color-mix(in srgb, var(--add-bg) 50%, var(--surface)); }
+  .cal-pair h4 { margin: 0 0 6px; font-size: 13.5px; display: flex; gap: 8px; align-items: baseline; }
+  .cal-pair h4 .t { margin-left: auto; font: 700 13px ui-monospace, Menlo, monospace; }
+  .cal-host { container: cal / inline-size; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .dow { font-size: 10.5px; font-weight: 700; color: var(--faint); text-align: center; }
+  .day { min-width: 0; overflow: hidden; min-height: 42px; border-radius: 5px; padding: 3px 5px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1px solid transparent; background: var(--surface-2); font: 11.5px ui-monospace, Menlo, monospace; }
+  button.day { cursor: pointer; }
+  button.day:hover { border-color: var(--ink); }
+  .day .dn, .day .amt { display: block; max-width: 100%; overflow: hidden; }
+  .day .dn { font-size: 10px; color: var(--muted); }
+  .day .amt { font-weight: 800; white-space: nowrap; letter-spacing: -.03em; }
+  .day.up .amt { color: var(--gain); } .day.down .amt { color: var(--loss); }
+  .day.up.l1 { background: rgba(var(--gain-rgb), .10); } .day.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .day.up.l3 { background: rgba(var(--gain-rgb), .36); } .day.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .day.down.l1 { background: rgba(var(--loss-rgb), .10); } .day.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .day.down.l3 { background: rgba(var(--loss-rgb), .36); } .day.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .day.l3 .amt, .day.l4 .amt { color: var(--ink); }
+  .day.off { background: transparent; border: 1px dashed var(--line); }
+  .day.off .amt { display: none; }
+  .day.blank { background: transparent; }
+  .day.future { background: transparent; border: 1px dotted var(--line); }
+  .day.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  @container cal (max-width: 330px) { .cal { gap: 2px; } .dow .rest { display: none; } .day { min-height: 34px; padding: 2px; } .day .amt { font-size: 9.5px; } .day .amt .cur { display: none; } }
+  .cal-day { font: 13px -apple-system, "Segoe UI", sans-serif; margin-top: 6px; color: var(--muted); }
+  .cal-legend { font: 11.5px -apple-system, "Segoe UI", sans-serif; color: var(--muted); margin-top: 6px; }
+
+  /* ---------- below ---------- */
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 0 0 20px; }
+  .how > div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  .how b { display: block; margin-bottom: 4px; font-size: 16px; }
+  .how p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .final { text-align: center; padding: 30px 20px 50px; }
+  .final h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .final p { color: var(--muted); margin: 0 0 18px; }
+  footer { border-top: 1px solid var(--line); padding: 18px 0 34px; font-size: 13px; color: var(--faint); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  /* ---------- demo ---------- */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+  .demo-body { flex: 1; overflow-y: auto; padding: 14px 0 30px; }
+  .demo .toolbar { top: 0; }
+  .find { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px; margin-bottom: 12px; align-items: center; }
+  .find input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 15px; padding: 4px 6px; outline: none; }
+  .find-r { margin: -4px 0 12px; font-size: 14px; color: var(--muted); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px) {
+    .files { grid-template-columns: minmax(0, 1fr); }
+    .pk-side { justify-items: start; grid-template-columns: auto auto; align-items: center; justify-content: space-between; }
+    .summary { grid-template-columns: 1fr; }
+    .bigdiff { text-align: left; }
+    .cal-pair { grid-template-columns: minmax(0, 1fr); }
+    .cal-pair > div:first-child { border-right: 0; border-bottom: 1px solid var(--line-2); }
+    .view-toggle { display: none !important; }
+  }
+  @media (max-width: 680px) { .intro { grid-template-columns: 1fr; } .how { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) {
+    .hide-sm, .brand small { display: none; }
+    header.top .wrap { gap: 8px; }
+    header.top .btn { padding: 7px 12px; font-size: 14px; }
+    .pk-rows { grid-template-columns: minmax(0, 1fr); }
+    .pk-side { grid-template-columns: 1fr; }
+    .thread { margin-left: 10px; margin-right: 10px; }
+    .unified .urow { font-size: 13px; }
+    .toolbar { position: static; }
+  }
+  @media (max-width: 420px) { header.top .btn { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note"><b>Design prototype · v13.</b> Every account, balance, change and AI comment here is <b>mock data</b>. No real bank or brokerage connection is implemented.</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <a class="brand" href="#top"><span class="mark">±</span> Ledgerline <small>v13</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <section class="intro">
+    <div>
+      <h1>See <span class="add">what changed</span>.<br>Skip <span class="del">what didn't</span>.</h1>
+      <p>Ledgerline lines up your bank and brokerage accounts in one document and compares them with last month, or with the last time you checked. Unchanged lines fold away, changed lines show the difference, and the AI comments on the ones that matter.</p>
+    </div>
+    <button class="btn" data-open-demo>View Demo →</button>
+  </section>
+
+  <div data-root="land">
+    <div class="compare" data-compare></div>
+    <div class="summary" data-summary aria-live="polite"></div>
+    <div class="files" data-picker aria-label="Accounts in this comparison"></div>
+    <div class="toolbar" data-toolbar></div>
+    <div class="doc" data-doc></div>
+  </div>
+
+  <section class="how" aria-label="How the diff works">
+    <div><b>One document, every account</b><p>Cash, spending and investments line up in one place, so a change in one sits right above the change it caused in another.</p></div>
+    <div><b>Only what moved</b><p>Lines that didn't change fold away. Open them any time, but they stay out of your way.</p></div>
+    <div><b>Comments where they matter</b><p>The AI leaves short notes on the lines worth explaining, the way a reviewer comments on a document.</p></div>
+  </section>
+</main>
+
+<section class="final">
+  <h2>Review the full demo diff</h2>
+  <p>Switch comparisons, filter accounts, jump between changes and search for any line. Everything is mock data.</p>
+  <button class="btn" data-open-demo>View Demo →</button>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Ledgerline is a fictional product concept. v13 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<!-- ============ DEMO ============ -->
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline diff demo">
+  <div class="demo-top">
+    <span class="brand"><span class="mark">±</span><span class="hide-sm">Ledgerline diff</span></span>
+    <span class="mock">DEMO · ALL DATA IS MOCK</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <button class="btn ghost sm" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-body">
+    <div class="wrap" data-root="demo">
+      <form class="find" id="find-form"><span class="tag" style="background:var(--accent-soft);color:var(--accent)">✦ Find</span><input id="find-text" type="text" placeholder="Find a line, e.g. “dining”, “savings”, “NVDA”, “checking”" aria-label="Find a line" autocomplete="off"><button class="btn sm" type="submit">Find</button></form>
+      <div id="find-r"></div>
+      <div class="compare" data-compare></div>
+      <div class="summary" data-summary aria-live="polite"></div>
+      <div class="files" data-picker aria-label="Accounts in this comparison"></div>
+      <div class="toolbar" data-toolbar></div>
+      <div class="doc" data-doc></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v12.
+   Month-end balances and August spending are mock values.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", inst: "Schwab (mock)", mask: "••5512", short: "Schwab", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", inst: "IBKR (mock)", mask: "U•••908", short: "IBKR", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  acct: "sch", qty: 120, px: 287.40, vol: 0.8, tech: false, desc: "US total market fund" },
+    { sym: "AAPL", acct: "sch", qty: 45,  px: 228.10, vol: 1.4, tech: true,  desc: "Apple" },
+    { sym: "MSFT", acct: "sch", qty: 30,  px: 431.20, vol: 1.2, tech: true,  desc: "Microsoft" },
+    { sym: "NVDA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8, tech: true,  desc: "Nvidia" },
+    { sym: "TSLA", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2, tech: false, desc: "Tesla" },
+    { sym: "QQQ",  acct: "ibk", qty: 25,  px: 489.50, vol: 1.1, tech: true,  desc: "Nasdaq-100 fund" }
+  ],
+  // month-end balances (mock)
+  balances: { chk: { aug: 7594.85, sep: 9324.85, oct1: 7587.55 }, sav: { aug: 23680, sep: 23680, oct1: 23680 }, cc: { aug: -1250.00, sep: -1236.40, oct1: -1236.40 } },
+  // money in and out, August vs September (mock)
+  flows: {
+    income: { aug: 6850, sep: 6850 },
+    spend: [
+      { c: "Housing", aug: 2100, sep: 2100, via: "chk" }, { c: "Groceries", aug: 668, sep: 640, via: "cc" },
+      { c: "Dining", aug: 498, sep: 612, via: "cc" }, { c: "Shopping", aug: 610, sep: 520, via: "cc" },
+      { c: "Transport", aug: 365, sep: 380, via: "cc" }, { c: "Utilities", aug: 308, sep: 290, via: "chk" },
+      { c: "Other", aug: 841, sep: 578, via: "cc" }
+    ],
+    savingsTransfer: { aug: 500, sep: 0 }
+  },
+  since: [ // since Thu Oct 1 close (mock)
+    { acct: "chk", t: "Paycheck", amt: 3425 }, { acct: "chk", t: "Rent, October", amt: -2100 }, { acct: "chk", t: "Transfer to savings", amt: -500 }, { acct: "sav", t: "Transfer from checking", amt: 500 }
+  ],
+  holidays: { "2026-09-07": "Labor Day" },
+  lastDataDay: "2026-10-02"
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 2) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 2) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const gl = n => (n >= 0 ? "gain" : "loss");
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const nice = s => { const [y, m, d] = s.split("-").map(Number); return `${DOW[new Date(y, m - 1, d).getDay()]}, ${MONTHS[m - 1].slice(0, 3)} ${d}`; };
+
+MOCK.positions.forEach(p => p.val = p.qty * p.px);
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const brokValue = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0) + MOCK.brok.find(a => a.id === id).cash;
+
+/* ---------- deterministic mock daily P&L (same generator as v02–v12) ---------- */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, bs) { const moves = rawDay(date).filter(m => bs.has(m.acct)).sort((a, b) => b.amt - a.amt); return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0) }; }
+function status(y, m, d) { const date = iso(y, m, d), dw = new Date(y, m, d).getDay(); if (date > MOCK.lastDataDay) return "future"; if (dw === 0 || dw === 6) return "weekend"; if (MOCK.holidays[date]) return "holiday"; return "trade"; }
+function monthStats(y, m, bs) {
+  const days = []; for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) if (status(y, m, d) === "trade") days.push(dayFor(iso(y, m, d), bs));
+  const sorted = [...days].sort((a, b) => b.total - a.total), bySym = {};
+  days.forEach(dd => dd.moves.forEach(mv => bySym[mv.sym] = (bySym[mv.sym] || 0) + mv.amt));
+  return { days, total: days.reduce((s, x) => s + x.total, 0), up: days.filter(x => x.total >= 0).length, down: days.filter(x => x.total < 0).length, best: sorted[0], worst: sorted[sorted.length - 1], bySym };
+}
+// Holding values at month ends, derived from today's (mock) values minus the daily moves since
+const ALLB = new Set(["sch", "ibk"]);
+const OCT = ["2026-10-01", "2026-10-02"].map(d => rawDay(d));
+const SEPM = monthStats(2026, 8, ALLB);
+const VAL = {}; MOCK.positions.forEach(p => {
+  const oct = OCT.reduce((s, day) => s + day.find(m => m.sym === p.sym).amt, 0), oct1 = OCT[0].find(m => m.sym === p.sym).amt;
+  VAL[p.sym] = { now: p.val, sep: p.val - oct, oct1: p.val - OCT[1].find(m => m.sym === p.sym).amt, aug: p.val - oct - SEPM.bySym[p.sym] };
+});
+
+/* ---------- selection & mode ---------- */
+const sel = new Set(ALL.map(a => a.id));
+const st = { land: { mode: "month", view: "split", open: new Set(), hidden: new Set() }, demo: { mode: "month", view: "split", open: new Set(), hidden: new Set(), focus: -1 } };
+const MODES = {
+  month: { label: "September vs. August", a: "Aug 31", b: "Sep 30", short: ["Aug", "Sep"] },
+  since: { label: "Since you last checked", a: "Thu, Oct 1", b: "Today, Oct 6", short: ["Oct 1", "Now"] }
+};
+
+/* =========================================================
+   BUILD THE DIFF: files → lines (label, before, after, comment)
+   ========================================================= */
+function build(mode) {
+  const files = [], bs = new Set(MOCK.brok.filter(a => sel.has(a.id)).map(a => a.id)), M = mode === "month";
+  const k = M ? ["aug", "sep"] : ["oct1", "now"];
+  const bal = id => { const b = MOCK.balances[id]; return M ? [b.aug, b.sep] : [b.oct1, MOCK.bank.find(a => a.id === id).bal]; };
+
+  // 1. Cash balances
+  const cashLines = MOCK.bank.filter(a => sel.has(a.id)).map(a => {
+    const [x, y] = bal(a.id), L = { id: "bal-" + a.id, label: a.name, sub: `${a.inst} ${a.mask}`, a: x, b: y };
+    if (a.id === "chk") L.comment = M ? { imp: false, t: `Up <b>$1,730</b>, exactly what you kept from September's income. With no transfer to savings this month, it all stayed here.` } : { imp: false, t: `Paycheck in (+$3,425), then rent (−$2,100) and $500 to savings. Net <b>+$825</b>.` };
+    if (a.id === "sav" && M) L.note0 = "No change: September's transfer didn't happen (see Money in & out).";
+    if (a.id === "sav" && !M) L.comment = { imp: false, t: `The automatic $500 transfer is back after skipping September.` };
+    return L;
+  });
+  if (cashLines.length) files.push({ id: "cash", title: "Cash", tag: "bank", tagText: "Mock Bank", hunk: `@@ balances · ${MODES[mode].a} → ${MODES[mode].b} @@`, lines: cashLines });
+
+  // 2. Money in & out (month mode) / activity (since mode)
+  if (M && sel.has("chk")) {
+    const spend = MOCK.flows.spend.filter(c => sel.has(c.via)), out = [];
+    out.push({ id: "income", label: "Income", sub: "two paychecks", a: 6850, b: 6850 });
+    spend.forEach(c => {
+      const L = { id: "sp-" + c.c.toLowerCase(), label: c.c, sub: c.via === "chk" ? "from checking" : "on the Rewards Card", a: c.aug, b: c.sep, spend: true };
+      if (c.c === "Dining") L.comment = { imp: true, t: `Up <b>$114</b> from August and $94 over your six-month average ($518). Seven weekend meals add up to $570.60; weekday coffee is the rest.` };
+      if (c.c === "Other") L.comment = { imp: false, t: `Down $263: August included a one-off $240 annual membership renewal (mock). September was a normal month here.` };
+      out.push(L);
+    });
+    const spA = spend.reduce((s, c) => s + c.aug, 0), spB = spend.reduce((s, c) => s + c.sep, 0);
+    if (sel.has("cc")) out.push({ id: "kept", label: "Kept", sub: "income minus spending", a: 6850 - spA, b: 6850 - spB, comment: { imp: false, t: `You kept <b>$270 more</b> than in August, mostly from lower shopping and “other” spending, even with dining up.` } });
+    if (sel.has("sav")) out.push({ id: "xfer", label: "Transfer to savings", sub: "automatic, on the 2nd", a: 500, b: 0, invertGood: true, comment: { imp: true, t: `<b>Skipped in September.</b> It usually runs on the 2nd. It resumed on Oct 2, so October is back to normal.` } });
+    files.push({ id: "flows", title: "Money in & out", tag: "bank", tagText: "checking + card", hunk: "@@ September vs. August totals @@", lines: out });
+  }
+  if (!M) {
+    const ev = MOCK.since.filter(e => sel.has(e.acct));
+    if (ev.length) files.push({ id: "flows", title: "New activity", tag: "bank", tagText: "since Oct 1", hunk: "@@ added since Thu, Oct 1 @@", lines: ev.map((e, i) => ({ id: "ev" + i, label: e.t, sub: MOCK.bank.find(a => a.id === e.acct).name, a: null, b: e.amt, added: true })) });
+  }
+
+  // 3. Investments
+  if (bs.size) {
+    const inv = [], val = id => M ? [VAL[id].aug, VAL[id].sep] : [VAL[id].oct1, VAL[id].now];
+    MOCK.brok.filter(a => bs.has(a.id)).forEach(a => {
+      const list = MOCK.positions.filter(p => p.acct === a.id);
+      const A = list.reduce((s, p) => s + val(p.sym)[0], 0) + a.cash, B = list.reduce((s, p) => s + val(p.sym)[1], 0) + a.cash;
+      inv.push({ id: "acct-" + a.id, label: a.name, sub: `${a.inst} ${a.mask} · account value`, a: A, b: B, strong: true,
+        comment: a.id === "ibk" && M ? { imp: false, t: `IBKR grew <b>${signed(B - A, 0)}</b> (${((B - A) / A * 100).toFixed(1)}%), nearly three times Schwab on less than half the money. NVDA, TSLA and QQQ move more than VTI.` } : null });
+      list.forEach(p => inv.push({ id: "pos-" + p.sym, label: p.sym, sub: `${p.desc} · ${a.short}`, a: val(p.sym)[0], b: val(p.sym)[1], indent: true }));
+      inv.push({ id: "cash-" + a.id, label: "Uninvested cash", sub: a.short, a: a.cash, b: a.cash, indent: true });
+    });
+    const tech = w => { const h = MOCK.positions.filter(p => bs.has(p.acct)), t = h.reduce((s, p) => s + val(p.sym)[w], 0); return h.filter(p => p.tech).reduce((s, p) => s + val(p.sym)[w], 0) / t; };
+    // tech share is computed, not scripted: in this mock data tech and non-tech grew at about the same rate, so it barely moves
+    inv.push({ id: "tech", label: "Tech share", sub: `of invested money, ${MOCK.brok.filter(a => bs.has(a.id)).map(a => a.short).join(" + ")}`, a: tech(0), b: tech(1), pct: true,
+      note0: `Tech share held steady at ${(tech(1) * 100).toFixed(1)}%: tech and everything else grew at about the same rate` });
+    files.push({ id: "inv", title: "Investments", tag: "brok", tagText: MOCK.brok.filter(a => bs.has(a.id)).map(a => a.short).join(" + "), hunk: `@@ values · ${MODES[mode].a} → ${MODES[mode].b} @@`, lines: inv, cal: true, bs });
+  }
+  // classify each line
+  files.forEach(f => f.lines.forEach(L => {
+    const d = L.a === null ? L.b : L.b - L.a; L.d = d;
+    L.changed = L.added || (L.pct ? Math.abs(d) >= .0005 : Math.abs(d) >= 0.5);
+    L.kind = !L.changed ? "same" : (L.spend || L.invertGood ? (d > 0 ? (L.invertGood ? "up" : "dn") : (L.invertGood ? "dn" : "up")) : (d >= 0 ? "up" : "dn"));
+  }));
+  return files;
+}
+
+/* ---------- rendering ---------- */
+const fmtV = (L, v) => v === null ? "—" : L.pct ? (v * 100).toFixed(1) + "%" : money(v, L.id.startsWith("pos-") || L.id.startsWith("acct-") || L.id.startsWith("cash-") ? 0 : L.id.startsWith("bal-") ? 2 : 0);
+const fmtD = L => L.pct ? (L.d >= 0 ? "+" : "−") + Math.abs(L.d * 100).toFixed(1) + " pts" : signed(L.d, L.id.startsWith("bal-") ? 2 : 0);
+function lineHTML(L, key, fi, li) {
+  const s = st[key], chg = L.changed, cls = chg ? (L.kind === "up" ? "up" : "dn") : "same";
+  const lab = `<div class="lab"${L.indent ? ' style="padding-left:22px"' : ""}>${L.strong ? `<b>${L.label}</b>` : L.label}<small>${L.sub}</small></div>`;
+  const dCol = chg ? `<span class="${L.spend ? (L.d > 0 ? "loss" : "gain") : L.invertGood ? (L.d < 0 ? "loss" : "gain") : gl(L.d)}">${fmtD(L)}</span>` : `<span style="color:var(--faint)">no change</span>`;
+  const split = `<div class="rowd ${cls}" data-line="${key}|${L.id}" id="${key}-${L.id}"><div class="g g1">${chg && L.a !== null ? "−" : ""}</div>${lab}<div class="old">${chg && L.a !== null ? `<em>${fmtV(L, L.a)}</em>` : fmtV(L, L.a)}</div><div class="g g2">${chg ? "+" : ""}</div><div class="new">${chg ? `<em>${fmtV(L, L.b)}</em>` : fmtV(L, L.b)}</div><div class="chg">${dCol}</div></div>`;
+  const uni = chg
+    ? `${L.a !== null ? `<div class="urow del" data-line="${key}|${L.id}"><div class="g">−</div><div class="lab">${L.label} <small style="color:var(--faint)">${MODES[s.mode].short[0]}</small></div><div class="v">${fmtV(L, L.a)}</div></div>` : ""}<div class="urow add" id="${key}-u-${L.id}" data-line="${key}|${L.id}"><div class="g">+</div><div class="lab">${L.label} <small style="color:var(--faint)">${MODES[s.mode].short[1]}</small></div><div class="v">${fmtV(L, L.b)}<b>${fmtD(L)}</b></div></div>`
+    : `<div class="urow same"><div class="g"> </div><div class="lab">${L.label}</div><div class="v">${fmtV(L, L.b)}</div></div>`;
+  const tid = `${L.id}`, hid = s.hidden.has(tid);
+  const th = L.comment ? `<div class="thread${L.comment.imp ? " important" : ""}${hid ? " collapsed" : ""}"><div class="thread-h"><span class="av">✦</span><b>Ledgerline AI</b> commented on <b>${L.label}</b> <span class="mock">MOCK</span><button type="button" class="hide" data-hide="${key}|${tid}">${hid ? "Show" : "Hide"}</button></div><div class="thread-b">${L.comment.t}</div></div>` : "";
+  return split + uni + th;
+}
+function calCol(y, m, bs, key, side) {
+  const ms = monthStats(y, m, bs), lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d[0]}<span class="rest">${d.slice(1, 2)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="day blank"></div>`;
+  const selDay = st[key]["day" + side];
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) {
+    const t = status(y, m, d), date = iso(y, m, d);
+    if (t === "trade") { const v = dayFor(date, bs).total, a = Math.abs(v); cells += `<button type="button" class="day ${v >= 0 ? "up" : "down"} l${lvl(v)}${date === selDay ? " sel" : ""}" data-day="${key}|${side}|${date}" aria-label="${nice(date)}: ${v >= 0 ? "gain" : "loss"} of ${money(a, 0)}"><span class="dn">${d}</span><span class="amt">${v >= 0 ? "+" : "−"}<span class="cur">$</span>${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`; }
+    else if (t === "future") cells += `<div class="day future"><span class="dn">${d}</span></div>`;
+    else cells += `<div class="day off"${t === "holiday" ? ` title="Market closed: ${MOCK.holidays[date]}"` : ""}><span class="dn">${d}</span></div>`;
+  }
+  const dd = selDay ? dayFor(selDay, bs) : null;
+  return `<h4>${MONTHS[m]} <span style="color:var(--muted);font-weight:500">${ms.up} up · ${ms.down} down</span><span class="t ${gl(ms.total)}">${signed(ms.total, 0)}</span></h4><div class="cal-host"><div class="cal" role="group" aria-label="Daily gains and losses, ${MONTHS[m]}">${cells}</div></div>
+    <div class="cal-day">${dd ? `<b>${nice(dd.date)}: ${sg(dd.total)}</b>, ${dd.total >= 0 ? `${dd.moves[0].sym} led` : `${dd.moves[dd.moves.length - 1].sym} weighed most`}.` : `Best ${nice(ms.best.date)} ${sg(ms.best.total)} · worst ${nice(ms.worst.date)} ${sg(ms.worst.total)}`}</div>`;
+}
+function render(key) {
+  const r = $(`[data-root="${key}"]`), s = st[key], files = build(s.mode);
+  const lines = files.flatMap(f => f.lines), changed = lines.filter(L => L.changed), comments = lines.filter(L => L.comment), imp = comments.filter(L => L.comment.imp);
+  const ups = changed.filter(L => L.kind === "up").length, dns = changed.filter(L => L.kind === "dn").length;
+  s.changed = changed.map(L => L.id);
+
+  $("[data-compare]", r).innerHTML = `<span class="lbl">Compare</span><div class="seg" role="group" aria-label="What to compare">${Object.entries(MODES).map(([k, m]) => `<button type="button" data-mode="${key}|${k}" aria-pressed="${s.mode === k}">${m.label}</button>`).join("")}</div><span class="range">${MODES[s.mode].a} → ${MODES[s.mode].b}</span><span class="spacer"></span><span class="mock">MOCK DATA</span>`;
+
+  // net worth before/after
+  const nw = w => files.reduce((sum, f) => sum + (f.id === "cash" || f.id === "inv" ? f.lines.filter(L => L.id.startsWith("bal-") || L.id.startsWith("acct-")).reduce((x, L) => x + (w ? L.b : L.a), 0) : 0), 0);
+  const nA = nw(0), nB = nw(1);
+  const bsN = MOCK.brok.filter(a => sel.has(a.id)), mkt = s.mode === "month" ? (bsN.length ? monthStats(2026, 8, new Set(bsN.map(a => a.id))).total : 0) : (bsN.length ? dayFor("2026-10-02", new Set(bsN.map(a => a.id))).total : 0);
+  const aiText = !sel.size ? "Tick at least one account to compare." : s.mode === "month"
+    ? [bsN.length ? `Your investments grew ${sg(mkt)} in September.` : "", sel.has("chk") && sel.has("cc") ? `You kept <b>$270 more</b> than in August.` : "", sel.has("cc") ? `Dining rose <b>$114</b>.` : "", sel.has("sav") && sel.has("chk") ? `The <b>$500 savings transfer was skipped</b>.` : ""].filter(Boolean).join(" ") + ` ${imp.length ? `${imp.length} change${imp.length === 1 ? " is" : "s are"} flagged as worth a look.` : ""}`
+    : [sel.has("chk") ? `Your $3,425 paycheck came in and rent went out.` : "", sel.has("sav") ? `$500 moved to savings.` : "", bsN.length ? `Markets moved ${sg(mkt)} on Friday.` : "", "Nothing unusual."].filter(Boolean).join(" ");
+  $("[data-summary]", r).innerHTML = `<div class="ai"><div class="who">✦ LEDGERLINE AI · SUMMARY OF CHANGES · MOCK</div>${aiText}
+      <div class="stat-line"><span><b>${changed.length}</b> lines changed</span><span class="a">▲ ${ups} better</span><span class="d">▼ ${dns} worse</span><span>${lines.length - changed.length} unchanged (folded)</span><span>💬 ${comments.length} comments</span></div></div>
+    <div class="bigdiff"><div class="l">Net worth, ${MODES[s.mode].short[0]} → ${MODES[s.mode].short[1]}</div><div class="v ${gl(nB - nA)}">${signed(nB - nA, 0)}</div><div class="s">${money(nA, 0)} → ${money(nB, 0)}</div></div>`;
+
+  $("[data-picker]", r).innerHTML = pickerHTML();
+  $("[data-toolbar]", r).innerHTML = `<span>${changed.length} changed lines across ${files.length} section${files.length === 1 ? "" : "s"}</span><span class="spacer"></span>
+    <button type="button" class="btn ghost sm" data-step="${key}|-1">↑ Previous change</button><button type="button" class="btn ghost sm" data-step="${key}|1">Next change ↓</button>
+    <span class="seg view-toggle" role="group" aria-label="View"><button type="button" data-view="${key}|split" aria-pressed="${s.view === "split"}">Side by side</button><button type="button" data-view="${key}|unified" aria-pressed="${s.view === "unified"}">Unified</button></span>
+    <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" data-allopen="${key}" ${s.showAll ? "checked" : ""}> Show unchanged</label>`;
+
+  const doc = $("[data-doc]", r);
+  doc.classList.toggle("unified", s.view === "unified" || matchMedia("(max-width: 900px)").matches);
+  doc.innerHTML = files.map((f, fi) => {
+    const c = f.lines.filter(L => L.changed), a = c.filter(L => L.kind === "up").length, d = c.length - a;
+    let body = `<div class="hunk">${f.hunk}</div><div class="colhead"><div></div><div>Line</div><div class="r">${MODES[s.mode].short[0]}</div><div></div><div class="r">${MODES[s.mode].short[1]}</div><div class="r">Change</div></div>`;
+    let run = [];
+    const flush = () => { if (!run.length) return; const open = s.showAll || s.open.has(f.id + run[0].id); body += open ? run.map(L => lineHTML(L, key)).join("") : `<button type="button" class="expander" data-expand="${key}|${f.id + run[0].id}">⋯ ${run.length} unchanged line${run.length === 1 ? "" : "s"}: ${run.map(L => L.label).join(", ")}${run.some(L => L.note0) ? ` · ${run.find(L => L.note0).note0}` : ""} (show)</button>`; run = []; };
+    f.lines.forEach(L => { if (L.changed) { flush(); body += lineHTML(L, key); } else run.push(L); });
+    flush();
+    if (f.cal) {
+      if (!s.dayA) s.dayA = null;
+      body += `<div class="hunk">@@ daily gains &amp; losses · ${s.mode === "month" ? "August → September" : "September → October so far"} @@</div><div class="cal-pair">${s.mode === "month" ? `<div>${calCol(2026, 7, f.bs, key, "A")}</div><div>${calCol(2026, 8, f.bs, key, "B")}</div>` : `<div>${calCol(2026, 8, f.bs, key, "A")}</div><div>${calCol(2026, 9, f.bs, key, "B")}</div>`}</div><div class="cal-legend" style="padding:6px 14px 10px">Green = gain, red = loss, darker = bigger · dashed = market closed · choose any day</div>`;
+    }
+    return `<section class="file" id="${key}-file-${f.id}"><div class="file-h"><span>${f.title}</span><span class="tag ${f.tag}">${f.tagText}</span><span class="cnt"><span class="a">+${a}</span> <span class="d">−${d}</span><span class="bar5">${Array.from({ length: 5 }, (_, i) => `<i class="${i < Math.round(a / Math.max(1, c.length) * Math.min(5, c.length)) ? "a" : i < Math.min(5, c.length) ? "d" : ""}"></i>`).join("")}</span></span></div>${body}</section>`;
+  }).join("") || `<p style="padding:20px;color:var(--muted)">Tick at least one account to compare.</p>`;
+}
+function pickerHTML() {
+  const allB = MOCK.bank.every(a => sel.has(a.id)), allK = MOCK.brok.every(a => sel.has(a.id)), anyB = MOCK.bank.some(a => sel.has(a.id)), anyK = MOCK.brok.some(a => sel.has(a.id));
+  const tot = MOCK.bank.filter(a => sel.has(a.id)).reduce((s, a) => s + a.bal, 0) + MOCK.brok.filter(a => sel.has(a.id)).reduce((s, a) => s + brokValue(a.id), 0);
+  const row = a => { const v = isBank(a.id) ? a.bal : brokValue(a.id), sub = isBank(a.id) ? `<small class="${gl(a.wk)}">${signed(a.wk, 0)} 7d</small>` : (() => { const d = dayFor(MOCK.lastDataDay, new Set([a.id])).total; return `<small class="${gl(d)}">${signed(d, 0)} Fri</small>`; })(); return `<label class="pk-row" title="${a.name}, ${a.inst} ${a.mask}"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""}><span class="nm">${a.name}</span><span class="amt">${money(v)}${sub}</span></label>`; };
+  return `<div><div class="pk-title"><span class="tag bank">Bank</span> Mock Bank<span class="sum">${money(MOCK.bank.reduce((s, a) => s + a.bal, 0), 0)}</span></div><div class="pk-rows">${MOCK.bank.map(row).join("")}</div></div>
+    <div><div class="pk-title"><span class="tag brok">Brokerage</span><span class="sum">${money(MOCK.brok.reduce((s, a) => s + brokValue(a.id), 0), 0)}</span></div><div class="pk-rows">${MOCK.brok.map(row).join("")}</div></div>
+    <div class="pk-side"><div class="pk-quick"><button type="button" class="qbtn" data-quick="bank" aria-pressed="${allB && !anyK}">Bank only</button><button type="button" class="qbtn" data-quick="brok" aria-pressed="${allK && !anyB}">Brokerage only</button><button type="button" class="qbtn" data-quick="all" aria-pressed="${sel.size === ALL.length}">All</button></div><div class="pk-total">${sel.size} of ${ALL.length} compared<b>${money(tot, 0)}</b></div></div>`;
+}
+function renderAll() { render("land"); if ($("#demo").classList.contains("open")) render("demo"); }
+
+/* ---------- jumping between changes ---------- */
+function step(key, dir) {
+  const s = st[key], ids = s.changed; if (!ids.length) return;
+  s.focus = ((s.focus ?? -1) + dir + ids.length) % ids.length;
+  const unified = $(`[data-root="${key}"] [data-doc]`).classList.contains("unified");
+  $$(`[data-root="${key}"] .focus`).forEach(e => e.classList.remove("focus"));
+  const el = $(`#${key}-${unified ? "u-" : ""}${ids[s.focus]}`);
+  if (el) { el.classList.add("focus"); el.scrollIntoView({ block: "center" }); }
+}
+
+/* ---------- events ---------- */
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-acct]");
+  if (c) { c.checked ? sel.add(c.dataset.acct) : sel.delete(c.dataset.acct); const id = c.dataset.acct, key = c.closest("[data-root]").dataset.root; renderAll(); const again = $(`[data-root="${key}"] [data-acct="${id}"]`); if (again) again.focus(); return; }
+  const ao = e.target.closest("[data-allopen]");
+  if (ao) { st[ao.dataset.allopen].showAll = ao.checked; render(ao.dataset.allopen); $(`[data-allopen="${ao.dataset.allopen}"]`).focus(); }
+});
+document.addEventListener("click", e => {
+  const q = e.target.closest("[data-quick]");
+  if (q) { sel.clear(); ALL.forEach(a => { if (q.dataset.quick === "all" || (q.dataset.quick === "bank") === isBank(a.id)) sel.add(a.id); }); renderAll(); return; }
+  const m = e.target.closest("[data-mode]");
+  if (m) { const [k, v] = m.dataset.mode.split("|"); st[k].mode = v; st[k].focus = -1; st[k].dayA = st[k].dayB = null; render(k); return; }
+  const v = e.target.closest("[data-view]");
+  if (v) { const [k, val] = v.dataset.view.split("|"); st[k].view = val; render(k); return; }
+  const x = e.target.closest("[data-expand]");
+  if (x) { const [k, id] = x.dataset.expand.split("|"); st[k].open.add(id); render(k); return; }
+  const h = e.target.closest("[data-hide]");
+  if (h) { const [k, id] = h.dataset.hide.split("|"), set = st[k].hidden; set.has(id) ? set.delete(id) : set.add(id); render(k); return; }
+  const s = e.target.closest("[data-step]");
+  if (s) { const [k, d] = s.dataset.step.split("|"); step(k, +d); return; }
+  const dy = e.target.closest("[data-day]");
+  if (dy) { const [k, side, d] = dy.dataset.day.split("|"); st[k]["day" + side] = st[k]["day" + side] === d ? null : d; render(k); const f = $(`[data-root="${k}"] [data-day="${k}|${side}|${d}"]`); if (f) f.focus({ preventScroll: true }); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+let wasSmall = matchMedia("(max-width: 900px)").matches;
+addEventListener("resize", () => { const sm = matchMedia("(max-width: 900px)").matches; if (sm !== wasSmall) { wasSmall = sm; renderAll(); } });
+
+/* ---------- demo ---------- */
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && $("#demo").classList.contains("open")) { closeDemo(); return; }
+  if (!$("#demo").classList.contains("open") || /input/i.test(document.activeElement.tagName)) return;
+  if (e.key === "n" || e.key === "j") step("demo", 1);
+  if (e.key === "p" || e.key === "k") step("demo", -1);
+});
+$("#find-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#find-text").value.toLowerCase().trim(); if (!t) return;
+  const map = [["checking", "bal-chk"], ["savings transfer", "xfer"], ["transfer", "xfer"], ["saving", "bal-sav"], ["card", "bal-cc"], ["dining", "sp-dining"], ["restaurant", "sp-dining"], ["grocer", "sp-groceries"], ["shopping", "sp-shopping"], ["other", "sp-other"], ["kept", "kept"], ["income", "income"], ["paycheck", "income"], ["tech", "tech"], ["schwab", "acct-sch"], ["ibkr", "acct-ibk"], ...MOCK.positions.map(p => [p.sym.toLowerCase(), "pos-" + p.sym])];
+  const hit = map.find(([k]) => t.includes(k)), key = "demo", s = st.demo;
+  if (!hit) { $("#find-r").innerHTML = `<p class="find-r">Nothing in the scripted diff matches that. Try checking, savings, dining, kept, tech, Schwab, IBKR or a ticker. <span class="mock">SCRIPTED</span></p>`; return; }
+  const files = build(s.mode), L = files.flatMap(f => f.lines).find(x => x.id === hit[1]);
+  if (!L) { $("#find-r").innerHTML = `<p class="find-r">That line isn't in this comparison. Try the other compare mode or tick the matching account. <span class="mock">SCRIPTED</span></p>`; return; }
+  if (!L.changed) { const f = files.find(f => f.lines.includes(L)); s.showAll = true; }
+  render(key);
+  const unified = $(`[data-root="demo"] [data-doc]`).classList.contains("unified"), el = $(`#demo-${unified && L.changed ? "u-" : ""}${L.id}`) || $(`#demo-${L.id}`);
+  $$(`[data-root="demo"] .focus`).forEach(x => x.classList.remove("focus"));
+  if (el) { el.classList.add("focus"); el.scrollIntoView({ block: "center" }); }
+  $("#find-r").innerHTML = `<p class="find-r"><b>✦ Found:</b> ${L.label}, ${L.changed ? fmtD(L) : "no change"}. <span class="mock">SCRIPTED</span></p>`;
+  $("#find-text").value = "";
+});
+let lastFocus = null;
+function openDemo() { lastFocus = document.activeElement; $("#demo").classList.add("open"); document.body.style.overflow = "hidden"; render("demo"); $("#demo-close").focus(); }
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+
+render("land");
+if (location.hash === "#demo") openDemo();
+</script>
+</body>
+</html>

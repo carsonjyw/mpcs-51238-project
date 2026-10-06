@@ -315,6 +315,28 @@
           </ul>
           <p>The gains calendar sits beside an “investment heartbeat” trace of September's daily moves. The tone stays descriptive (“notes, not advice”). The demo adds a scripted ask box that opens the matching sign.</p>
         </li>
+        <li>
+          <div class="when">Stage 14 · Feedback on v12 → v13</div>
+          <h4>The Checkup isn't the one; try The Diff next</h4>
+          <p><b>Your review of v12:</b> you're not very drawn to “The Checkup.” Keep v12 in the gallery as part of the exploration, but move on to another direction for v13 rather than refining this one.</p>
+          <p><b>Your request:</b> v13 tries “The Diff: organized by what changed, line by line.”</p>
+        </li>
+        <li>
+          <div class="when">Stage 14 · Decision → v13</div>
+          <h4>“The Diff” built</h4>
+          <p><b>How v13 responds:</b> instead of a dashboard, the page is one comparison document across all accounts, borrowing the way programmers review changes between two versions of a file.</p>
+          <ul>
+            <li><b>Two comparisons:</b> “September vs. August” and “Since you last checked.” The second follows your earlier interest in the v08 summary.</li>
+            <li><b>Three sections:</b> Cash, Money in &amp; out, and Investments (each account and holding), with before and after values, the change, and red/green highlighting.</li>
+            <li><b>Unchanged lines fold away</b> (“⋯ 2 unchanged lines: Income, Housing”) but can be opened.</li>
+            <li><b>AI comments</b> sit like review comments on the lines worth explaining. Two are flagged as worth a look: dining up $114, and the September savings transfer that went from $500 to $0.</li>
+            <li><b>Top summary:</b> a plain-language summary of changes, line counts and the net-worth difference give a clear starting point.</li>
+            <li><b>Gains calendar:</b> shown as two months side by side.</li>
+            <li><b>Navigation:</b> “Previous / Next change” buttons jump between changed lines.</li>
+            <li><b>Phones:</b> switch to a unified view (old line, then new line).</li>
+          </ul>
+          <p>Tech share is computed, not scripted, and in this mock data it held steady (52.9%), so it is folded as unchanged rather than claimed as a change. The demo adds a scripted “find a line” box and n/p keyboard shortcuts.</p>
+        </li>
       </ol>
     </div>
   </section>
@@ -416,7 +438,14 @@ const VERSIONS = [
     title: "The Checkup",
     stage: "explore",
     date: "2026-10-06",
-    note: "<b>Bolder direction 2, chosen by you.</b> The page is organized by vital signs. A chart-style header gives a clear starting point (“5 of 6 vital signs are in your usual range. One is worth a look.”) with net worth, cash, invested and kept. Six vital signs follow, each combining bank and brokerage data and plotted against your own six-month usual range: cash cushion, saving rate, spending vs. usual, bills ahead, portfolio mix and daily swings. Out-of-range signs come first, and any sign opens into a larger view. The <b>gains calendar</b> sits beside an “investment heartbeat” trace. v01 account picker; light/dark; all mock."
+    note: "<b>Bolder direction 2, chosen by you.</b> The page is organized by vital signs. A chart-style header gives a clear starting point (“5 of 6 vital signs are in your usual range. One is worth a look.”) with net worth, cash, invested and kept. Six vital signs follow, each combining bank and brokerage data and plotted against your own six-month usual range: cash cushion, saving rate, spending vs. usual, bills ahead, portfolio mix and daily swings. Out-of-range signs come first, and any sign opens into a larger view. The <b>gains calendar</b> sits beside an “investment heartbeat” trace. v01 account picker; light/dark; all mock. <b>Your review:</b> not very drawn to it; kept as part of the exploration, not refined further."
+  },
+  {
+    v: "v13",
+    title: "The Diff",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Bolder direction 3, chosen by you.</b> The page is organized by what changed. One document lines up every account, compared September vs. August or “since you last checked,” line by line, side by side or unified. Changed lines are highlighted with the difference; unchanged lines fold away. The AI leaves review-style comments on the lines that matter (dining, the skipped savings transfer). The <b>gains calendar</b> appears as August and September side by side. A summary of changes and net-worth difference sits on top; next/previous buttons jump between changes. v01 account picker; light/dark; all mock."
   }
 ];
 
