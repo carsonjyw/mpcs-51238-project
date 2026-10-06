@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v15 · Money Weather — Ledgerline</title>
+<meta name="description" content="v15 — Money Weather: today's conditions across your bank and brokerage accounts, a map of your money with a forecast for each account, a 30-day outlook built from known paychecks and bills, and past market weather on the gains calendar. All data is mock.">
+<script>
+  document.documentElement.dataset.theme =
+    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
+<style>
+  :root, [data-theme="light"] {
+    --bg: #eef4fa;
+    --sky-1: #cfe5fb; --sky-2: #eaf3fc;
+    --surface: #ffffff;
+    --surface-2: #f2f6fb;
+    --ink: #13202e;
+    --muted: #546474;
+    --faint: #8696a6;
+    --line: #dce5ee;
+    --line-2: #c8d4e0;
+    --accent: #1f6fd1;
+    --accent-soft: #e3effc;
+    --sun: #f2a516; --cloud: #a9b8c7; --rain: #3b82d6; --wind: #5aa7a0; --storm: #6b5bd6;
+    --clear-soft: #fff4d9; --show-soft: #e3effc; --wind-soft: #e1f3f1; --cloud-soft: #eef2f6;
+    --bank: #1773bd; --bank-soft: #e2eff9;
+    --brok: #7646c6; --brok-soft: #eee7fa;
+    --gain: #14804a; --loss: #c7372c;
+    --gain-rgb: 20, 128, 74; --loss-rgb: 199, 55, 44;
+    --mock-ink: #84520a; --mock-bg: #fff0c6;
+    --shadow: 0 1px 2px rgba(15,35,60,.05), 0 12px 32px rgba(15,35,60,.08);
+  }
+  [data-theme="dark"] {
+    --bg: #0b1320;
+    --sky-1: #142640; --sky-2: #0e1a2c;
+    --surface: #131e2e;
+    --surface-2: #192638;
+    --ink: #e8f0f8;
+    --muted: #a3b2c3;
+    --faint: #71829a;
+    --line: #22324a;
+    --line-2: #2e405b;
+    --accent: #78aaff;
+    --accent-soft: #172a47;
+    --sun: #f6c050; --cloud: #8796a8; --rain: #6aa8f0; --wind: #6cc3ba; --storm: #a597ff;
+    --clear-soft: #2c2610; --show-soft: #172a47; --wind-soft: #12302d; --cloud-soft: #1b2636;
+    --bank: #66b4f2; --bank-soft: #16293b;
+    --brok: #b99bff; --brok-soft: #2b2145;
+    --gain: #46cd8a; --loss: #ff7d71;
+    --gain-rgb: 70, 205, 138; --loss-rgb: 255, 125, 113;
+    --mock-ink: #ffd88a; --mock-bg: #3a2c0d;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16.5px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  button { font: inherit; color: inherit; }
+  .n { font-variant-numeric: tabular-nums; }
+  .gain { color: var(--gain); } .loss { color: var(--loss); }
+  .nw { white-space: nowrap; }
+  .spacer { flex: 1; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .mock { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--mock-ink); background: var(--mock-bg); padding: 2px 6px; border-radius: 4px; vertical-align: 2px; white-space: nowrap; }
+  .tag { font-size: 11px; font-weight: 750; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .tag.bank { background: var(--bank-soft); color: var(--bank); }
+  .tag.brok { background: var(--brok-soft); color: var(--brok); }
+  .wx { display: inline-block; vertical-align: middle; flex: none; }
+
+  /* ---------- chrome ---------- */
+  .mockbar { background: var(--mock-bg); color: var(--mock-ink); font-size: 13.5px; text-align: center; padding: 7px 16px; }
+  header.top { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 12px; height: 58px; }
+  .back { font-size: 14px; text-decoration: none; color: var(--muted); padding: 5px 12px; border: 1px solid var(--line-2); border-radius: 999px; white-space: nowrap; background: var(--surface); }
+  .back:hover { color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 750; font-size: 17px; text-decoration: none; color: var(--ink); }
+  .brand small { font-size: 11px; color: var(--faint); border: 1px solid var(--line-2); border-radius: 999px; padding: 0 7px; font-weight: 600; }
+  .theme-btn { display: inline-flex; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 3px; cursor: pointer; font-size: 13px; }
+  .theme-btn > span { padding: 3px 10px; border-radius: 999px; color: var(--muted); }
+  [data-theme="light"] .theme-btn .t-light, [data-theme="dark"] .theme-btn .t-dark { background: var(--ink); color: var(--bg); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 999px; padding: 10px 18px; font-weight: 650; font-size: 15px; cursor: pointer; border: 1px solid transparent; text-decoration: none; white-space: nowrap; background: var(--accent); color: #fff; }
+  [data-theme="dark"] .btn { color: #0b1320; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+  .btn.sm { padding: 6px 13px; font-size: 14px; }
+
+  /* ---------- conditions now (the starting point) ---------- */
+  .now { margin: 22px 0 16px; border-radius: 24px; background: linear-gradient(160deg, var(--sky-1), var(--sky-2)); border: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden; }
+  .now-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 26px 28px 20px; }
+  .now .k { font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .now h1 { font-size: clamp(30px, 4.6vw, 50px); line-height: 1.04; letter-spacing: -.035em; margin: 6px 0 8px; }
+  .now p { margin: 0; font-size: 17.5px; color: var(--muted); max-width: 60ch; }
+  .now p b { color: var(--ink); }
+  .now .temp { text-align: right; }
+  .now .temp .v { font-size: 44px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .now .temp .l { font-size: 14px; color: var(--muted); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 28px 18px; }
+  .chip { display: inline-flex; gap: 8px; align-items: center; background: color-mix(in srgb, var(--surface) 80%, transparent); border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px 6px 8px; font-size: 14.5px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .chip b { font-variant-numeric: tabular-nums; }
+  .now-bottom { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: color-mix(in srgb, var(--surface) 75%, transparent); border-top: 1px solid var(--line); }
+  .now-bottom > div { padding: 12px 20px; border-right: 1px solid var(--line); }
+  .now-bottom > div:last-child { border-right: 0; }
+  .now-bottom .l { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .now-bottom .v { font-size: 22px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .now-bottom .s { font-size: 13px; color: var(--muted); }
+
+  /* account picker (v01 contents) */
+  .accts { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-bottom: 18px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) auto; gap: 14px; align-items: start; }
+  .pk-title { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin: 0 0 6px; }
+  .pk-title .sum { margin-left: auto; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 650; }
+  .pk-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+  .pk-row { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 8px; align-items: center; padding: 7px 9px; border-radius: 10px; cursor: pointer; font-size: 13.5px; border: 1px solid var(--line); background: var(--surface-2); }
+  .pk-row:not(:has(input:checked)) { opacity: .55; background: transparent; }
+  .pk-row input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; grid-row: span 2; }
+  .pk-row .nm { min-width: 0; font-weight: 600; line-height: 1.25; }
+  .pk-row .amt { font-weight: 650; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pk-row .amt small { font-weight: 500; font-size: 11.5px; margin-left: 6px; }
+  .pk-side { display: grid; gap: 8px; justify-items: end; }
+  .pk-quick { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+  .qbtn { font-size: 12.5px; font-weight: 650; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  .qbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pk-total { font-size: 13px; color: var(--muted); text-align: right; }
+  .pk-total b { display: block; color: var(--ink); font-size: 18px; font-variant-numeric: tabular-nums; }
+
+  /* section heads */
+  .sec-h { display: flex; align-items: baseline; gap: 12px; margin: 4px 0 12px; flex-wrap: wrap; }
+  .sec-h h2 { font-size: 23px; letter-spacing: -.02em; margin: 0; }
+  .sec-h span { color: var(--muted); font-size: 15px; }
+
+  /* ---------- the map of your money ---------- */
+  .map { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .region { text-align: left; border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; cursor: pointer; display: grid; gap: 6px; align-content: start; min-height: 168px; min-width: 210px; box-shadow: var(--shadow); position: relative; }
+  .region:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .region.clear { background: linear-gradient(170deg, var(--clear-soft), var(--surface) 70%); }
+  .region.clearing { background: linear-gradient(170deg, var(--cloud-soft), var(--surface) 70%); }
+  .region.showers { background: linear-gradient(170deg, var(--show-soft), var(--surface) 70%); }
+  .region.breezy { background: linear-gradient(170deg, var(--wind-soft), var(--surface) 70%); }
+  .region .top { display: flex; gap: 10px; align-items: center; }
+  .region .nm { font-weight: 750; font-size: 16.5px; line-height: 1.25; }
+  .region .nm small { display: block; font-weight: 500; font-size: 12.5px; color: var(--faint); }
+  .region .cond { font-weight: 800; font-size: 19px; letter-spacing: -.01em; }
+  .region .bal { font-size: 28px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .region .why { font-size: 14.5px; color: var(--muted); }
+  .region .why b { color: var(--ink); }
+  .region .more { font-size: 13px; font-weight: 700; color: var(--accent); margin-top: auto; }
+  .key { display: flex; gap: 6px 16px; flex-wrap: wrap; align-items: center; font-size: 13.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 14px; margin-bottom: 24px; }
+  .key b { color: var(--ink); }
+  .key span { display: inline-flex; gap: 6px; align-items: center; }
+
+  /* ---------- two columns: outlook | notes ---------- */
+  .duo { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-bottom: 24px; align-items: start; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
+  .panel h3 { margin: 0 0 4px; font-size: 19px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .panel .sub { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
+  .proj svg { display: block; width: 100%; height: auto; }
+  .proj .ax { fill: var(--faint); font-size: 11.5px; }
+  .proj .gl { stroke: var(--line); }
+  .weeks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+  .week { border: 1px solid var(--line); border-radius: 14px; padding: 10px; text-align: center; background: var(--surface-2); }
+  .week .wl { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+  .week .ev { font-size: 13px; margin-top: 4px; line-height: 1.35; }
+  .week .ev b { display: block; font-variant-numeric: tabular-nums; }
+  .note { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; margin-bottom: 14px; font-size: 15.5px; }
+  .note:last-child { margin-bottom: 0; }
+  .note .t { font-size: 12px; font-weight: 800; letter-spacing: .05em; color: var(--accent); margin-bottom: 2px; display: flex; gap: 6px; align-items: center; }
+
+  /* ---------- past market weather (gains calendar) ---------- */
+  .past { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 22px; }
+  .past .honest { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; font-size: 15px; margin-top: 12px; }
+  .cal-host { container: cal / inline-size; }
+  .cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .cal-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .cal-nav button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; }
+  .cal-nav button:disabled { opacity: .3; cursor: default; }
+  .cal-nav .m { padding: 0 4px; white-space: nowrap; font-weight: 700; font-size: 14px; }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .dow { font-size: 11px; font-weight: 700; color: var(--faint); text-align: center; }
+  .day { min-width: 0; overflow: hidden; min-height: 46px; border-radius: 8px; padding: 4px 6px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; border: 1px solid transparent; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+  button.day { cursor: pointer; }
+  button.day:hover { border-color: var(--ink); }
+  .day .dn, .day .amt { display: block; max-width: 100%; overflow: hidden; }
+  .day .dn { font-size: 11px; color: var(--muted); font-weight: 650; }
+  .day .amt { font-size: 12.5px; font-weight: 800; white-space: nowrap; letter-spacing: -.01em; }
+  .day.up .amt { color: var(--gain); } .day.down .amt { color: var(--loss); }
+  .day.up.l1 { background: rgba(var(--gain-rgb), .10); } .day.up.l2 { background: rgba(var(--gain-rgb), .22); }
+  .day.up.l3 { background: rgba(var(--gain-rgb), .36); } .day.up.l4 { background: rgba(var(--gain-rgb), .52); }
+  .day.down.l1 { background: rgba(var(--loss-rgb), .10); } .day.down.l2 { background: rgba(var(--loss-rgb), .22); }
+  .day.down.l3 { background: rgba(var(--loss-rgb), .36); } .day.down.l4 { background: rgba(var(--loss-rgb), .52); }
+  .day.l3 .amt, .day.l4 .amt { color: var(--ink); }
+  .day.off { background: transparent; border: 1px dashed var(--line-2); }
+  .day.off .amt { font-size: 10.5px; font-weight: 500; color: var(--faint); }
+  .day.blank { background: transparent; }
+  .day.future { background: transparent; border: 1px dotted var(--line-2); }
+  .day.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  @container cal (max-width: 520px) { .day { min-height: 42px; padding: 4px; } .day .amt { font-size: 11px; } .day .amt .cur { display: none; } }
+  @container cal (max-width: 360px) { .cal { gap: 2px; } .dow .rest { display: none; } .day { min-height: 38px; padding: 3px 2px 3px 3px; } .day .dn { font-size: 10px; } .day .amt { font-size: 10px; letter-spacing: -.03em; } .day.off .amt { display: none; } }
+  .cal-legend { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .cal-legend .sw { width: 15px; height: 10px; border-radius: 2px; }
+  .cal-legend .gap { width: 8px; }
+  .cal-day { margin-top: 10px; font-size: 14.5px; }
+
+  /* ---------- local forecast (larger view of one region) ---------- */
+  .sheet { position: fixed; inset: 0; z-index: 70; display: none; }
+  .sheet.open { display: block; }
+  .sheet .scrim { position: absolute; inset: 0; background: rgba(5, 15, 30, .45); }
+  .sheet .panel2 { position: absolute; right: 0; top: 0; bottom: 0; width: min(620px, 100%); background: var(--surface); box-shadow: -10px 0 40px rgba(0,0,0,.2); overflow-y: auto; padding: 22px 26px 30px; }
+  .sheet .close { float: right; }
+  .sheet h2 { font-size: 26px; letter-spacing: -.02em; margin: 6px 0 2px; display: flex; gap: 10px; align-items: center; }
+  .sheet .big { font-size: 46px; font-weight: 800; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+  .sheet .blk { margin-top: 18px; }
+  .sheet .blk h4 { margin: 0 0 8px; font-size: 12.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+  .rows .r { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 15.5px; }
+  .rows .r:last-child { border-bottom: 0; }
+  .rows .r small { color: var(--faint); }
+  .ai-box { background: var(--accent-soft); border-radius: 12px; padding: 12px 15px; font-size: 16px; margin-top: 12px; }
+  .ai-box .who { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--accent); }
+
+  /* ---------- below ---------- */
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 4px 0 20px; }
+  .how > div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .how b { display: block; margin-bottom: 4px; font-size: 16px; }
+  .how p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .final { text-align: center; padding: 30px 20px 50px; }
+  .final h2 { font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .final p { color: var(--muted); margin: 0 0 18px; }
+  footer { border-top: 1px solid var(--line); padding: 18px 0 34px; font-size: 13px; color: var(--faint); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+  /* ---------- demo ---------- */
+  .demo { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: none; flex-direction: column; }
+  .demo.open { display: flex; }
+  .demo-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+  .demo-body { flex: 1; overflow-y: auto; padding: 4px 0 30px; }
+  .ask { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 14px; margin: 12px 0 0; align-items: center; }
+  .ask input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 15.5px; padding: 6px 4px; outline: none; }
+  .ask-r { margin: 8px 0 0; font-size: 14.5px; color: var(--muted); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 980px) {
+    .duo, .past { grid-template-columns: minmax(0, 1fr); }
+    .accts { grid-template-columns: minmax(0, 1fr); }
+    .pk-side { justify-items: start; grid-template-columns: auto auto; align-items: center; justify-content: space-between; }
+  }
+  @media (max-width: 720px) {
+    .now-top { grid-template-columns: auto minmax(0, 1fr); padding: 20px 18px 16px; }
+    .now .temp { grid-column: 1 / -1; text-align: left; }
+    .chips { padding: 0 18px 16px; }
+    .now-bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .now-bottom > div:nth-child(2) { border-right: 0; }
+    .now-bottom > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    .weeks { grid-template-columns: minmax(0, 1fr); }
+    .week { display: grid; grid-template-columns: 90px auto minmax(0, 1fr); gap: 10px; align-items: center; text-align: left; }
+    .week .ev { margin-top: 0; }
+    .how { grid-template-columns: 1fr; }
+    .region { min-width: 100%; }
+  }
+  @media (max-width: 560px) {
+    .hide-sm, .brand small { display: none; }
+    header.top .wrap { gap: 8px; }
+    header.top .btn { padding: 8px 12px; font-size: 14px; }
+    .pk-rows { grid-template-columns: minmax(0, 1fr); }
+    .pk-side { grid-template-columns: 1fr; }
+    .now-top .wxbig { width: 64px; height: 64px; }
+    .sheet .panel2 { padding: 18px 16px 26px; }
+  }
+  @media (max-width: 420px) { header.top .btn { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="mockbar" role="note"><b>Design prototype · v15.</b> Every account, condition, forecast and AI note here is <b>mock data</b>. Forecasts use only known paychecks and bills; nothing here predicts the stock market. No real bank or brokerage connection is implemented.</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <a class="brand" href="#top"><span id="brand-ic"></span> Ledgerline <small>v15</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀<span class="hide-sm"> Light</span></span><span class="t-dark">☾<span class="hide-sm"> Dark</span></span></button>
+    <button class="btn" data-open-demo>View Demo</button>
+  </div>
+</header>
+
+<main class="wrap" id="top" data-root="land">
+  <section class="now" data-now aria-live="polite"></section>
+  <div class="accts" data-picker aria-label="Accounts in the forecast"></div>
+
+  <div class="sec-h"><h2>The map of your money</h2><span>Each account is a region, sized by its balance, with its own conditions. Open one for the local forecast.</span></div>
+  <div class="map" data-map></div>
+  <div class="key" data-key></div>
+
+  <section class="duo">
+    <div class="panel" data-outlook></div>
+    <div class="panel" data-notes></div>
+  </section>
+
+  <section class="panel past" data-past style="margin-bottom:24px"></section>
+
+  <section class="how" aria-label="How Money Weather works">
+    <div><b>Today's conditions, at a glance</b><p>One sentence for all your bank and brokerage accounts, then a region for each one with the numbers behind it.</p></div>
+    <div><b>A forecast only from what's known</b><p>The 30-day outlook uses scheduled paychecks, bills and transfers. It never guesses where the stock market is going.</p></div>
+    <div><b>Every icon has a reason</b><p>Each condition follows a simple rule shown in the key, so a cloud or a breeze always points to a real number.</p></div>
+  </section>
+</main>
+
+<section class="final">
+  <h2>Check the full demo forecast</h2>
+  <p>Choose accounts, open any region, and ask about the weather ahead. Everything is mock data.</p>
+  <button class="btn" data-open-demo>View Demo →</button>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Ledgerline is a fictional product concept. v15 of 25 in a landing-page design exploration.</span>
+    <span>Schwab and IBKR are named only to label mock accounts. No affiliation, no real connections.</span>
+    <a href="../index.html">← Back to gallery</a>
+  </div>
+</footer>
+
+<!-- ============ LOCAL FORECAST (larger view of one region) ============ -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="scrim" data-close-sheet></div>
+  <div class="panel2" id="sheet-panel"></div>
+</div>
+
+<!-- ============ DEMO ============ -->
+<div class="demo" id="demo" role="dialog" aria-modal="true" aria-label="Ledgerline money weather demo">
+  <div class="demo-top">
+    <span class="brand" id="demo-brand"></span>
+    <span class="mock">DEMO · ALL DATA IS MOCK</span>
+    <span class="spacer"></span>
+    <button class="theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode"><span class="t-light">☀</span><span class="t-dark">☾</span></button>
+    <a class="back" href="../index.html">← <span class="hide-sm">Gallery</span></a>
+    <button class="btn ghost sm" id="demo-close">Close ✕</button>
+  </div>
+  <div class="demo-body">
+    <div class="wrap" data-root="demo">
+      <form class="ask" id="ask-form"><span class="tag" style="background:var(--accent-soft);color:var(--accent)">✦ Ask</span><input id="ask-text" type="text" placeholder="e.g. “why is IBKR breezy?”, “any storms coming?”, “lowest point this month?”" aria-label="Ask about the forecast" autocomplete="off"><button class="btn sm" type="submit">Ask</button></form>
+      <div id="ask-r"></div>
+      <section class="now" data-now aria-live="polite"></section>
+      <div class="accts" data-picker aria-label="Accounts in the forecast"></div>
+      <div class="sec-h"><h2>The map of your money</h2></div>
+      <div class="map" data-map></div>
+      <div class="key" data-key></div>
+      <section class="duo"><div class="panel" data-outlook></div><div class="panel" data-notes></div></section>
+      <section class="panel past" data-past></section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MOCK DATA: fictional, for design demonstration only.
+   Same mock accounts and daily-gain generator as v01–v14.
+   ========================================================= */
+const MOCK = {
+  bank: [
+    { id: "chk", name: "Everyday Checking", inst: "Mock Bank", mask: "••4021", bal: 8412.55, wk: -912.30 },
+    { id: "sav", name: "High-Yield Savings", inst: "Mock Bank", mask: "••7710", bal: 24180.00, wk: 500.00 },
+    { id: "cc",  name: "Rewards Card", inst: "Mock Bank", mask: "••3398", bal: -1236.40, wk: -284.15 }
+  ],
+  brok: [
+    { id: "sch", name: "Schwab Individual", inst: "Schwab (mock)", mask: "••5512", short: "Schwab", cash: 2140 },
+    { id: "ibk", name: "IBKR Margin", inst: "IBKR (mock)", mask: "U•••908", short: "IBKR", cash: 3615 }
+  ],
+  positions: [
+    { sym: "VTI",  acct: "sch", qty: 120, px: 287.40, vol: 0.8, tech: false },
+    { sym: "AAPL", acct: "sch", qty: 45,  px: 228.10, vol: 1.4, tech: true },
+    { sym: "MSFT", acct: "sch", qty: 30,  px: 431.20, vol: 1.2, tech: true },
+    { sym: "NVDA", acct: "ibk", qty: 60,  px: 121.80, vol: 2.8, tech: true },
+    { sym: "TSLA", acct: "ibk", qty: 15,  px: 251.30, vol: 3.2, tech: false },
+    { sym: "QQQ",  acct: "ibk", qty: 25,  px: 489.50, vol: 1.1, tech: true }
+  ],
+  // known, scheduled events in the next 30 days (mock)
+  ahead: [
+    { date: "2026-10-17", acct: "chk", t: "Paycheck", amt: 3425 },
+    { date: "2026-10-22", acct: "cc",  t: "Rewards Card payment", amt: -1236.40, from: "chk" },
+    { date: "2026-11-02", acct: "sav", t: "Savings transfer", amt: -500, from: "chk", xfer: true },
+    { date: "2026-11-03", acct: "chk", t: "Rent, November", amt: -2100 }
+  ],
+  today: "2026-10-06",
+  holidays: { "2026-09-07": "Labor Day" },
+  months: [[2026, 7], [2026, 8], [2026, 9]],
+  lastDataDay: "2026-10-02"
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const money = (n, d = 0) => (n < 0 ? "−" : "") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (n, d = 0) => (n >= 0 ? "+" : "−") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sg = (n, d = 0) => `<span class="nw ${n >= 0 ? "gain" : "loss"}">${signed(n, d)}</span>`;
+const gl = n => (n >= 0 ? "gain" : "loss");
+const P = x => Math.round(x * 100) + "%";
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const toDate = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const nice = s => { const t = toDate(s); return `${DOW[t.getDay()]}, ${MONTHS[t.getMonth()].slice(0, 3)} ${t.getDate()}`; };
+
+MOCK.positions.forEach(p => p.val = p.qty * p.px);
+const ALL = [...MOCK.bank, ...MOCK.brok];
+const isBank = id => MOCK.bank.some(a => a.id === id);
+const brokValue = id => MOCK.positions.filter(p => p.acct === id).reduce((s, p) => s + p.val, 0) + MOCK.brok.find(a => a.id === id).cash;
+
+/* ---------- deterministic mock daily P&L (same generator as v02–v14) ---------- */
+function seeded(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const cache = {};
+function rawDay(date) {
+  if (cache[date]) return cache[date];
+  const r = seeded("ledgerline-" + date), market = (r() + r() + r() - 1.5) * 0.9 + 0.06;
+  return cache[date] = MOCK.positions.map(p => { const own = (r() + r() + r() - 1.5) * p.vol, pc = market * (p.vol / 1.2) * 0.8 + own * 0.6; return { sym: p.sym, acct: p.acct, pct: pc, amt: p.val * pc / 100 }; });
+}
+function dayFor(date, bs) { const moves = rawDay(date).filter(m => bs.has(m.acct)).sort((a, b) => b.amt - a.amt); return { date, moves, total: moves.reduce((s, m) => s + m.amt, 0) }; }
+function status(y, m, d) { const date = iso(y, m, d), dw = new Date(y, m, d).getDay(); if (date > MOCK.lastDataDay) return "future"; if (dw === 0 || dw === 6) return "weekend"; if (MOCK.holidays[date]) return "holiday"; return "trade"; }
+function monthStats(y, m, bs) {
+  const days = []; for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) if (status(y, m, d) === "trade") days.push(dayFor(iso(y, m, d), bs));
+  const sorted = [...days].sort((a, b) => b.total - a.total), bySym = {};
+  days.forEach(dd => dd.moves.forEach(mv => bySym[mv.sym] = (bySym[mv.sym] || 0) + mv.amt));
+  return { days, total: days.reduce((s, x) => s + x.total, 0), up: days.filter(x => x.total >= 0).length, down: days.filter(x => x.total < 0).length, best: sorted[0], worst: sorted[sorted.length - 1], avgAbs: days.reduce((s, x) => s + Math.abs(x.total), 0) / Math.max(1, days.length), bySym };
+}
+
+/* =========================================================
+   WEATHER ICONS (inline SVG) and the rules behind them
+   ========================================================= */
+function wx(kind, size = 36) {
+  const s = size, sun = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" style="fill:var(--sun)"/>${Array.from({ length: 8 }, (_, i) => { const a = i * Math.PI / 4; return `<line x1="${cx + Math.cos(a) * (r + 3)}" y1="${cy + Math.sin(a) * (r + 3)}" x2="${cx + Math.cos(a) * (r + 7)}" y2="${cy + Math.sin(a) * (r + 7)}" style="stroke:var(--sun);stroke-width:2.5;stroke-linecap:round"/>`; }).join("")}`;
+  const cloud = (x, y, k, col) => `<path transform="translate(${x} ${y}) scale(${k})" d="M6 22a6 6 0 0 1 1-11.9A8 8 0 0 1 22 8a6.5 6.5 0 0 1 4 12.5 4 4 0 0 1-2 1.5Z" style="fill:${col || "var(--cloud)"}"/>`;
+  const body = {
+    clear: sun(24, 24, 9),
+    clearing: sun(30, 16, 7) + cloud(2, 14, 1.15),
+    showers: cloud(4, 4, 1.25) + [12, 22, 32].map(x => `<line x1="${x}" y1="36" x2="${x - 3}" y2="44" style="stroke:var(--rain);stroke-width:2.5;stroke-linecap:round"/>`).join(""),
+    breezy: `<path d="M6 16h22a5 5 0 1 0-5-5M6 26h30a5 5 0 1 1-5 5M6 36h16" style="fill:none;stroke:var(--wind);stroke-width:3;stroke-linecap:round"/>`,
+    storm: cloud(4, 2, 1.25, "var(--storm)") + `<path d="M24 30l-6 9h6l-4 8 10-12h-6l4-5z" style="fill:var(--sun)"/>`,
+    calm: `<path d="M8 20h32M8 28h32" style="stroke:var(--cloud);stroke-width:3;stroke-linecap:round"/>`
+  }[kind];
+  return `<svg class="wx${size >= 60 ? " wxbig" : ""}" width="${s}" height="${s}" viewBox="0 0 48 48" aria-hidden="true">${body}</svg>`;
+}
+const COND = {
+  clear: { label: "Clear", rule: "in your usual range, nothing needs attention" },
+  clearing: { label: "Clearing", rule: "something was off recently and is back to normal" },
+  breezy: { label: "Breezy", rule: "moving more than usual from day to day" },
+  showers: { label: "Showers", rule: "something is above your usual, or a bill is coming" },
+  storm: { label: "Storm", rule: "a bill may not be covered or something looks unusual" }
+};
+
+/* ---------- selection ---------- */
+const sel = new Set(ALL.map(a => a.id));
+function S() {
+  const bank = MOCK.bank.filter(a => sel.has(a.id)), brok = MOCK.brok.filter(a => sel.has(a.id)), bs = new Set(brok.map(a => a.id));
+  const inv = brok.reduce((s, a) => s + brokValue(a.id), 0), bankTotal = bank.reduce((s, a) => s + a.bal, 0);
+  return { bank, brok, bs, inv, bankTotal, total: inv + bankTotal, sep: monthStats(2026, 8, bs), last: dayFor(MOCK.lastDataDay, bs) };
+}
+const names = s => s.brok.map(a => a.short).join(" + ");
+
+/* ---------- each account's local conditions, from its numbers ---------- */
+function regions(s) {
+  const R = [];
+  const add = (id, kind, why, extra) => R.push({ id, kind, why, ...extra });
+  if (sel.has("chk")) add("chk", "clear", `<b>−$912</b> over the past 7 days, within your usual range. Next paycheck <b>$3,425 on Oct 17</b>.`, { bal: 8412.55 });
+  if (sel.has("sav")) add("sav", "clearing", `September's <b>$500 transfer was skipped</b>; it ran again on Oct 2 (<b>+$500</b>).`, { bal: 24180 });
+  if (sel.has("cc")) add("cc", "showers", `Dining ran <b>$94 over usual</b> in September. <b>$1,236.40 due Oct 22</b>${sel.has("chk") ? ", and checking covers it" : ""}.`, { bal: -1236.40 });
+  s.brok.forEach(a => {
+    const f = new Set([a.id]), ms = monthStats(2026, 8, f), inv = MOCK.positions.filter(p => p.acct === a.id).reduce((x, p) => x + p.val, 0), swing = ms.avgAbs / inv;
+    add(a.id, swing > 0.005 ? "breezy" : "clear", swing > 0.005
+      ? `A typical day moves <b>${(swing * 100).toFixed(1)}%</b> (about ${money(ms.avgAbs)}), roughly twice Schwab's pace, because of NVDA and TSLA. September <b>${signed(ms.total)}</b>.`
+      : `Calm days: a typical day moves <b>${(swing * 100).toFixed(1)}%</b> (about ${money(ms.avgAbs)}). September <b>${signed(ms.total)}</b>.`, { bal: brokValue(a.id), ms, swing });
+  });
+  return R.sort((x, y) => Math.abs(y.bal) - Math.abs(x.bal));
+}
+function overall(R) {
+  const n = k => R.filter(r => r.kind === k).length;
+  if (!R.length) return { kind: "calm", head: "No accounts in the forecast", line: "Tick at least one account to see its conditions." };
+  if (n("storm")) return { kind: "storm", head: "Storm warning", line: "" };
+  const bad = R.filter(r => r.kind !== "clear" && r.kind !== "clearing");
+  const kind = bad.length === 0 ? "clear" : bad.length <= 2 ? "clearing" : "showers";
+  const head = { clear: "Clear skies", clearing: "Mostly clear", showers: "Changeable" }[kind];
+  const bits = [];
+  if (R.some(r => r.id === "cc" && r.kind === "showers")) bits.push("light showers on the card (dining, and a bill due Oct 22)");
+  if (R.some(r => r.kind === "breezy")) bits.push(`breezy in ${R.filter(r => r.kind === "breezy").map(r => acctLabel(r.id)).join(" and ")} (bigger daily moves)`);
+  if (R.some(r => r.id === "sav" && r.kind === "clearing")) bits.push("savings clearing after a skipped transfer");
+  return { kind, head, line: bits.length ? `Across your ${R.length} account${R.length === 1 ? "" : "s"}: ${bits.join("; ")}.` : `Everything across your ${R.length} account${R.length === 1 ? " is" : "s is"} in its usual range.` };
+}
+const acctLabel = id => ({ chk: "Checking", sav: "Savings", cc: "Rewards Card", sch: "Schwab", ibk: "IBKR" })[id];
+
+/* ---------- 30-day checking outlook (known events only) ---------- */
+function outlook() {
+  const start = toDate(MOCK.today), pts = [], ev = sel.has("chk") ? MOCK.ahead : [];
+  let bal = 8412.55;
+  for (let i = 0; i <= 29; i++) {
+    const t = new Date(start); t.setDate(start.getDate() + i); const d = iso(t.getFullYear(), t.getMonth(), t.getDate());
+    ev.filter(e => e.date === d).forEach(e => bal += e.amt); // every amount is the change to checking
+    pts.push({ d, bal });
+  }
+  const low = pts.reduce((m, p) => p.bal < m.bal ? p : m, pts[0]);
+  return { pts, ev, low };
+}
+function outlookSVG(o) {
+  const w = 620, h = 170, vals = o.pts.map(p => p.bal), lo = Math.min(...vals) * .9, hi = Math.max(...vals) * 1.05, x = i => 40 + i * (w - 60) / (o.pts.length - 1), y = v => 12 + (hi - v) / (hi - lo) * (h - 40);
+  let path = o.pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.bal).toFixed(1)}`).join("");
+  let g = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Forecast of the Everyday Checking balance for the next 30 days, from known paychecks and bills only">`;
+  [lo, (lo + hi) / 2, hi].forEach(v => g += `<line class="gl" x1="34" x2="${w}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="0" y="${y(v) + 4}">${(v / 1000).toFixed(1)}k</text>`);
+  g += `<path d="${path} L${x(o.pts.length - 1)},${h - 28} L${x(0)},${h - 28}Z" style="fill:var(--accent);opacity:.08"/><path d="${path}" style="fill:none;stroke:var(--accent);stroke-width:2.5"/>`;
+  o.pts.forEach((p, i) => { const e = o.ev.find(e => e.date === p.d); if (e) g += `<circle cx="${x(i)}" cy="${y(p.bal)}" r="5" style="fill:${e.amt > 0 && !e.from ? "var(--sun)" : "var(--rain)"};stroke:var(--surface);stroke-width:2"><title>${nice(p.d)}: ${e.t} ${signed(e.amt, 2)}</title></circle>`; });
+  const li = o.pts.indexOf(o.low);
+  g += `<text x="${x(li) + (li > o.pts.length - 6 ? 6 : 0)}" y="${y(o.low.bal) + 20}" text-anchor="${li > o.pts.length - 6 ? "end" : "middle"}" style="fill:var(--muted);font-size:11.5px;font-weight:700">lowest ${money(o.low.bal)}</text>`;
+  [0, 7, 14, 21, 29].forEach(i => g += `<text class="ax" x="${x(i)}" y="${h - 8}" text-anchor="${i === 0 ? "start" : i === 29 ? "end" : "middle"}">${nice(o.pts[i].d).slice(5)}</text>`);
+  return `<div class="proj">${g}</svg></div>`;
+}
+
+/* ---------- rendering ---------- */
+function nowHTML(s, R) {
+  const o = overall(R), oc = sel.has("chk") ? outlook() : null;
+  const chips = R.map(r => `<button type="button" class="chip" data-region="${r.id}">${wx(r.kind, 24)}<span>${acctLabel(r.id)}: <b>${COND[r.kind].label}</b></span></button>`).join("");
+  const k = [["Net worth", money(s.total), `${sel.size} account${sel.size === 1 ? "" : "s"}`], ["Cash", s.bank.length ? money(s.bankTotal) : "—", s.bank.length ? "bank accounts" : "no bank selected"], ["Invested", s.brok.length ? money(s.inv) : "—", s.brok.length ? `${signed(s.sep.total)} in September` : "no brokerage selected"], ["Next 30 days", oc ? `${oc.ev.length} known` : "—", oc ? `paycheck, bills, transfer` : "needs checking"]];
+  return `<div class="now-top">${wx(o.kind === "storm" ? "storm" : o.kind, 84)}
+      <div><div class="k">Conditions now · Tue, Oct 6 <span class="mock">MOCK</span></div><h1>${o.head}</h1><p>${o.line}</p></div>
+      <div class="temp"><div class="v">${money(s.total)}</div><div class="l">net worth today${s.brok.length ? ` · markets ${signed(s.last.total)} Fri` : ""}</div></div></div>
+    <div class="chips" aria-label="Conditions by account">${chips}</div>
+    <div class="now-bottom">${k.map(([l, v, sub]) => `<div><div class="l">${l}</div><div class="v">${v}</div><div class="s">${sub}</div></div>`).join("")}</div>`;
+}
+function mapHTML(R) {
+  if (!R.length) return `<div class="region" style="cursor:default;min-height:auto">Tick at least one account to draw the map.</div>`;
+  return R.map(r => { const a = ALL.find(x => x.id === r.id); return `<button type="button" class="region ${r.kind}" style="flex:${Math.max(1.4, Math.sqrt(Math.abs(r.bal)) / 40)} 1 300px" data-region="${r.id}" aria-label="${a.name}: ${COND[r.kind].label}, ${money(r.bal, 2)}. Open the local forecast.">
+      <div class="top">${wx(r.kind, 40)}<span class="cond">${COND[r.kind].label}</span></div><span class="nm">${a.name} <small>${a.inst} ${a.mask}</small></span>
+      <div class="bal">${money(r.bal, 2)}${r.id === "cc" ? ` <span style="font-size:14px;color:var(--muted);font-weight:600">owed</span>` : ""}</div>
+      <div class="why">${r.why}</div><span class="more">Local forecast →</span></button>`; }).join("");
+}
+function keyHTML() { return `<b>How conditions are set:</b>${Object.entries(COND).map(([k, c]) => `<span>${wx(k, 22)}<b>${c.label}</b> ${c.rule}</span>`).join("")}`; }
+function outlookHTML() {
+  if (!sel.has("chk")) return `<h3>30-day outlook</h3><p class="sub">The outlook follows Everyday Checking, where your paychecks and bills land. Tick it to see the forecast.</p>`;
+  const o = outlook(), start = toDate(MOCK.today);
+  const weeks = Array.from({ length: 5 }, (_, w) => { const a = new Date(start); a.setDate(start.getDate() + w * 7); const b = new Date(a); b.setDate(a.getDate() + 6); const ai = iso(a.getFullYear(), a.getMonth(), a.getDate()), bi = iso(b.getFullYear(), b.getMonth(), b.getDate()); return { ai, bi, ev: o.ev.filter(e => e.date >= ai && e.date <= bi) }; });
+  return `<h3>30-day outlook <span class="tag bank">Everyday Checking</span> <span class="mock">MOCK</span></h3>
+    <p class="sub">Built only from known paychecks, bills and transfers. Lowest point: <b>${money(o.low.bal)}</b> on ${nice(o.low.d)}${o.low.bal > 0 ? ", so every bill is covered" : ""}.</p>
+    ${outlookSVG(o)}
+    <div class="weeks">${weeks.map(w => { const k = w.ev.some(e => e.amt > 0 && !e.from) ? "clear" : w.ev.length ? "showers" : "calm"; return `<div class="week"><div class="wl">${nice(w.ai).slice(5)}–${toDate(w.bi).getDate()}</div>${wx(k, 34)}<div class="ev">${w.ev.length ? w.ev.map(e => `${e.t}<b class="${e.amt > 0 && !e.from ? "gain" : ""}">${e.xfer ? money(Math.abs(e.amt)) + " to savings" : signed(e.amt)}</b>`).join("") : `<span style="color:var(--muted)">Nothing scheduled</span>`}</div></div>`; }).join("")}</div>`;
+}
+function notesHTML(s, R) {
+  const notes = [];
+  if (sel.has("cc")) notes.push(["Showers on the card", `Dining was <b>$612</b> in September, $94 above your usual. The $1,236.40 statement is due Oct 22${sel.has("chk") ? "; it comes after the Oct 17 paycheck, so checking stays above $10,600 after paying it" : ""}.`]);
+  if (s.bs.has("ibk")) notes.push(["Breezy in IBKR", `IBKR is mostly tech (84%), so its days swing more than Schwab's. In September that worked in your favour: <b>${signed(monthStats(2026, 8, new Set(["ibk"])).total)}</b>.`]);
+  if (sel.has("sav")) notes.push(["Savings clearing", `The $500 transfer skipped in September ran again on Oct 2. The next one is scheduled for Nov 2.`]);
+  if (sel.has("chk")) notes.push(["No storms ahead", `Nothing in the next 30 days pushes checking below ${money(outlook().low.bal)}.`]);
+  return `<h3>✦ Forecaster's notes <span class="mock">AI · MOCK</span></h3><p class="sub">What the conditions mean, in plain language.</p>${notes.map(([t, b]) => `<div class="note"><div class="t">${t}</div>${b}</div>`).join("") || `<p class="sub">Tick accounts to see notes.</p>`}`;
+}
+const cals = {};
+function pastHTML(s, key) {
+  if (!s.brok.length) return `<div style="grid-column:1/-1"><h3>Past market weather</h3><p class="sub">Tick Schwab or IBKR to see each trading day's gain or loss.</p></div>`;
+  const c = cals[key] || (cals[key] = { mi: 1, day: null }), [y, m] = MOCK.months[c.mi], ms = monthStats(y, m, s.bs);
+  if (!c.day || !c.day.startsWith(iso(y, m, 1).slice(0, 7))) c.day = (m === 8 ? ms.best : ms.days[ms.days.length - 1]).date;
+  const lvl = v => { const a = Math.abs(v); return a < 100 ? 1 : a < 250 ? 2 : a < 500 ? 3 : 4; };
+  let cells = DOW.map(d => `<div class="dow">${d[0]}<span class="rest">${d.slice(1)}</span></div>`).join("");
+  for (let i = 0, f = new Date(y, m, 1).getDay(); i < f; i++) cells += `<div class="day blank"></div>`;
+  for (let d = 1, n = new Date(y, m + 1, 0).getDate(); d <= n; d++) {
+    const t = status(y, m, d), date = iso(y, m, d);
+    if (t === "trade") { const v = dayFor(date, s.bs).total, a = Math.abs(v); cells += `<button type="button" class="day ${v >= 0 ? "up" : "down"} l${lvl(v)}${date === c.day ? " sel" : ""}" data-day="${key}|${date}" aria-pressed="${date === c.day}" aria-label="${nice(date)}: ${v >= 0 ? "gain" : "loss"} of ${money(a)}"><span class="dn">${d}</span><span class="amt">${v >= 0 ? "+" : "−"}<span class="cur">$</span>${a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a)}</span></button>`; }
+    else if (t === "future") cells += `<div class="day future"><span class="dn">${d}</span></div>`;
+    else cells += `<div class="day off"${t === "holiday" ? ` title="Market closed: ${MOCK.holidays[date]}"` : ""}><span class="dn">${d}</span><span class="amt">${t === "holiday" ? "Closed" : ""}</span></div>`;
+  }
+  const dd = dayFor(c.day, s.bs), top = dd.moves[0], low = dd.moves[dd.moves.length - 1];
+  const sw = (k, a) => `<span class="sw" style="background:rgba(var(--${k}-rgb),${a})"></span>`;
+  return `<div><h3>Past market weather <span class="tag brok">${names(s)}</span></h3><p class="sub">Every trading day's gain or loss, like a weather history: ${ms.up} sunny days and ${ms.down} rainy ones in ${MONTHS[m]}, ${sg(ms.total)} overall.</p>
+      <div class="honest"><b>We don't forecast the stock market.</b> Nobody can reliably. The outlook above only uses paychecks, bills and transfers you already know about.</div></div>
+    <div class="cal-host"><div class="cal-head"><span class="tag brok">mock prices</span><div class="cal-nav"><button type="button" data-cal="${key}|-1" aria-label="Previous month" ${c.mi === 0 ? "disabled" : ""}>‹</button><span class="m">${MONTHS[m]} ${y}</span><button type="button" data-cal="${key}|1" aria-label="Next month" ${c.mi === MOCK.months.length - 1 ? "disabled" : ""}>›</button></div></div>
+      <div class="cal" role="group" aria-label="Daily gains and losses, ${MONTHS[m]} ${y}">${cells}</div>
+      <div class="cal-legend" aria-hidden="true">Loss ${sw("loss", .52)}${sw("loss", .36)}${sw("loss", .22)}${sw("loss", .10)}<span class="gap"></span>${sw("gain", .10)}${sw("gain", .22)}${sw("gain", .36)}${sw("gain", .52)} Gain<span class="gap"></span>dashed = market closed</div>
+      <div class="cal-day"><b>${nice(dd.date)}: ${sg(dd.total)}.</b> ${dd.total >= 0 ? `${top.sym} led (${sg(top.amt)}).` : `${low.sym} weighed most (${sg(low.amt)}).`}</div></div>`;
+}
+function pickerHTML() {
+  const allB = MOCK.bank.every(a => sel.has(a.id)), allK = MOCK.brok.every(a => sel.has(a.id)), anyB = MOCK.bank.some(a => sel.has(a.id)), anyK = MOCK.brok.some(a => sel.has(a.id));
+  const tot = MOCK.bank.filter(a => sel.has(a.id)).reduce((s, a) => s + a.bal, 0) + MOCK.brok.filter(a => sel.has(a.id)).reduce((s, a) => s + brokValue(a.id), 0);
+  const row = a => { const v = isBank(a.id) ? a.bal : brokValue(a.id), sub = isBank(a.id) ? `<small class="${gl(a.wk)}">${signed(a.wk)} 7d</small>` : (() => { const d = dayFor(MOCK.lastDataDay, new Set([a.id])).total; return `<small class="${gl(d)}">${signed(d)} Fri</small>`; })(); return `<label class="pk-row" title="${a.name}, ${a.inst} ${a.mask}"><input type="checkbox" data-acct="${a.id}" ${sel.has(a.id) ? "checked" : ""}><span class="nm">${a.name}</span><span class="amt">${money(v, 2)}${sub}</span></label>`; };
+  return `<div><div class="pk-title"><span class="tag bank">Bank</span> Mock Bank<span class="sum">${money(MOCK.bank.reduce((s, a) => s + a.bal, 0))}</span></div><div class="pk-rows">${MOCK.bank.map(row).join("")}</div></div>
+    <div><div class="pk-title"><span class="tag brok">Brokerage</span><span class="sum">${money(MOCK.brok.reduce((s, a) => s + brokValue(a.id), 0))}</span></div><div class="pk-rows">${MOCK.brok.map(row).join("")}</div></div>
+    <div class="pk-side"><div class="pk-quick"><button type="button" class="qbtn" data-quick="bank" aria-pressed="${allB && !anyK}">Bank only</button><button type="button" class="qbtn" data-quick="brok" aria-pressed="${allK && !anyB}">Brokerage only</button><button type="button" class="qbtn" data-quick="all" aria-pressed="${sel.size === ALL.length}">All</button></div><div class="pk-total">${sel.size} of ${ALL.length} in the forecast<b>${money(tot)}</b></div></div>`;
+}
+function render(key) {
+  const r = $(`[data-root="${key}"]`), s = S(), R = regions(s);
+  $("[data-now]", r).innerHTML = nowHTML(s, R);
+  $("[data-picker]", r).innerHTML = pickerHTML();
+  $("[data-map]", r).innerHTML = mapHTML(R);
+  $("[data-key]", r).innerHTML = keyHTML();
+  $("[data-outlook]", r).innerHTML = outlookHTML();
+  $("[data-notes]", r).innerHTML = notesHTML(s, R);
+  $("[data-past]", r).innerHTML = pastHTML(s, key);
+}
+function renderAll() { render("land"); if ($("#demo").classList.contains("open")) render("demo"); if (sheetId) openSheet(sheetId, true); }
+
+/* ---------- local forecast: larger view of one account ---------- */
+let sheetId = null, sheetReturn = null;
+function openSheet(id, keep) {
+  const s = S(), R = regions(s), r = R.find(x => x.id === id);
+  if (!r) { closeSheet(); return; }
+  sheetId = id; if (!keep) sheetReturn = document.activeElement;
+  const a = ALL.find(x => x.id === id);
+  let body = "";
+  if (id === "chk") { const o = outlook(); body = `<div class="blk"><h4>Next 30 days</h4><div class="rows">${o.ev.map(e => `<div class="r"><span>${e.t} <small>${nice(e.date)}</small></span><span class="${e.amt > 0 ? "gain" : ""}">${signed(e.amt, 2)}</span></div>`).join("")}<div class="r"><b>Lowest point</b><b>${money(o.low.bal, 2)} · ${nice(o.low.d)}</b></div></div></div><div class="blk"><h4>Balance forecast</h4>${outlookSVG(o)}</div>`; }
+  if (id === "sav") body = `<div class="blk"><h4>Recent activity</h4><div class="rows"><div class="r"><span>Transfer from checking <small>Fri, Oct 2</small></span><span class="gain">+$500.00</span></div><div class="r"><span>No transfer <small>September</small></span><span>$0.00</span></div><div class="r"><span>Transfer from checking <small>Sun, Aug 2</small></span><span class="gain">+$500.00</span></div><div class="r"><span>Next transfer <small>Mon, Nov 2</small></span><span>+$500.00</span></div></div></div>`;
+  if (id === "cc") body = `<div class="blk"><h4>Statement</h4><div class="rows"><div class="r"><span>Balance due <small>Thu, Oct 22</small></span><b>$1,236.40</b></div><div class="r"><span>New charges since Sep 22</span><span>$284.15</span></div><div class="r"><span>Dining in September <small>usual $518</small></span><span>$612.00</span></div>${sel.has("chk") ? `<div class="r"><span>Checking after the Oct 22 payment <small>with the Oct 17 paycheck</small></span><span>$10,601.15</span></div>` : ""}</div></div>`;
+  if (id === "sch" || id === "ibk") body = `<div class="blk"><h4>What each holding did in September</h4><div class="rows">${MOCK.positions.filter(p => p.acct === id).map(p => `<div class="r"><span><b>${p.sym}</b> <small>${money(p.val)}</small></span><span class="${gl(r.ms.bySym[p.sym])}">${signed(r.ms.bySym[p.sym])}</span></div>`).join("")}</div></div><div class="blk"><h4>Daily weather, ${a.short}</h4>${pastHTML({ ...s, bs: new Set([id]), brok: [a] }, "sheet").split('<div class="cal-host">')[1] ? '<div class="cal-host">' + pastHTML({ ...s, bs: new Set([id]), brok: [a] }, "sheet").split('<div class="cal-host">')[1] : ""}</div>`;
+  $("#sheet-panel").innerHTML = `<button type="button" class="btn ghost sm close" data-close-sheet>Close ✕</button>
+    <div style="font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Local forecast <span class="mock">MOCK</span></div>
+    <h2 id="sheet-title">${wx(r.kind, 44)} ${a.name}</h2><div style="color:var(--muted)">${a.inst} ${a.mask} · <b style="color:var(--ink)">${COND[r.kind].label}</b>: ${COND[r.kind].rule}</div>
+    <div class="big">${money(r.bal, 2)}</div>
+    <div class="ai-box"><div class="who">✦ LEDGERLINE AI · MOCK</div>${r.why}</div>${body}`;
+  $("#sheet").classList.add("open"); document.body.style.overflow = "hidden";
+  if (!keep) $("#sheet .close").focus();
+}
+function closeSheet() { $("#sheet").classList.remove("open"); sheetId = null; if (!$("#demo").classList.contains("open")) document.body.style.overflow = ""; if (sheetReturn && document.contains(sheetReturn)) sheetReturn.focus(); }
+
+/* ---------- events ---------- */
+document.addEventListener("change", e => {
+  const c = e.target.closest("[data-acct]"); if (!c) return;
+  c.checked ? sel.add(c.dataset.acct) : sel.delete(c.dataset.acct);
+  const id = c.dataset.acct, key = c.closest("[data-root]").dataset.root;
+  renderAll(); const again = $(`[data-root="${key}"] [data-acct="${id}"]`); if (again) again.focus();
+});
+document.addEventListener("click", e => {
+  const q = e.target.closest("[data-quick]");
+  if (q) { sel.clear(); ALL.forEach(a => { if (q.dataset.quick === "all" || (q.dataset.quick === "bank") === isBank(a.id)) sel.add(a.id); }); renderAll(); return; }
+  if (e.target.closest("[data-close-sheet]")) { closeSheet(); return; }
+  const rg = e.target.closest("[data-region]");
+  if (rg) { openSheet(rg.dataset.region); return; }
+  const cn = e.target.closest("[data-cal]");
+  if (cn) { const [k, d] = cn.dataset.cal.split("|"); cals[k].mi = Math.max(0, Math.min(MOCK.months.length - 1, cals[k].mi + +d)); cals[k].day = null; k === "sheet" ? openSheet(sheetId, true) : render(k); return; }
+  const dy = e.target.closest("[data-day]");
+  if (dy) { const [k, d] = dy.dataset.day.split("|"); cals[k].day = d; k === "sheet" ? openSheet(sheetId, true) : render(k); const f = $(`[data-day="${k}|${d}"]`); if (f) f.focus(); return; }
+  if (e.target.closest("[data-open-demo]")) openDemo();
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if ($("#sheet").classList.contains("open")) { closeSheet(); return; }
+  if ($("#demo").classList.contains("open")) closeDemo();
+});
+$$("[data-theme-toggle]").forEach(b => b.addEventListener("click", () => { const h = document.documentElement; h.dataset.theme = h.dataset.theme === "dark" ? "light" : "dark"; }));
+
+/* ---------- demo ---------- */
+$("#ask-form").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("#ask-text").value.toLowerCase().trim(); if (!t) return;
+  const s = S();
+  let a = "";
+  if (/storm|danger|worry|problem/.test(t)) a = sel.has("chk") ? `No storms in the forecast. The lowest checking balance in the next 30 days is ${money(outlook().low.bal)} on ${nice(outlook().low.d)}, after the card bill and rent.` : "Tick Everyday Checking to see the outlook.";
+  else if (/lowest|low point|dip/.test(t)) a = sel.has("chk") ? `Lowest point: ${money(outlook().low.bal)} on ${nice(outlook().low.d)}.` : "Tick Everyday Checking to see the outlook.";
+  else if (/ibkr|breez|wind|swing/.test(t)) a = s.bs.has("ibk") ? `IBKR is breezy because it's mostly tech (84%) and holds NVDA and TSLA, which move more each day. In September it finished ${signed(monthStats(2026, 8, new Set(["ibk"])).total)}.` : "IBKR isn't in the forecast. Tick it to include it.";
+  else if (/card|shower|dining|bill/.test(t)) a = sel.has("cc") ? `Showers on the card: dining was $94 over usual in September, and $1,236.40 is due Oct 22.` : "The Rewards Card isn't in the forecast.";
+  else if (/sav/.test(t)) a = `Savings is clearing: the transfer skipped in September ran again on Oct 2.`;
+  else if (/market|stock|predict|forecast.*(stock|market)/.test(t)) a = `Ledgerline doesn't forecast the stock market. The outlook only uses paychecks, bills and transfers you already know about.`;
+  $("#ask-r").innerHTML = `<p class="ask-r">${a ? `<b>✦</b> ${a}` : "This prototype only has scripted answers. Try storms, lowest point, IBKR, the card, savings or the stock market."} <span class="mock">SCRIPTED</span></p>`;
+  $("#ask-text").value = "";
+});
+let lastFocus = null;
+function openDemo() { lastFocus = document.activeElement; $("#demo").classList.add("open"); document.body.style.overflow = "hidden"; render("demo"); $("#demo-close").focus(); }
+function closeDemo() { $("#demo").classList.remove("open"); document.body.style.overflow = ""; if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+$("#demo-close").addEventListener("click", closeDemo);
+
+$("#brand-ic").innerHTML = wx("clearing", 28);
+$("#demo-brand").innerHTML = wx("clearing", 28) + `<span class="hide-sm">Ledgerline weather</span>`;
+render("land");
+if (location.hash === "#demo") openDemo();
+</script>
+</body>
+</html>
