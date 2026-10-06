@@ -168,6 +168,12 @@
           <p><b>Your request for v05:</b> explore the newspaper-style idea, with headlines about the user's money, short stories explaining account changes and sample AI summaries, so it feels like reading a personal financial morning briefing. Keep the bank and brokerage options, the light/dark switch and the gains calendar, worked naturally into the editorial layout, with clearly labeled mock data. Keep v01–v04 unchanged.</p>
           <p><b>How v05 responds:</b> a masthead (“The Ledgerline Daily,” dated Monday, October 5, 2026) with a numbers index row. A front-page lead story's headline changes with the accounts covered. Beside it are an “About this paper” box that explains the product, “The briefing in 30 seconds” (AI summary) and “Sources for this edition,” the v01-style account picker. Below come three short stories with AI notes, Section B (Markets) with the gains calendar where choosing a day prints that day's story and a newspaper-style stock table, Section C (Household) with the checking ledger, spending and saving, and Letters to the Editor answered by the AI. Bank / Brokerage / Both appears as “This edition covers.” View Demo opens a reader with back issues by date and a scripted “write to the editor” box.</p>
         </li>
+        <li>
+          <div class="when">Fix · v05 calendar</div>
+          <h4>Calendar amounts no longer overlap</h4>
+          <p><b>Your report:</b> amounts in the v05 calendar were overlapping. You asked for each day's number and gain or loss to fit inside its own cell on narrow screens too, keeping the newspaper style.</p>
+          <p><b>What changed:</b> the overlap was worst in the demo's narrow “Back issues” calendar. Both v05 calendars now size themselves to their own width. Wide calendars are unchanged; medium ones drop the “$” and use slightly smaller type; narrow ones tighten padding and hide the “Closed” label (the dashed border and legend still mark closed days). Each cell also clips anything that could spill over. Checked with no overflow at 1440, 1024, 768, 375 and 320px wide.</p>
+        </li>
       </ol>
     </div>
   </section>
