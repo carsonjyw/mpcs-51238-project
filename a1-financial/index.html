@@ -366,7 +366,37 @@
           <div class="when">Stage 16 · Decision → v15</div>
           <h4>v15 · Money Weather</h4>
           <p><b>What I built:</b> weather is used as a quick read on the whole picture, but every condition shows its number and the rule behind it. The account overview and AI notes sit together on one page, following your earlier feedback. Forecasts use only known paychecks, bills and transfers, never market predictions.</p>
-          <p><b>Your review:</b> pending.</p>
+          <p><b>Your review:</b> Money Weather doesn't feel very practical. v15 stays in the gallery.</p>
+        </li>
+        <li>
+          <div class="when">Stage 17 · End of metaphor exploration → v16–v19</div>
+          <h4>From creative metaphors to real user needs</h4>
+          <p><b>Your decision:</b> we've explored plenty of creative metaphors. v16–v19 should focus on real user needs and usability by building on what worked:</p>
+          <ul>
+            <li><b>v01:</b> clear account details</li>
+            <li><b>v02:</b> easy-to-understand structure</li>
+            <li><b>v08:</b> focus on changes</li>
+            <li><b>v14:</b> the useful what-if feature</li>
+          </ul>
+          <p>Each version should help users understand their accounts, see what changed, and get useful AI explanations, without trying to fit every feature into every version. You'll choose an approach before I build, and v20–v25 will refine the strongest direction.</p>
+        </li>
+        <li>
+          <div class="when">Stage 17 · Decision → v16</div>
+          <h4>v16 · Account Detail View (direction A)</h4>
+          <p><b>Your decision:</b> build the four proposed directions one by one, A through D as v16–v19.</p>
+          <p><b>The four directions:</b> A, an account list with a detail view; B, a weekly check-in; C, an overview with an AI side panel and what-ifs; D, pick what you connect, with tabs for cash, investments and both together.</p>
+          <p><b>What I built for A:</b> a list on the left and the selected account's details on the right, a layout none of the earlier versions used. It builds on v01's account details and v02's plain structure, and leaves out the what-if tool.</p>
+        </li>
+        <li>
+          <div class="when">Stage 17 · Decision → v17–v19</div>
+          <h4>v17–v19 · Directions B, C and D</h4>
+          <p><b>Your decision:</b> build the rest of the four directions through v19 in one go, before reviewing.</p>
+          <ul>
+            <li><b>v17 · Weekly Check-in (B):</b> a document you read top to bottom in five fixed steps. It puts v08's “Since you last checked” first and upcoming events last, as you suggested after v08.</li>
+            <li><b>v18 · Overview + AI Panel (C):</b> the overview stays in front, with an assistant panel beside it. The panel explains anything you click and runs v14's what-ifs, whose results show up in the overview. This follows your note that what-ifs work alongside an overview and AI analysis.</li>
+            <li><b>v19 · Pick What You Connect (D):</b> you choose bank, brokerage or both, and the product view adapts with Cash, Investments and Together tabs.</li>
+          </ul>
+          <p><b>Your review of v16–v19:</b> pending. You'll pick the strongest direction to refine in v20–v25.</p>
         </li>
       </ol>
     </div>
@@ -490,7 +520,35 @@ const VERSIONS = [
     title: "Money Weather",
     stage: "explore",
     date: "2026-10-06",
-    note: "<b>Bolder direction 5, chosen by you.</b> The page is organized as a forecast. It opens with “Conditions now”: one headline and sentence for all accounts, condition chips per account, and key numbers (net worth, cash, invested, next 30 days). A <b>map of your money</b> gives each account a region, sized by balance, with a condition (Clear, Clearing, Breezy, Showers) and the number behind it. Each region opens a larger ‘local forecast’ view. A key explains the rule behind every condition. A <b>30-day outlook</b> projects checking only from known paychecks, bills and transfers, and states plainly that it never forecasts the stock market. AI ‘forecaster's notes’ sit beside it. The <b>gains calendar</b> appears as ‘past market weather’. v01 account picker; light/dark; scripted ask box in the demo; all mock."
+    note: "<b>Bolder direction 5, chosen by you.</b> The page is organized as a forecast. It opens with “Conditions now”: one headline and sentence for all accounts, condition chips per account, and key numbers (net worth, cash, invested, next 30 days). A <b>map of your money</b> gives each account a region, sized by balance, with a condition (Clear, Clearing, Breezy, Showers) and the number behind it. Each region opens a larger ‘local forecast’ view. A key explains the rule behind every condition. A <b>30-day outlook</b> projects checking only from known paychecks, bills and transfers, and states plainly that it never forecasts the stock market. AI ‘forecaster's notes’ sit beside it. The <b>gains calendar</b> appears as ‘past market weather’. v01 account picker; light/dark; scripted ask box in the demo; all mock. <b>Your review:</b> Money Weather doesn't feel very practical."
+  },
+  {
+    v: "v16",
+    title: "Account Detail View",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Practical direction A, the first of four you asked me to build one by one.</b> Built for the need “what do I have, and is it okay?” A permanent account list on the left keeps v01's details: bank and brokerage groups, balances, 7-day change, checkboxes and quick select. Clicking an account opens its details on the right, in v02's plain structure: key numbers, an AI explanation with follow-up questions, and the content that fits the account. Checking shows the past 7 days and upcoming bills; the card shows spending by category vs. usual; Schwab and IBKR show holdings and their own gains calendar. A Combined view sums the ticked accounts. The what-if tool is left out on purpose. Light/dark; all mock."
+  },
+  {
+    v: "v17",
+    title: "Weekly Check-in",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Practical direction B.</b> Built for the need “what changed since I last looked?” One check-in document is read top to bottom in five fixed steps. (1) <b>Since you last checked</b>: the net-worth change, split into bank vs. investments, and a 4-point AI summary. This builds on the part of v08 you liked and makes it the first thing on the page. (2) <b>Every account, side by side</b>: balance now, this week's change and what happened, with expandable details. (3) <b>The three biggest changes</b>, each with an ‘Explain this’ AI note. (4) <b>Market days</b>: the gains calendar with this week outlined, plus a day-by-day bar list. (5) <b>Coming up</b> at the end, as you suggested for v08, plus a ‘Mark as reviewed’ step. v01 account picker; no what-if; light/dark; all mock."
+  },
+  {
+    v: "v18",
+    title: "Overview + AI Panel",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Practical direction C.</b> Built for the need “explain this, and what happens if…?” The account overview stays in front: the v01 picker, tiles for net worth, checking, savings, card and invested, September cash flow by category, holdings and the gains calendar. A permanent <b>assistant panel</b> sits beside it (a bottom drawer on phones). Its <b>Explain</b> tab explains any number, category, holding or market day you click. Its <b>What if</b> tab brings back v14's levers (pay the card now, dining back to usual, move savings into investments, a market move). The results show up as orange ‘what-if →’ values right in the overview. This follows your note that what-ifs work alongside an account overview and AI analysis. Light/dark; illustrations, not advice; all mock."
+  },
+  {
+    v: "v19",
+    title: "Pick What You Connect",
+    stage: "explore",
+    date: "2026-10-06",
+    note: "<b>Practical direction D.</b> Built for people who connect only a bank, only a brokerage, or both. The page opens by asking “What would you like to connect?” with three choices. The product view below then shows three tabs. <b>Cash</b>: balances, cash flow, spending by category and upcoming bills. <b>Investments</b>: holdings with portfolio share, what moved in September, and the gains calendar. <b>Together</b>: net worth, cash cushion, ‘September, two ways’ and this week side by side. Each tab has its own AI summary and follow-up questions. A tab that has no data says what's missing and offers to add it. Builds on v02's plain structure and v01's account picker (behind an ‘Accounts’ button); no what-if; light/dark; all mock."
   }
 ];
 
